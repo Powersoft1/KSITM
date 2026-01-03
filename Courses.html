@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Courses - KSITM CTE</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Courses Specific Styles */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 25px 30px;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+
+        .header-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 40px 10px 15px;
+            border: 1px solid var(--light-gray);
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            background: white;
+            color: var(--dark);
+        }
+
+        .search-box i {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid var(--light-gray);
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        .loading-text {
+            font-size: 1.2rem;
+            color: var(--dark);
+            font-weight: 500;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: var(--radius-md);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            transition: var(--transition);
+            border-left: 4px solid var(--primary);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-right: 15px;
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .stat-details h3 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+            color: var(--dark);
+        }
+
+        .stat-details p {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        /* Course Grid */
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .course-card {
+            background: white;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            border: 1px solid var(--light-gray);
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .course-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .course-header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 20px;
+            position: relative;
+        }
+
+        .course-code {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .course-name {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .course-status {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .course-body {
+            padding: 20px;
+        }
+
+        .course-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-label {
+            font-size: 0.85rem;
+            color: var(--gray);
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        .teacher {
+            color: var(--danger);
+            font-weight: bold;
+        }
+
+        /* Progress Section */
+        .progress-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--light-gray);
+        }
+
+        .progress-container {
+            background-color: var(--light-gray);
+            border-radius: 5px;
+            height: 8px;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            border-radius: 5px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            transition: width 0.5s ease;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            color: var(--gray);
+            font-size: 0.85rem;
+        }
+
+        /* Schedule Info */
+        .schedule-info {
+            background: var(--primary-light);
+            padding: 10px;
+            border-radius: var(--radius-sm);
+            margin-top: 15px;
+            font-size: 0.85rem;
+        }
+
+        .schedule-info i {
+            margin-right: 8px;
+            color: var(--primary);
+        }
+
+        /* Assignments & Tests Badges */
+        .assessment-badges {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .badge-assignment {
+            background-color: rgba(52, 152, 219, 0.1);
+            color: var(--info);
+        }
+
+        .badge-test {
+            background-color: rgba(243, 156, 18, 0.1);
+            color: var(--warning);
+        }
+
+        .badge-overdue {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: var(--danger);
+        }
+
+        .badge-upcoming {
+            background-color: rgba(46, 204, 113, 0.1);
+            color: var(--success);
+        }
+
+        /* Course Actions */
+        .course-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn-course {
+            flex: 1;
+            padding: 10px;
+            border-radius: var(--radius-sm);
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .btn-course-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .btn-course-outline {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-course:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            grid-column: 1/-1;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--gray);
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 10px;
+            color: var(--dark);
+        }
+
+        .empty-state p {
+            color: var(--gray);
+            margin-bottom: 20px;
+        }
+
+        /* Custom Course Details Modal Styles */
+        .course-details-modal .modal-content {
+            max-width: 600px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .course-details-modal .modal-header {
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .course-details-modal .modal-header h2 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            margin: 0;
+        }
+
+        .course-details-modal .close-details-modal {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.3s ease;
+        }
+
+        .course-details-modal .close-details-modal:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .course-details-modal .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 25px;
+            max-height: 60vh;
+        }
+
+        .course-details-modal .modal-footer {
+            padding: 15px 20px;
+            border-top: 1px solid var(--light-gray);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        /* Scrollbar styling for modal */
+        .course-details-modal .modal-body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .course-details-modal .modal-body::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .course-details-modal .modal-body::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
+
+        .course-details-modal .modal-body::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .courses-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .course-info {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .course-actions {
+                flex-direction: column;
+            }
+            
+            .search-box {
+                min-width: 100%;
+            }
+            
+            .course-details-modal .modal-content {
+                width: 95%;
+                margin: 10px;
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="loading-overlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading Courses...</div>
+    </div>
+
+    <div class="main-container">
+        <div class="header">
+            <h1><i class="fas fa-book-open"></i> My Courses</h1>
+            <p>View all your enrolled courses and track your progress</p>
+            
+            <div class="header-controls">
+                <div class="search-box">
+                    <input type="text" id="search-courses" placeholder="Search courses by code, name, or lecturer...">
+                    <i class="fas fa-search"></i>
+                </div>
+                
+                <button class="btn btn-primary" id="refresh-courses">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+        </div>
+        
+        <div class="content">
+            <!-- Stats Overview -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3 id="total-courses">0</h3>
+                        <p>Total Courses</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3 id="ongoing-courses">0</h3>
+                        <p>Active Today</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3 id="pending-assignments">0</h3>
+                        <p>Pending Assignments</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3 id="avg-progress">0%</h3>
+                        <p>Average Progress</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Courses Grid -->
+            <div class="courses-grid" id="courses-container">
+                <!-- Course cards will be dynamically loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Course Details Modal -->
+    <div class="modal course-details-modal" id="course-details-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-info-circle"></i> Course Details</h2>
+                <button class="close-details-modal">&times;</button>
+            </div>
+            
+            <div class="modal-body" id="course-details-body">
+                <!-- Course details will be loaded here -->
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="open-reading-btn">
+                    <i class="fas fa-play-circle"></i> Open Reading Page
+                </button>
+                <button type="button" class="btn btn-secondary close-details-modal">
+                    <i class="fas fa-times"></i> Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include the consolidated school app JS -->
+    <script src="js/school-app.js"></script>
+    
+    <!-- Courses Script -->
+    <script>
+        let courses = [];
+        let studentCourses = [];
+        let assignments = {};
+        let tests = {};
+        let lectures = {};
+        let courseTargets = {};
+        let studentData = null;
+        let userDepartment = '';
+        let currentUser = null;
+        let currentCourseId = null;
+
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', async function() {
+            await initializeCourses();
+            setupEventListeners();
+            loadStudentCourses();
+        });
+
+        async function initializeCourses() {
+            showLoading(true, 'Initializing...');
+            
+            try {
+                // Check authentication
+                const auth = window.SchoolApp.auth;
+                auth.onAuthStateChanged(async (user) => {
+                    if (!user) {
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    
+                    currentUser = user;
+                    
+                    // Get student data
+                    const db = window.SchoolApp.db;
+                    const userDoc = await db.collection('users').doc(user.uid).get();
+                    
+                    if (userDoc.exists) {
+                        studentData = userDoc.data();
+                        userDepartment = studentData.department || '';
+                        
+                        // Check if user is a student
+                        const userRole = studentData.role || '';
+                        if (!['Admin', 'Student', 'Student Admin'].includes(userRole)) {
+                            window.SchoolApp.SchoolUtils.showToast('Access denied. Student access only.', 'error');
+                            setTimeout(() => {
+                                window.location.href = 'dashboard.html';
+                            }, 2000);
+                            return;
+                        }
+                        
+                        // Load all data
+                        await Promise.all([
+                            loadStudentCoursesFromDB(),
+                            loadCourseTargets()
+                        ]);
+                        
+                        showLoading(false);
+                    } else {
+                        window.SchoolApp.SchoolUtils.showToast('User data not found', 'error');
+                        showLoading(false);
+                    }
+                });
+                
+            } catch (error) {
+                window.SchoolApp.SchoolUtils.showToast('Error initializing: ' + error.message, 'error');
+                showLoading(false);
+            }
+        }
+
+        function setupEventListeners() {
+            // Refresh button
+            document.getElementById('refresh-courses').addEventListener('click', () => {
+                loadStudentCoursesFromDB();
+            });
+            
+            // Search functionality
+            document.getElementById('search-courses').addEventListener('input', filterCourses);
+            
+            // Modal close buttons
+            document.querySelectorAll('.close-details-modal').forEach(btn => {
+                btn.addEventListener('click', closeCourseDetailsModal);
+            });
+            
+            // Open reading page button
+            document.getElementById('open-reading-btn').addEventListener('click', openCourseReadingFromModal);
+            
+            // Close modal on overlay click
+            document.getElementById('course-details-modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeCourseDetailsModal();
+                }
+            });
+            
+            // Prevent modal from closing when clicking inside modal content
+            document.querySelector('.course-details-modal .modal-content').addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        }
+
+        function showLoading(show, text = 'Loading...') {
+            const overlay = document.getElementById('loading-overlay');
+            const loadingText = overlay.querySelector('.loading-text');
+            
+            if (show) {
+                loadingText.textContent = text;
+                overlay.style.display = 'flex';
+            } else {
+                overlay.style.display = 'none';
+            }
+        }
+
+        async function loadStudentCoursesFromDB() {
+            showLoading(true, 'Loading courses...');
+            
+            try {
+                const db = window.SchoolApp.db;
+                
+                // Clear previous data
+                courses = [];
+                assignments = {};
+                tests = {};
+                lectures = {};
+                
+                // Get student's enrolled courses
+                // First, get all active courses in the student's department
+                const coursesSnapshot = await db.collection('Departments')
+                    .doc(userDepartment)
+                    .collection('Courses')
+                    .where('status', '==', 'active')
+                    .get();
+                
+                courses = [];
+                coursesSnapshot.forEach(doc => {
+                    courses.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                // For each course, load assignments, tests, and lectures
+                await Promise.all(courses.map(async (course) => {
+                    // Load assignments
+                    const assignmentsSnapshot = await db.collection('Departments')
+                        .doc(userDepartment)
+                        .collection('Courses')
+                        .doc(course.id)
+                        .collection('Assignments')
+                        .get();
+                    
+                    assignments[course.id] = [];
+                    assignmentsSnapshot.forEach(doc => {
+                        assignments[course.id].push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    });
+                    
+                    // Load tests
+                    const testsSnapshot = await db.collection('Departments')
+                        .doc(userDepartment)
+                        .collection('Courses')
+                        .doc(course.id)
+                        .collection('Tests')
+                        .get();
+                    
+                    tests[course.id] = [];
+                    testsSnapshot.forEach(doc => {
+                        tests[course.id].push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    });
+                    
+                    // Load lectures
+                    const lecturesSnapshot = await db.collection('Departments')
+                        .doc(userDepartment)
+                        .collection('Courses')
+                        .doc(course.id)
+                        .collection('Lectures')
+                        .orderBy('lectureDate', 'desc')
+                        .get();
+                    
+                    lectures[course.id] = [];
+                    lecturesSnapshot.forEach(doc => {
+                        lectures[course.id].push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    });
+                }));
+                
+                // Set student courses (all courses for now - you might want to filter by enrollment)
+                studentCourses = [...courses];
+                
+                updateCoursesDisplay();
+                updateStats();
+                showLoading(false);
+                
+            } catch (error) {
+                console.error('Error loading courses:', error);
+                window.SchoolApp.SchoolUtils.showToast('Error loading courses: ' + error.message, 'error');
+                showLoading(false);
+            }
+        }
+
+        async function loadCourseTargets() {
+            try {
+                const db = window.SchoolApp.db;
+                const snapshot = await db.collection('courseTargets').get();
+                
+                courseTargets = {};
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.department === userDepartment) {
+                        courseTargets[data.courseId] = data.targetLectures || 0;
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading course targets:', error);
+            }
+        }
+
+        function updateCoursesDisplay() {
+            const container = document.getElementById('courses-container');
+            
+            if (studentCourses.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-book-open"></i>
+                        <h3>No Courses Found</h3>
+                        <p>You are not enrolled in any courses yet.</p>
+                        <button class="btn btn-primary mt-20" onclick="window.location.href='enrollment.html'">
+                            <i class="fas fa-plus"></i> Browse Courses
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            studentCourses.forEach(course => {
+                const courseAssignments = assignments[course.id] || [];
+                const courseTests = tests[course.id] || [];
+                const courseLectures = lectures[course.id] || [];
+                
+                // Calculate lecture progress
+                const targetLectures = courseTargets[course.id] || 0;
+                const completedLectures = courseLectures.length;
+                const progress = targetLectures > 0 ? Math.min(Math.round((completedLectures / targetLectures) * 100), 100) : 0;
+                
+                // Calculate overdue and upcoming assignments
+                const now = new Date();
+                let overdueAssignments = 0;
+                let activeAssignments = 0;
+                
+                courseAssignments.forEach(assignment => {
+                    const dueDate = new Date(assignment.dueDate);
+                    const timeDiff = dueDate - now;
+                    const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+                    
+                    if (daysDiff < 0) {
+                        overdueAssignments++;
+                    } else if (daysDiff <= 7) {
+                        activeAssignments++;
+                    }
+                });
+                
+                // Check if course is active today
+                const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+                const isActiveToday = course.lectureDay === today;
+                
+                // Count assignments and tests
+                const totalAssignments = courseAssignments.length;
+                const totalTests = courseTests.length;
+                
+                const courseCard = document.createElement('div');
+                courseCard.className = 'course-card';
+                
+                courseCard.innerHTML = `
+                    <div class="course-header">
+                        <div class="course-code">${course.courseCode}</div>
+                        <div class="course-name">${course.courseName}</div>
+                        <div class="course-status">${isActiveToday ? 'Active Today' : 'Active'}</div>
+                    </div>
+                    
+                    <div class="course-body">
+                        <div class="course-info">
+                            <div class="info-item">
+                                <span class="info-label">Credit Units</span>
+                                <span class="info-value">${course.creditUnits}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Lecturer</span>
+                                <span class="info-value teacher">${course.lecturerName || 'To be assigned'}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Department</span>
+                                <span class="info-value">${course.department || 'General'}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Level</span>
+                                <span class="info-value">${course.level || 'All Levels'}</span>
+                            </div>
+                        </div>
+                        
+                        ${course.lectureDay ? `
+                        <div class="schedule-info">
+                            <i class="fas fa-calendar-day"></i>
+                            <strong>${course.lectureDay}</strong>: ${formatTime(course.startTime)} - ${formatTime(course.endTime)}
+                            <br>
+                            <i class="fas fa-map-marker-alt"></i> ${course.lectureVenue || 'TBA'}
+                        </div>
+                        ` : ''}
+                        
+                        <!-- Assignments & Tests Badges -->
+                        <div class="assessment-badges">
+                            ${totalAssignments > 0 ? `
+                            <div class="badge badge-assignment">
+                                <i class="fas fa-file-alt"></i> ${totalAssignments} Assignments
+                                ${overdueAssignments > 0 ? `<span class="badge badge-overdue" style="margin-left: 5px;">${overdueAssignments} overdue</span>` : ''}
+                                ${activeAssignments > 0 ? `<span class="badge badge-upcoming" style="margin-left: 5px;">${activeAssignments} due soon</span>` : ''}
+                            </div>
+                            ` : ''}
+                            
+                            ${totalTests > 0 ? `
+                            <div class="badge badge-test">
+                                <i class="fas fa-clipboard-check"></i> ${totalTests} Tests
+                            </div>
+                            ` : ''}
+                            
+                            ${completedLectures > 0 ? `
+                            <div class="badge ${progress >= 100 ? 'badge-upcoming' : 'badge-assignment'}">
+                                <i class="fas fa-chalkboard-teacher"></i> ${completedLectures} Lectures
+                            </div>
+                            ` : ''}
+                        </div>
+                        
+                        <!-- Progress Section -->
+                        <div class="progress-section">
+                            <div class="progress-container">
+                                <div class="progress-bar" style="width: ${progress}%"></div>
+                            </div>
+                            <div class="progress-info">
+                                <span>${progress}% Complete</span>
+                                <span>${completedLectures}/${targetLectures || '?'} Lectures</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Course Actions -->
+                        <div class="course-actions">
+                            <button class="btn-course btn-course-primary" onclick="openCourseReading('${course.id}')">
+                                <i class="fas fa-play-circle"></i> Continue Learning
+                            </button>
+                            <button class="btn-course btn-course-outline" onclick="viewCourseDetails('${course.id}')">
+                                <i class="fas fa-info-circle"></i> Details
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(courseCard);
+            });
+        }
+
+        function updateStats() {
+            const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+            let totalAssignments = 0;
+            let pendingAssignments = 0;
+            let totalProgress = 0;
+            let courseCount = 0;
+            
+            studentCourses.forEach(course => {
+                const courseAssignments = assignments[course.id] || [];
+                totalAssignments += courseAssignments.length;
+                
+                // Count pending assignments
+                const now = new Date();
+                courseAssignments.forEach(assignment => {
+                    const dueDate = new Date(assignment.dueDate);
+                    if (dueDate > now) {
+                        pendingAssignments++;
+                    }
+                });
+                
+                // Calculate progress
+                const targetLectures = courseTargets[course.id] || 0;
+                const completedLectures = lectures[course.id]?.length || 0;
+                const progress = targetLectures > 0 ? Math.min(Math.round((completedLectures / targetLectures) * 100), 100) : 0;
+                
+                totalProgress += progress;
+                courseCount++;
+            });
+            
+            // Total courses
+            document.getElementById('total-courses').textContent = studentCourses.length;
+            
+            // Courses active today
+            const activeToday = studentCourses.filter(course => course.lectureDay === today).length;
+            document.getElementById('ongoing-courses').textContent = activeToday;
+            
+            // Pending assignments
+            document.getElementById('pending-assignments').textContent = pendingAssignments;
+            
+            // Average progress
+            const avgProgress = courseCount > 0 ? Math.round(totalProgress / courseCount) : 0;
+            document.getElementById('avg-progress').textContent = `${avgProgress}%`;
+        }
+
+        function filterCourses() {
+            const searchTerm = document.getElementById('search-courses').value.toLowerCase();
+            const filteredCourses = studentCourses.filter(course => {
+                return (
+                    course.courseCode.toLowerCase().includes(searchTerm) ||
+                    course.courseName.toLowerCase().includes(searchTerm) ||
+                    (course.lecturerName && course.lecturerName.toLowerCase().includes(searchTerm)) ||
+                    (course.department && course.department.toLowerCase().includes(searchTerm))
+                );
+            });
+            
+            // Temporarily update display with filtered results
+            const originalCourses = [...studentCourses];
+            studentCourses = filteredCourses;
+            updateCoursesDisplay();
+            studentCourses = originalCourses;
+        }
+
+        function openCourseReading(courseId) {
+            // Redirect to reading page with course ID parameter in a new tab
+            window.open(`course-reading.html?courseId=${courseId}`, '_blank');
+        }
+
+        function openCourseReadingFromModal() {
+            if (currentCourseId) {
+                window.open(`course-reading.html?courseId=${currentCourseId}`, '_blank');
+                closeCourseDetailsModal();
+            }
+        }
+
+        function viewCourseDetails(courseId) {
+            const course = courses.find(c => c.id === courseId);
+            if (!course) return;
+            
+            currentCourseId = courseId;
+            
+            const courseAssignments = assignments[courseId] || [];
+            const courseTests = tests[courseId] || [];
+            const courseLectures = lectures[courseId] || [];
+            const targetLectures = courseTargets[courseId] || 0;
+            const completedLectures = courseLectures.length;
+            const progress = targetLectures > 0 ? Math.min(Math.round((completedLectures / targetLectures) * 100), 100) : 0;
+            
+            // Count assignments by status
+            const now = new Date();
+            let overdueAssignments = 0;
+            let activeAssignments = 0;
+            let upcomingAssignments = 0;
+            
+            courseAssignments.forEach(assignment => {
+                const dueDate = new Date(assignment.dueDate);
+                const timeDiff = dueDate - now;
+                const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+                
+                if (daysDiff < 0) {
+                    overdueAssignments++;
+                } else if (daysDiff <= 7) {
+                    activeAssignments++;
+                } else {
+                    upcomingAssignments++;
+                }
+            });
+            
+            // Get lecturer details
+            let lecturerEmail = '';
+            let lecturerPhone = '';
+            if (course.lecturerId) {
+                // In a real app, you would fetch lecturer details from users collection
+                // For now, we'll use the stored lecturer name
+            }
+            
+            let detailsHTML = `
+                <div class="course-details-content">
+                    <div class="mb-20">
+                        <h3 style="color: var(--primary); margin-bottom: 10px;">${course.courseCode} - ${course.courseName}</h3>
+                        <p style="color: var(--gray); font-size: 0.9rem; margin-bottom: 20px;">
+                            ${course.description || 'No description available.'}
+                        </p>
+                    </div>
+                    
+                    <div class="details-section">
+                        <h4 style="color: var(--primary); margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-info-circle"></i> Course Information
+                        </h4>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px;">
+                            <div>
+                                <strong>Credit Units:</strong> ${course.creditUnits}
+                            </div>
+                            <div>
+                                <strong>Department:</strong> ${course.department || 'General'}
+                            </div>
+                            <div>
+                                <strong>Academic Level:</strong> ${course.level || 'All Levels'}
+                            </div>
+                            <div>
+                                <strong>Status:</strong> <span class="${course.status === 'active' ? 'status-active' : 'status-inactive'}">${course.status}</span>
+                            </div>
+                            ${course.lectureDay ? `
+                            <div>
+                                <strong>Schedule:</strong> ${course.lectureDay}
+                            </div>
+                            <div>
+                                <strong>Time:</strong> ${formatTime(course.startTime)} - ${formatTime(course.endTime)}
+                            </div>
+                            ` : ''}
+                            ${course.lectureVenue ? `
+                            <div>
+                                <strong>Venue:</strong> ${course.lectureVenue}
+                            </div>
+                            ` : ''}
+                            ${course.maxStudents ? `
+                            <div>
+                                <strong>Max Students:</strong> ${course.maxStudents}
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    
+                    <div class="details-section">
+                        <h4 style="color: var(--primary); margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-chalkboard-teacher"></i> Lecturer Information
+                        </h4>
+                        <div style="padding: 15px; background: var(--primary-light); border-radius: var(--radius-sm);">
+                            <p style="margin: 0 0 10px 0;">
+                                <strong>Name:</strong> ${course.lecturerName || 'To be assigned'}
+                            </p>
+                            ${lecturerEmail ? `<p style="margin: 0 0 10px 0;"><strong>Email:</strong> ${lecturerEmail}</p>` : ''}
+                            ${lecturerPhone ? `<p style="margin: 0;"><strong>Phone:</strong> ${lecturerPhone}</p>` : ''}
+                        </div>
+                    </div>
+                    
+                    <div class="details-section">
+                        <h4 style="color: var(--primary); margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-chart-line"></i> Lecture Progress
+                        </h4>
+                        <div style="background: var(--primary-light); padding: 15px; border-radius: var(--radius-sm); margin-bottom: 15px;">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                <div style="flex: 1; background: var(--light-gray); height: 10px; border-radius: 5px;">
+                                    <div style="width: ${progress}%; height: 100%; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 5px;"></div>
+                                </div>
+                                <span style="font-weight: bold; font-size: 1.2rem;">${progress}%</span>
+                            </div>
+                            <p style="margin: 0; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-chalkboard-teacher"></i> 
+                                <span>${completedLectures} of ${targetLectures || '?'} lectures completed</span>
+                            </p>
+                            ${courseLectures.length > 0 ? `
+                            <p style="margin: 10px 0 0 0; font-size: 0.85rem; color: var(--gray);">
+                                Last lecture: ${formatDate(courseLectures[0].lectureDate)}
+                            </p>
+                            ` : ''}
+                        </div>
+                    </div>
+                    
+                    <div class="details-section">
+                        <h4 style="color: var(--primary); margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-tasks"></i> Assignments Overview
+                        </h4>
+                        <div style="background: var(--primary-light); padding: 15px; border-radius: var(--radius-sm); margin-bottom: 15px;">
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center; margin-bottom: 15px;">
+                                <div>
+                                    <div style="font-size: 1.5rem; font-weight: bold; color: ${overdueAssignments > 0 ? 'var(--danger)' : 'var(--primary)'};">${overdueAssignments}</div>
+                                    <div style="font-size: 0.9rem; color: var(--gray);">Overdue</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--warning);">${activeAssignments}</div>
+                                    <div style="font-size: 0.9rem; color: var(--gray);">Active</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--success);">${upcomingAssignments}</div>
+                                    <div style="font-size: 0.9rem; color: var(--gray);">Upcoming</div>
+                                </div>
+                            </div>
+                            <p style="margin: 0; font-size: 0.9rem;">
+                                <strong>Total:</strong> ${courseAssignments.length} assignments
+                            </p>
+                            ${overdueAssignments > 0 ? `
+                            <p style="margin: 10px 0 0 0; padding: 10px; background: rgba(231, 76, 60, 0.1); border-radius: var(--radius-sm); color: var(--danger); font-size: 0.9rem;">
+                                <i class="fas fa-exclamation-circle"></i> You have ${overdueAssignments} overdue assignment${overdueAssignments !== 1 ? 's' : ''}
+                            </p>
+                            ` : ''}
+                        </div>
+                    </div>
+                    
+                    ${courseTests.length > 0 ? `
+                    <div class="details-section">
+                        <h4 style="color: var(--primary); margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-clipboard-check"></i> Tests Overview
+                        </h4>
+                        <div style="background: var(--primary-light); padding: 15px; border-radius: var(--radius-sm);">
+                            <p style="margin: 0 0 10px 0; font-size: 0.9rem;">
+                                <i class="fas fa-clipboard-check"></i> ${courseTests.length} test${courseTests.length !== 1 ? 's' : ''} recorded
+                            </p>
+                            ${courseTests.slice(0, 3).map(test => `
+                            <div style="padding: 10px; background: white; border-radius: var(--radius-sm); margin-bottom: 10px; border-left: 3px solid var(--warning);">
+                                <strong>${test.title}</strong><br>
+                                <small style="color: var(--gray);">${formatDate(test.testDate)}</small>
+                            </div>
+                            `).join('')}
+                            ${courseTests.length > 3 ? `
+                            <p style="margin: 10px 0 0 0; font-size: 0.85rem; color: var(--gray); text-align: center;">
+                                + ${courseTests.length - 3} more tests
+                            </p>
+                            ` : ''}
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    ${course.testWeight || course.assignmentWeight || course.examWeight ? `
+                    <div class="details-section">
+                        <h4 style="color: var(--primary); margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-percentage"></i> Assessment Weights
+                        </h4>
+                        <div style="background: var(--primary-light); padding: 15px; border-radius: var(--radius-sm);">
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center;">
+                                <div>
+                                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--info);">${course.testWeight || 0}%</div>
+                                    <div style="font-size: 0.9rem; color: var(--gray);">Tests</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--warning);">${course.assignmentWeight || 0}%</div>
+                                    <div style="font-size: 0.9rem; color: var(--gray);">Assignments</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--success);">${course.examWeight || 0}%</div>
+                                    <div style="font-size: 0.9rem; color: var(--gray);">Exams</div>
+                                </div>
+                            </div>
+                            <p style="margin: 10px 0 0 0; text-align: center; font-weight: bold;">
+                                Total: ${(course.testWeight || 0) + (course.assignmentWeight || 0) + (course.examWeight || 0)}%
+                            </p>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            document.getElementById('course-details-body').innerHTML = detailsHTML;
+            document.getElementById('course-details-modal').classList.add('active');
+        }
+
+        function closeCourseDetailsModal() {
+            document.getElementById('course-details-modal').classList.remove('active');
+            currentCourseId = null;
+        }
+
+        // Utility functions
+        function formatTime(timeString) {
+            if (!timeString) return '';
+            const [hours, minutes] = timeString.split(':');
+            const hour = parseInt(hours);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const hour12 = hour % 12 || 12;
+            return `${hour12}:${minutes} ${ampm}`;
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+    </script>
+</body>
+</html>

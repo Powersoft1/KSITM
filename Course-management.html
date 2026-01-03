@@ -1,0 +1,2097 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Management - KSITM CTE</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Course Management Specific Styles */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 25px 30px;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid var(--light-gray);
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        .loading-text {
+            font-size: 1.2rem;
+            color: var(--dark);
+            font-weight: 500;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: var(--radius-md);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            transition: var(--transition);
+            border-left: 4px solid var(--primary);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-right: 15px;
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .stat-details h3 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+            color: var(--dark);
+        }
+
+        .stat-details p {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        /* Course Table */
+        .table-container {
+            background: white;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            margin-top: 20px;
+        }
+
+        .table-header {
+            padding: 20px;
+            background: var(--primary-light);
+            border-bottom: 1px solid var(--light-gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 40px 10px 15px;
+            border: 1px solid var(--light-gray);
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+        }
+
+        .search-box i {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+        }
+
+        /* Modal Styles - FIXED FOR SCROLLING */
+        .course-modal .modal-content {
+            max-width: 800px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 25px;
+            max-height: 60vh;
+        }
+
+        .lecture-schedule-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .schedule-item {
+            background: var(--primary-light);
+            padding: 15px;
+            border-radius: var(--radius-sm);
+            border-left: 3px solid var(--primary);
+        }
+
+        .schedule-item h4 {
+            margin-bottom: 10px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1rem;
+        }
+
+        /* Assessment Section */
+        .assessment-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: var(--primary-light);
+            border-radius: var(--radius-md);
+        }
+
+        .assessment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .assessment-item {
+            background: white;
+            padding: 15px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--light-gray);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-icon {
+            padding: 6px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-sm);
+        }
+
+        /* Status Badges */
+        .status-active {
+            background-color: rgba(46, 204, 113, 0.1);
+            color: var(--success);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .status-inactive {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: var(--danger);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        /* Course Cards View */
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .course-card {
+            background: white;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            border: 1px solid var(--light-gray);
+        }
+
+        .course-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .course-header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 20px;
+        }
+
+        .course-code {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .course-name {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .course-body {
+            padding: 20px;
+        }
+
+        .course-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-label {
+            font-size: 0.85rem;
+            color: var(--gray);
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        .lecture-time {
+            background: var(--primary-light);
+            padding: 10px;
+            border-radius: var(--radius-sm);
+            margin-top: 15px;
+        }
+
+        .course-footer {
+            padding: 15px 20px;
+            border-top: 1px solid var(--light-gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Toggle View */
+        .view-toggle {
+            display: flex;
+            background: var(--light-gray);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            width: fit-content;
+        }
+
+        .view-toggle button {
+            padding: 8px 16px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .view-toggle button.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Validation Messages */
+        .validation-message {
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .validation-message.error {
+            color: var(--danger);
+        }
+
+        .validation-message.success {
+            color: var(--success);
+        }
+
+        .validation-message.warning {
+            color: var(--warning);
+        }
+
+        /* Lecturer availability styles */
+        .lecturer-available {
+            color: #2ecc71;
+        }
+
+        .lecturer-busy {
+            color: #e74c3c;
+        }
+
+        .lecturer-conflict {
+            color: #c0392b !important;
+            font-weight: bold;
+        }
+
+        .venue-occupied {
+            color: #95a5a6;
+            text-decoration: line-through;
+        }
+
+        /* Custom scrollbar for modal */
+        .modal-body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .modal-body::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .modal-body::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
+
+        .modal-body::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary);
+        }
+
+        @media (max-width: 768px) {
+            .courses-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .course-info {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .search-box {
+                min-width: 100%;
+            }
+            
+            .course-modal .modal-content {
+                width: 95%;
+                margin: 10px;
+            }
+            
+            .modal-body {
+                max-height: 70vh;
+            }
+            
+            .lecture-schedule-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .assessment-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .modal-body {
+                padding: 15px;
+            }
+            
+            .assessment-section {
+                padding: 15px;
+            }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="loading-overlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading Course Management...</div>
+    </div>
+
+    <div class="main-container">
+        <div class="header">
+            <h1><i class="fas fa-book-open"></i> Course Management</h1>
+            <p>Manage courses, lectures, and assessments for KSITM CTE</p>
+            
+            <div class="header-actions">
+                <div class="search-box">
+                    <input type="text" id="search-courses" placeholder="Search courses by code, name, or lecturer...">
+                    <i class="fas fa-search"></i>
+                </div>
+                
+                <div class="d-flex gap-15 align-items-center">
+                    <div class="view-toggle">
+                        <button id="tableViewBtn" class="active" title="Table View">
+                            <i class="fas fa-table"></i>
+                        </button>
+                        <button id="cardViewBtn" title="Card View">
+                            <i class="fas fa-th-large"></i>
+                        </button>
+                    </div>
+                    
+                    <button class="btn btn-primary" id="add-course-btn">
+                        <i class="fas fa-plus"></i> Add New Course
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="content">
+            <!-- Stats Overview -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3 id="total-courses">0</h3>
+                        <p>Total Courses</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3 id="active-lecturers">0</h3>
+                        <p>Active Lecturers</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3 id="ongoing-courses">0</h3>
+                        <p>Ongoing Lectures</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3 id="total-assessments">0</h3>
+                        <p>Total Assessments</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Table View -->
+            <div id="tableView" class="table-view">
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3>All Courses</h3>
+                        <span id="course-count">0 courses found</span>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Course Code</th>
+                                    <th>Course Name</th>
+                                    <th>Credit Units</th>
+                                    <th>Lecturer</th>
+                                    <th>Schedule</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="courses-table-body">
+                                <!-- Courses will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Card View -->
+            <div id="cardView" class="card-view" style="display: none;">
+                <div class="courses-grid" id="courses-grid">
+                    <!-- Course cards will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Course Modal -->
+    <div class="modal course-modal" id="course-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-book"></i> <span id="modal-title">Add New Course</span></h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="course-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="course-code">Course Code *</label>
+                            <input type="text" id="course-code" class="form-control" required placeholder="e.g., CSC 101">
+                            <div class="validation-message" id="course-code-validation"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="course-name">Course Name *</label>
+                            <input type="text" id="course-name" class="form-control" required placeholder="e.g., Introduction to Computer Science">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="credit-units">Credit Units *</label>
+                            <input type="number" id="credit-units" class="form-control" required min="1" max="10" placeholder="e.g., 3">
+                        </div>
+                        <div class="form-group">
+                            <label for="lecturer">Lecturer *</label>
+                            <select id="lecturer" class="form-control" required>
+                                <option value="">Select Lecturer</option>
+                                <!-- Lecturers will be populated from database -->
+                            </select>
+                            <div class="validation-message" id="lecturer-validation"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="department">Department *</label>
+                            <input type="text" id="department" class="form-control" readonly>
+                            <small class="text-muted">Auto-filled from your profile</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="level">Academic Level *</label>
+                            <select id="level" class="form-control" required>
+                                <option value="">Select Level</option>
+                                <!-- Levels will be populated from school config -->
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Lecture Schedule -->
+                    <div class="section mt-20">
+                        <h3><i class="fas fa-calendar-alt"></i> Lecture Schedule</h3>
+                        <div class="lecture-schedule-grid">
+                            <div class="form-group">
+                                <label for="lecture-day">Lecture Day *</label>
+                                <select id="lecture-day" class="form-control" required>
+                                    <option value="">Select Day</option>
+                                    <option value="Monday">Monday</option>
+                                    <option value="Tuesday">Tuesday</option>
+                                    <option value="Wednesday">Wednesday</option>
+                                    <option value="Thursday">Thursday</option>
+                                    <option value="Friday">Friday</option>
+                                    <option value="Saturday">Saturday</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="start-time">Start Time *</label>
+                                <input type="time" id="start-time" class="form-control" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="end-time">End Time *</label>
+                                <input type="time" id="end-time" class="form-control" required>
+                                <div class="validation-message" id="time-validation"></div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="lecture-venue">Venue *</label>
+                                <select id="lecture-venue" class="form-control" required>
+                                    <option value="">Select Venue</option>
+                                    <!-- Venues will be populated from school config -->
+                                </select>
+                                <div class="validation-message" id="venue-validation"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Assessments -->
+                    <div class="assessment-section">
+                        <h3><i class="fas fa-tasks"></i> Assessments</h3>
+                        <div class="assessment-grid">
+                            <div class="form-group">
+                                <label for="test-weight">Test & Attendance Weight (%)</label>
+                                <input type="number" id="test-weight" class="form-control" min="0" max="100" placeholder="e.g., 30">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="assignment-weight">Practical/Assignment Weight (%)</label>
+                                <input type="number" id="assignment-weight" class="form-control" min="0" max="100" placeholder="e.g., 20">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="exam-weight">Exam Weight (%)</label>
+                                <input type="number" id="exam-weight" class="form-control" min="0" max="100" placeholder="e.g., 50">
+                            </div>
+                        </div>
+                        <div class="validation-message" id="assessment-validation"></div>
+                    </div>
+                    
+                    <!-- Additional Information -->
+                    <div class="form-group">
+                        <label for="description">Course Description</label>
+                        <textarea id="description" class="form-control" rows="3" placeholder="Brief description of the course..."></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="status">Status</label>
+                            <select id="status" class="form-control">
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="max-students">Maximum Students</label>
+                            <input type="number" id="max-students" class="form-control" min="1" placeholder="e.g., 50">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger close-modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="save-course-btn">
+                    <i class="fas fa-save"></i> Save Course
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal" id="delete-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-exclamation-triangle"></i> Confirm Delete</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this course? This action cannot be undone.</p>
+                <p><strong>Course:</strong> <span id="delete-course-name"></span></p>
+                <p><strong>Code:</strong> <span id="delete-course-code"></span></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger close-modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="confirm-delete-btn">
+                    <i class="fas fa-trash"></i> Delete Course
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include the consolidated school app JS -->
+    <script src="js/school-app.js"></script>
+    
+    <!-- Course Management Script -->
+    <script>
+    let courses = [];
+    let currentCourseId = null;
+    let currentUser = null;
+    let userData = null;
+    let userDepartment = '';
+    let coursesListener = null;
+    let schoolConfig = {};
+    let lecturers = [];
+    let allUsers = [];
+
+    // AUTH MANAGER
+    const AuthManager = {
+        currentUser: null,
+        userData: null,
+
+        initialize: function() {
+            return new Promise((resolve, reject) => {
+                firebase.auth().onAuthStateChanged(async (user) => {
+                    if (user) {
+                        this.currentUser = user;
+                        await this.loadUserData(user.uid);
+                        resolve(user);
+                    } else {
+                        this.currentUser = null;
+                        this.userData = null;
+                        resolve(null);
+                    }
+                });
+            });
+        },
+
+        loadUserData: async function(uid) {
+            try {
+                const doc = await firebase.firestore().collection('users').doc(uid).get();
+                if (doc.exists) {
+                    this.userData = { uid, ...doc.data() };
+                    localStorage.setItem('currentUser', JSON.stringify(this.userData));
+                }
+            } catch (error) {
+                console.error("Error loading user data:", error);
+            }
+        },
+
+        getCurrentUser: function() {
+            return this.currentUser;
+        },
+
+        getUserData: function() {
+            return this.userData;
+        },
+
+        getRole: function() {
+            return this.userData?.role || 'Lecturer';
+        },
+
+        isAdmin: function() {
+            const adminRoles = ['Admin', 'HOD', 'Dean'];
+            return this.userData && adminRoles.includes(this.userData.role);
+        }
+    };
+
+    // Initialize when DOM is loaded
+    document.addEventListener('DOMContentLoaded', async function() {
+        await initializeCourseManagement();
+        setupEventListeners();
+        loadCourses();
+    });
+
+    async function initializeCourseManagement() {
+        showLoading(true, 'Initializing Course Management...');
+        
+        try {
+            // Initialize auth using AuthManager
+            await AuthManager.initialize();
+            
+            // Check if user is logged in
+            const currentUser = AuthManager.getCurrentUser();
+            if (!currentUser) {
+                window.SchoolApp.SchoolUtils.showToast('Please login first', 'error');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 2000);
+                return false;
+            }
+            
+            // Load user data
+            userData = AuthManager.getUserData();
+            if (!userData) {
+                await AuthManager.loadUserData(currentUser.uid);
+                userData = AuthManager.getUserData();
+            }
+            
+            userDepartment = userData.department || '';
+            
+            // Check admin access
+            const allowedRoles = ['Admin', 'Lecturer', 'HOD', 'Dean'];
+            if (!userData || !allowedRoles.includes(userData.role)) {
+                window.SchoolApp.SchoolUtils.showToast('Access denied. Admin privileges required.', 'error');
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 2000);
+                return false;
+            }
+            
+            // Display department
+            document.getElementById('department').value = userDepartment;
+            
+            // Load school config for dropdowns - NO COMPLEX QUERIES
+            const db = firebase.firestore();
+            const configDoc = await db.collection('schoolConfig').doc('main').get();
+            if (configDoc.exists) {
+                schoolConfig = configDoc.data();
+                console.log("School config loaded:", schoolConfig);
+            }
+            
+            // Load all users - NO COMPLEX QUERIES
+            await loadAllUsers();
+            
+            // Load lecturers from all users
+            await loadLecturers();
+            
+            // Populate dropdowns
+            populateDropdowns();
+            
+            return true;
+        } catch (error) {
+            window.SchoolApp.SchoolUtils.showToast('Error initializing: ' + error.message, 'error');
+            console.error("Initialization error:", error);
+            return false;
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    // Load all users without any filtering queries
+    async function loadAllUsers() {
+        try {
+            const db = firebase.firestore();
+            const snapshot = await db.collection('users').get();
+            
+            allUsers = [];
+            snapshot.forEach(doc => {
+                allUsers.push({
+                    id: doc.id,
+                    ...doc.data()
+                });
+            });
+            
+            console.log(`Loaded ${allUsers.length} total users from database`);
+            
+        } catch (error) {
+            console.error('Error loading users:', error);
+            window.SchoolApp.SchoolUtils.showToast('Error loading users', 'error');
+        }
+    }
+
+    // Load lecturers by filtering allUsers client-side
+    async function loadLecturers() {
+        try {
+            lecturers = [];
+            
+            // Filter users client-side to find lecturers
+            allUsers.forEach(user => {
+                const userRole = user.role || '';
+                const roleLower = userRole.toLowerCase();
+                
+                // Check if user is a lecturer/academic staff
+                const isLecturer = 
+                    roleLower.includes('lecturer') || 
+                    roleLower.includes('professor') ||
+                    roleLower.includes('instructor') ||
+                    userRole === 'HOD' ||
+                    userRole === 'Dean' ||
+                    userRole === 'Head of Department';
+                
+                // Also filter by status
+                const isActive = user.status === 'Active';
+                
+                // Also check if department matches (if userDepartment is specified)
+                const deptMatches = !userDepartment || user.department === userDepartment;
+                
+                if (isLecturer && isActive && deptMatches) {
+                    lecturers.push({
+                        id: user.id,
+                        fullName: user.fullName || 'Unknown Lecturer',
+                        staffId: user.staffId || 'No ID',
+                        department: user.department || '',
+                        role: userRole,
+                        email: user.email || '',
+                        phone: user.phone || '',
+                        office: user.office || '',
+                        officeHours: user.officeHours || '',
+                        qualifications: user.qualifications || [],
+                        courses: user.courses || []
+                    });
+                }
+            });
+            
+            // Also include current user if they're a lecturer
+            if (userData) {
+                const userRole = userData.role || '';
+                const roleLower = userRole.toLowerCase();
+                const isCurrentUserLecturer = 
+                    roleLower.includes('lecturer') || 
+                    roleLower.includes('professor') ||
+                    roleLower.includes('instructor') ||
+                    userRole === 'HOD' ||
+                    userRole === 'Dean';
+                
+                const isActive = userData.status === 'Active';
+                const deptMatches = !userDepartment || userData.department === userDepartment;
+                
+                if (isCurrentUserLecturer && isActive && deptMatches) {
+                    const exists = lecturers.some(lect => lect.id === AuthManager.getCurrentUser().uid);
+                    if (!exists) {
+                        lecturers.push({
+                            id: AuthManager.getCurrentUser().uid,
+                            fullName: userData.fullName || 'Unknown Lecturer',
+                            staffId: userData.staffId || 'No ID',
+                            department: userData.department || '',
+                            role: userData.role || 'Lecturer',
+                            email: userData.email || '',
+                            phone: userData.phone || ''
+                        });
+                    }
+                }
+            }
+            
+            // Sort lecturers by name
+            lecturers.sort((a, b) => {
+                const nameA = a.fullName.toLowerCase();
+                const nameB = b.fullName.toLowerCase();
+                return nameA.localeCompare(nameB);
+            });
+            
+            console.log(`Found ${lecturers.length} lecturers for department: ${userDepartment}`);
+            
+        } catch (error) {
+            console.error('Error loading lecturers:', error);
+            window.SchoolApp.SchoolUtils.showToast('Error loading lecturers', 'error');
+        }
+    }
+
+    function populateDropdowns() {
+        // Populate lecturer dropdown
+        const lecturerSelect = document.getElementById('lecturer');
+        lecturerSelect.innerHTML = '<option value="">Select Lecturer</option>';
+        
+        if (lecturers.length === 0) {
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'No lecturers found';
+            option.disabled = true;
+            lecturerSelect.appendChild(option);
+        } else {
+            lecturers.forEach(lecturer => {
+                const option = document.createElement('option');
+                option.value = lecturer.id;
+                option.textContent = `${lecturer.fullName} (${lecturer.staffId || 'No ID'})`;
+                lecturerSelect.appendChild(option);
+            });
+        }
+        
+        // Populate level dropdown from school config
+        const levelSelect = document.getElementById('level');
+        levelSelect.innerHTML = '<option value="">Select Level</option>';
+        
+        if (schoolConfig.academicLevels && schoolConfig.academicLevels.length > 0) {
+            schoolConfig.academicLevels.forEach(level => {
+                const option = document.createElement('option');
+                option.value = level;
+                option.textContent = level;
+                levelSelect.appendChild(option);
+            });
+        } else {
+            // Default levels if not in config
+            const defaultLevels = ['100 Level', '200 Level', '300 Level', '400 Level', '500 Level', 'PGD', 'Masters', 'PhD'];
+            defaultLevels.forEach(level => {
+                const option = document.createElement('option');
+                option.value = level;
+                option.textContent = level;
+                levelSelect.appendChild(option);
+            });
+        }
+        
+        // Populate venue dropdown from school config
+        const venueSelect = document.getElementById('lecture-venue');
+        venueSelect.innerHTML = '<option value="">Select Venue</option>';
+        
+        if (schoolConfig.venues && schoolConfig.venues.length > 0) {
+            schoolConfig.venues.forEach(venue => {
+                const option = document.createElement('option');
+                option.value = venue.name;
+                
+                let availabilityText = venue.occupiedBy ? ' - Occupied' : ' - Available';
+                option.textContent = `${venue.name} (${venue.code || 'No Code'}) - ${venue.capacity} seats${availabilityText}`;
+                
+                if (venue.occupiedBy) {
+                    option.disabled = true;
+                    option.classList.add('venue-occupied');
+                }
+                
+                venueSelect.appendChild(option);
+            });
+        } else {
+            // Default venues if not in config
+            const defaultVenues = [
+                { name: 'Lecture Hall A', code: 'LHA', capacity: 100 },
+                { name: 'Lecture Hall B', code: 'LHB', capacity: 80 },
+                { name: 'Room 101', code: 'R101', capacity: 40 },
+                { name: 'Room 102', code: 'R102', capacity: 40 },
+                { name: 'Computer Lab 1', code: 'CL1', capacity: 30 }
+            ];
+            
+            defaultVenues.forEach(venue => {
+                const option = document.createElement('option');
+                option.value = venue.name;
+                option.textContent = `${venue.name} (${venue.code}) - ${venue.capacity} seats`;
+                venueSelect.appendChild(option);
+            });
+        }
+    }
+
+    function setupEventListeners() {
+        // Modal buttons
+        document.getElementById('add-course-btn').addEventListener('click', openAddCourseModal);
+        document.querySelectorAll('.close-modal').forEach(btn => {
+            btn.addEventListener('click', closeAllModals);
+        });
+        
+        // Form submission
+        document.getElementById('save-course-btn').addEventListener('click', handleCourseSubmit);
+        
+        // Delete confirmation
+        document.getElementById('confirm-delete-btn').addEventListener('click', confirmDeleteCourse);
+        
+        // Search functionality
+        document.getElementById('search-courses').addEventListener('input', filterCourses);
+        
+        // View toggle
+        document.getElementById('tableViewBtn').addEventListener('click', () => toggleView('table'));
+        document.getElementById('cardViewBtn').addEventListener('click', () => toggleView('card'));
+        
+        // Close modal on overlay click
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeAllModals();
+                }
+            });
+        });
+        
+        // Prevent modal from closing when clicking inside modal content
+        document.querySelectorAll('.modal-content').forEach(content => {
+            content.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        });
+        
+        // Real-time validation
+        document.getElementById('course-code').addEventListener('input', validateCourseCode);
+        document.getElementById('end-time').addEventListener('change', validateTime);
+        document.getElementById('lecture-venue').addEventListener('change', checkVenueAvailability);
+        
+        // Lecturer availability check
+        document.getElementById('lecturer').addEventListener('change', checkSelectedLecturerAvailability);
+        document.getElementById('lecture-day').addEventListener('change', checkSelectedLecturerAvailability);
+        document.getElementById('start-time').addEventListener('change', checkSelectedLecturerAvailability);
+        document.getElementById('end-time').addEventListener('change', checkSelectedLecturerAvailability);
+        
+        // Assessment validation
+        document.getElementById('test-weight').addEventListener('input', validateAssessmentWeights);
+        document.getElementById('assignment-weight').addEventListener('input', validateAssessmentWeights);
+        document.getElementById('exam-weight').addEventListener('input', validateAssessmentWeights);
+    }
+
+    function checkSelectedLecturerAvailability() {
+        const lecturerId = document.getElementById('lecturer').value;
+        const lectureDay = document.getElementById('lecture-day').value;
+        const startTime = document.getElementById('start-time').value;
+        const endTime = document.getElementById('end-time').value;
+        
+        if (!lecturerId || !lectureDay || !startTime || !endTime) {
+            return;
+        }
+        
+        const availability = checkLecturerAvailability(
+            lecturerId, 
+            lectureDay, 
+            startTime, 
+            endTime, 
+            currentCourseId
+        );
+        
+        const validationElement = document.getElementById('lecturer-validation');
+        
+        if (!availability.available) {
+            validationElement.innerHTML = `
+                <i class="fas fa-exclamation-triangle"></i>
+                Lecturer not available: ${availability.reason}
+            `;
+            validationElement.className = 'validation-message error';
+        } else {
+            validationElement.innerHTML = `
+                <i class="fas fa-check-circle"></i>
+                Lecturer is available
+            `;
+            validationElement.className = 'validation-message success';
+        }
+    }
+
+    // Check lecturer availability
+    function checkLecturerAvailability(lecturerId, day, startTime, endTime, excludeCourseId = null) {
+        const lecturer = lecturers.find(l => l.id === lecturerId);
+        if (!lecturer) return { available: false, reason: 'Lecturer not found' };
+        
+        // Get all courses assigned to this lecturer
+        const lecturerCourses = courses.filter(course => 
+            course.lecturerId === lecturerId && 
+            course.id !== excludeCourseId &&
+            course.status === 'active'
+        );
+        
+        // Check for time conflicts
+        for (const course of lecturerCourses) {
+            if (!course.lectureDay || !course.startTime || !course.endTime) continue;
+            
+            // Check if same day
+            if (course.lectureDay === day) {
+                // Check if time slots overlap
+                const timeConflict = (
+                    (startTime >= course.startTime && startTime < course.endTime) ||
+                    (endTime > course.startTime && endTime <= course.endTime) ||
+                    (startTime <= course.startTime && endTime >= course.endTime)
+                );
+                
+                if (timeConflict) {
+                    return { 
+                        available: false, 
+                        reason: `Time conflict with ${course.courseCode} (${course.startTime}-${course.endTime})`
+                    };
+                }
+            }
+        }
+        
+        return { available: true, reason: 'Lecturer is available' };
+    }
+
+    function loadCourses() {
+        showLoading(true, 'Loading courses...');
+        
+        // Set up real-time listener for courses in the user's department
+        if (coursesListener) {
+            coursesListener(); // Remove previous listener
+        }
+        
+        const departmentPath = `Departments/${userDepartment}/Courses`;
+        const db = firebase.firestore();
+        
+        coursesListener = db.collection(departmentPath)
+            .orderBy('createdAt', 'desc')
+            .onSnapshot(snapshot => {
+                courses = [];
+                snapshot.forEach(doc => {
+                    courses.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                // Update lecturer courses in their user documents
+                updateLecturerCourses();
+                
+                updateCoursesDisplay();
+                updateStats();
+                showLoading(false);
+            }, error => {
+                window.SchoolApp.SchoolUtils.showToast('Error loading courses: ' + error.message, 'error');
+                showLoading(false);
+            });
+    }
+
+    // Update lecturer's course assignments in their user document
+    async function updateLecturerCourses() {
+        try {
+            const db = firebase.firestore();
+            
+            // Group courses by lecturer
+            const coursesByLecturer = {};
+            courses.forEach(course => {
+                if (course.lecturerId && course.status === 'active') {
+                    if (!coursesByLecturer[course.lecturerId]) {
+                        coursesByLecturer[course.lecturerId] = [];
+                    }
+                    coursesByLecturer[course.lecturerId].push({
+                        courseId: course.id,
+                        courseCode: course.courseCode,
+                        courseName: course.courseName,
+                        lectureDay: course.lectureDay,
+                        startTime: course.startTime,
+                        endTime: course.endTime,
+                        lectureVenue: course.lectureVenue
+                    });
+                }
+            });
+            
+            // Update each lecturer's document
+            const updatePromises = Object.entries(coursesByLecturer).map(async ([lecturerId, lecturerCourses]) => {
+                try {
+                    await db.collection('users').doc(lecturerId).update({
+                        courses: lecturerCourses,
+                        updatedAt: new Date().toISOString()
+                    });
+                } catch (error) {
+                    console.error(`Error updating lecturer ${lecturerId}:`, error);
+                }
+            });
+            
+            await Promise.all(updatePromises);
+            
+        } catch (error) {
+            console.error('Error updating lecturer courses:', error);
+        }
+    }
+
+    // [KEEP ALL THE REST OF THE FUNCTIONS AS THEY WERE WORKING BEFORE]
+    // Only changed the data loading parts to avoid complex queries
+
+    function updateCoursesDisplay() {
+        updateTableView();
+        updateCardView();
+        updateCourseCount();
+    }
+
+    function updateTableView() {
+        const tbody = document.getElementById('courses-table-body');
+        tbody.innerHTML = '';
+        
+        if (courses.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center" style="padding: 40px;">
+                        <i class="fas fa-book" style="font-size: 2rem; color: var(--gray); margin-bottom: 10px;"></i>
+                        <p>No courses found. Click "Add New Course" to create one.</p>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        courses.forEach(course => {
+            const scheduleText = course.lectureDay ? 
+                `${course.lectureDay}, ${formatTime(course.startTime)} - ${formatTime(course.endTime)}` : 
+                'Not scheduled';
+            
+            // Get lecturer name
+            let lecturerName = course.lecturerName || 'Unknown';
+            if (course.lecturerId) {
+                const lecturer = lecturers.find(l => l.id === course.lecturerId);
+                if (lecturer) {
+                    lecturerName = lecturer.fullName;
+                }
+            }
+            
+            const row = `
+                <tr>
+                    <td><strong>${course.courseCode}</strong></td>
+                    <td>${course.courseName}</td>
+                    <td>${course.creditUnits}</td>
+                    <td>${lecturerName}</td>
+                    <td>${scheduleText}<br><small>${course.lectureVenue || ''}</small></td>
+                    <td>
+                        <span class="${course.status === 'active' ? 'status-active' : 'status-inactive'}">
+                            ${course.status === 'active' ? 'Active' : 'Inactive'}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-info btn-icon" onclick="editCourse('${course.id}')" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-danger btn-icon" onclick="deleteCoursePrompt('${course.id}')" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            <button class="btn btn-warning btn-icon" onclick="viewCourse('${course.id}')" title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+    }
+
+    function updateCardView() {
+        const grid = document.getElementById('courses-grid');
+        grid.innerHTML = '';
+        
+        if (courses.length === 0) {
+            grid.innerHTML = `
+                <div class="text-center" style="grid-column: 1/-1; padding: 40px;">
+                    <i class="fas fa-book" style="font-size: 3rem; color: var(--gray); margin-bottom: 20px;"></i>
+                    <h3>No courses found</h3>
+                    <p>Click "Add New Course" to create your first course.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        courses.forEach(course => {
+            // Get lecturer name
+            let lecturerName = course.lecturerName || 'Unknown';
+            if (course.lecturerId) {
+                const lecturer = lecturers.find(l => l.id === course.lecturerId);
+                if (lecturer) {
+                    lecturerName = lecturer.fullName;
+                }
+            }
+            
+            const card = `
+                <div class="course-card">
+                    <div class="course-header">
+                        <div class="course-code">${course.courseCode}</div>
+                        <div class="course-name">${course.courseName}</div>
+                    </div>
+                    
+                    <div class="course-body">
+                        <div class="course-info">
+                            <div class="info-item">
+                                <span class="info-label">Credit Units</span>
+                                <span class="info-value">${course.creditUnits}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Lecturer</span>
+                                <span class="info-value">${lecturerName}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Department</span>
+                                <span class="info-value">${course.department || 'N/A'}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Level</span>
+                                <span class="info-value">${course.level || 'N/A'}</span>
+                            </div>
+                        </div>
+                        
+                        ${course.lectureDay ? `
+                        <div class="lecture-time">
+                            <strong>${course.lectureDay}</strong><br>
+                            ${formatTime(course.startTime)} - ${formatTime(course.endTime)}<br>
+                            <small>${course.lectureVenue}</small>
+                        </div>
+                        ` : ''}
+                        
+                        ${course.description ? `
+                        <div class="mt-10">
+                            <p style="font-size: 0.9rem; color: var(--gray);">${course.description.substring(0, 100)}${course.description.length > 100 ? '...' : ''}</p>
+                        </div>
+                        ` : ''}
+                    </div>
+                    
+                    <div class="course-footer">
+                        <span class="${course.status === 'active' ? 'status-active' : 'status-inactive'}">
+                            ${course.status === 'active' ? 'Active' : 'Inactive'}
+                        </span>
+                        <div class="action-buttons">
+                            <button class="btn btn-info btn-icon" onclick="editCourse('${course.id}')" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-danger btn-icon" onclick="deleteCoursePrompt('${course.id}')" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            grid.innerHTML += card;
+        });
+    }
+
+    function updateCourseCount() {
+        const countElement = document.getElementById('course-count');
+        if (countElement) {
+            countElement.textContent = `${courses.length} course${courses.length !== 1 ? 's' : ''} found`;
+        }
+    }
+
+    function updateStats() {
+        // Update total courses
+        document.getElementById('total-courses').textContent = courses.length;
+        
+        // Count active lecturers
+        const lecturerIds = new Set(courses.filter(c => c.status === 'active').map(c => c.lecturerId));
+        document.getElementById('active-lecturers').textContent = lecturerIds.size;
+        
+        // Count ongoing courses (based on current time and day)
+        const now = new Date();
+        const currentDay = now.toLocaleDateString('en-US', { weekday: 'long' });
+        const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+        
+        const ongoingCount = courses.filter(course => {
+            if (course.status !== 'active' || !course.lectureDay || !course.startTime || !course.endTime) {
+                return false;
+            }
+            
+            if (course.lectureDay !== currentDay) {
+                return false;
+            }
+            
+            return course.startTime <= currentTime && course.endTime >= currentTime;
+        }).length;
+        
+        document.getElementById('ongoing-courses').textContent = ongoingCount;
+        
+        // Calculate total assessments
+        const totalAssessments = courses.reduce((sum, course) => {
+            const assessments = (course.testWeight || 0) + (course.assignmentWeight || 0) + (course.examWeight || 0);
+            return sum + (assessments > 0 ? 1 : 0);
+        }, 0);
+        
+        document.getElementById('total-assessments').textContent = totalAssessments;
+    }
+
+    function openAddCourseModal() {
+        currentCourseId = null;
+        document.getElementById('modal-title').textContent = 'Add New Course';
+        document.getElementById('course-form').reset();
+        document.getElementById('status').value = 'active';
+        document.getElementById('department').value = userDepartment;
+        
+        // Set default times
+        document.getElementById('start-time').value = '08:00';
+        document.getElementById('end-time').value = '09:00';
+        
+        // Clear validation messages
+        clearValidationMessages();
+        
+        document.getElementById('course-modal').classList.add('active');
+    }
+
+    function editCourse(courseId) {
+        const course = courses.find(c => c.id === courseId);
+        if (!course) return;
+        
+        currentCourseId = courseId;
+        document.getElementById('modal-title').textContent = 'Edit Course';
+        
+        // Fill form with course data
+        document.getElementById('course-code').value = course.courseCode || '';
+        document.getElementById('course-name').value = course.courseName || '';
+        document.getElementById('credit-units').value = course.creditUnits || '';
+        document.getElementById('lecturer').value = course.lecturerId || '';
+        document.getElementById('department').value = course.department || '';
+        document.getElementById('level').value = course.level || '';
+        document.getElementById('lecture-day').value = course.lectureDay || '';
+        document.getElementById('start-time').value = course.startTime || '';
+        document.getElementById('end-time').value = course.endTime || '';
+        document.getElementById('lecture-venue').value = course.lectureVenue || '';
+        document.getElementById('test-weight').value = course.testWeight || '';
+        document.getElementById('assignment-weight').value = course.assignmentWeight || '';
+        document.getElementById('exam-weight').value = course.examWeight || '';
+        document.getElementById('description').value = course.description || '';
+        document.getElementById('status').value = course.status || 'active';
+        document.getElementById('max-students').value = course.maxStudents || '';
+        
+        // Clear validation messages
+        clearValidationMessages();
+        
+        document.getElementById('course-modal').classList.add('active');
+    }
+
+    function viewCourse(courseId) {
+        const course = courses.find(c => c.id === courseId);
+        if (!course) return;
+        
+        // Get lecturer name
+        let lecturerName = course.lecturerName || 'Unknown';
+        if (course.lecturerId) {
+            const lecturer = lecturers.find(l => l.id === course.lecturerId);
+            if (lecturer) {
+                lecturerName = lecturer.fullName;
+            }
+        }
+        
+        window.SchoolApp.SchoolUtils.showAlert(`
+            <h3>${course.courseCode} - ${course.courseName}</h3>
+            <p><strong>Credit Units:</strong> ${course.creditUnits}</p>
+            <p><strong>Lecturer:</strong> ${lecturerName}</p>
+            <p><strong>Department:</strong> ${course.department || 'N/A'}</p>
+            <p><strong>Level:</strong> ${course.level || 'N/A'}</p>
+            <p><strong>Schedule:</strong> ${course.lectureDay} ${formatTime(course.startTime)}-${formatTime(course.endTime)}</p>
+            <p><strong>Venue:</strong> ${course.lectureVenue || 'N/A'}</p>
+            <p><strong>Status:</strong> ${course.status}</p>
+            ${course.description ? `<p><strong>Description:</strong> ${course.description}</p>` : ''}
+            <div class="mt-20">
+                <h4>Assessment Weights:</h4>
+                <p>Test & Attendance: ${course.testWeight || 0}%</p>
+                <p>Practical/Assignment: ${course.assignmentWeight || 0}%</p>
+                <p>Exam: ${course.examWeight || 0}%</p>
+                <p><strong>Total: ${(course.testWeight || 0) + (course.assignmentWeight || 0) + (course.examWeight || 0)}%</strong></p>
+            </div>
+        `, 'Course Details');
+    }
+
+    // Validation functions
+    function validateCourseCode() {
+        const courseCode = document.getElementById('course-code').value.trim();
+        const validationElement = document.getElementById('course-code-validation');
+        
+        if (!courseCode) {
+            validationElement.textContent = '';
+            validationElement.className = 'validation-message';
+            return false;
+        }
+        
+        // Check if course code already exists
+        const exists = courses.some(course => 
+            course.courseCode.toLowerCase() === courseCode.toLowerCase() && 
+            course.id !== currentCourseId
+        );
+        
+        if (exists) {
+            validationElement.textContent = 'Course code already exists';
+            validationElement.className = 'validation-message error';
+            return false;
+        }
+        
+        validationElement.textContent = 'Course code is available';
+        validationElement.className = 'validation-message success';
+        return true;
+    }
+
+    function validateTime() {
+        const startTime = document.getElementById('start-time').value;
+        const endTime = document.getElementById('end-time').value;
+        const validationElement = document.getElementById('time-validation');
+        
+        if (!startTime || !endTime) {
+            validationElement.textContent = '';
+            validationElement.className = 'validation-message';
+            return false;
+        }
+        
+        if (startTime >= endTime) {
+            validationElement.textContent = 'End time must be after start time';
+            validationElement.className = 'validation-message error';
+            return false;
+        }
+        
+        validationElement.textContent = '';
+        validationElement.className = 'validation-message';
+        return true;
+    }
+
+    async function checkVenueAvailability() {
+        const venue = document.getElementById('lecture-venue').value;
+        const validationElement = document.getElementById('venue-validation');
+        
+        if (!venue) {
+            validationElement.textContent = '';
+            validationElement.className = 'validation-message';
+            return true;
+        }
+        
+        try {
+            // Check if venue is occupied by another course at the same time
+            const lectureDay = document.getElementById('lecture-day').value;
+            const startTime = document.getElementById('start-time').value;
+            const endTime = document.getElementById('end-time').value;
+            
+            if (!lectureDay || !startTime || !endTime) {
+                validationElement.textContent = 'Please select day and time first';
+                validationElement.className = 'validation-message warning';
+                return false;
+            }
+            
+            // Check for venue conflicts
+            const conflictingCourses = courses.filter(course => {
+                if (course.id === currentCourseId) return false;
+                if (course.lectureVenue !== venue) return false;
+                if (course.lectureDay !== lectureDay) return false;
+                
+                // Check if time slots overlap
+                return (
+                    (startTime >= course.startTime && startTime < course.endTime) ||
+                    (endTime > course.startTime && endTime <= course.endTime) ||
+                    (startTime <= course.startTime && endTime >= course.endTime)
+                );
+            });
+            
+            if (conflictingCourses.length > 0) {
+                const conflictingCourse = conflictingCourses[0];
+                validationElement.innerHTML = `
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Venue occupied by ${conflictingCourse.courseCode} (${conflictingCourse.courseName}) 
+                    at ${formatTime(conflictingCourse.startTime)}-${formatTime(conflictingCourse.endTime)}
+                `;
+                validationElement.className = 'validation-message error';
+                return false;
+            }
+            
+            validationElement.textContent = 'Venue is available';
+            validationElement.className = 'validation-message success';
+            return true;
+        } catch (error) {
+            validationElement.textContent = 'Error checking venue availability';
+            validationElement.className = 'validation-message error';
+            return false;
+        }
+    }
+
+    function validateAssessmentWeights() {
+        const testWeight = parseInt(document.getElementById('test-weight').value) || 0;
+        const assignmentWeight = parseInt(document.getElementById('assignment-weight').value) || 0;
+        const examWeight = parseInt(document.getElementById('exam-weight').value) || 0;
+        const total = testWeight + assignmentWeight + examWeight;
+        const validationElement = document.getElementById('assessment-validation');
+        
+        if (total > 100) {
+            validationElement.textContent = `Total weight ${total}% exceeds 100%`;
+            validationElement.className = 'validation-message error';
+            return false;
+        }
+        
+        if (total < 0) {
+            validationElement.textContent = 'Total weight cannot be negative';
+            validationElement.className = 'validation-message error';
+            return false;
+        }
+        
+        validationElement.textContent = total === 100 ? 'Total weight: 100% ✓' : `Total weight: ${total}%`;
+        validationElement.className = total === 100 ? 'validation-message success' : 'validation-message warning';
+        return true;
+    }
+
+    function clearValidationMessages() {
+        const validationElements = document.querySelectorAll('.validation-message');
+        validationElements.forEach(el => {
+            el.textContent = '';
+            el.className = 'validation-message';
+        });
+    }
+
+    async function handleCourseSubmit(e) {
+        e.preventDefault();
+        
+        // Validate all fields
+        if (!validateCourseCode() || !validateTime() || !validateAssessmentWeights()) {
+            window.SchoolApp.SchoolUtils.showToast('Please fix validation errors', 'error');
+            return;
+        }
+        
+        const venueAvailable = await checkVenueAvailability();
+        if (!venueAvailable) {
+            window.SchoolApp.SchoolUtils.showToast('Venue is not available', 'error');
+            return;
+        }
+        
+        // Check lecturer availability
+        const lecturerId = document.getElementById('lecturer').value;
+        const lectureDay = document.getElementById('lecture-day').value;
+        const startTime = document.getElementById('start-time').value;
+        const endTime = document.getElementById('end-time').value;
+        
+        const lecturerAvailability = checkLecturerAvailability(
+            lecturerId, 
+            lectureDay, 
+            startTime, 
+            endTime, 
+            currentCourseId
+        );
+        
+        if (!lecturerAvailability.available) {
+            window.SchoolApp.SchoolUtils.showToast(
+                `Lecturer not available: ${lecturerAvailability.reason}`, 
+                'error'
+            );
+            return;
+        }
+        
+        const saveBtn = document.getElementById('save-course-btn');
+        const originalText = saveBtn.innerHTML;
+        saveBtn.innerHTML = '<div class="spinner"></div> Saving...';
+        saveBtn.disabled = true;
+        
+        try {
+            const lecturerId = document.getElementById('lecturer').value;
+            const selectedLecturer = lecturers.find(l => l.id === lecturerId);
+            
+            const courseData = {
+                courseCode: document.getElementById('course-code').value.trim(),
+                courseName: document.getElementById('course-name').value.trim(),
+                creditUnits: parseInt(document.getElementById('credit-units').value),
+                lecturerId: lecturerId,
+                lecturerName: selectedLecturer ? selectedLecturer.fullName : '',
+                department: userDepartment,
+                level: document.getElementById('level').value,
+                lectureDay: document.getElementById('lecture-day').value,
+                startTime: document.getElementById('start-time').value,
+                endTime: document.getElementById('end-time').value,
+                lectureVenue: document.getElementById('lecture-venue').value,
+                testWeight: parseInt(document.getElementById('test-weight').value) || 0,
+                assignmentWeight: parseInt(document.getElementById('assignment-weight').value) || 0,
+                examWeight: parseInt(document.getElementById('exam-weight').value) || 0,
+                description: document.getElementById('description').value.trim(),
+                status: document.getElementById('status').value,
+                maxStudents: parseInt(document.getElementById('max-students').value) || 0,
+                updatedAt: new Date().toISOString(),
+                updatedBy: AuthManager.getCurrentUser().uid,
+                updatedByName: userData.fullName || 'Unknown'
+            };
+            
+            // Validation
+            if (!courseData.courseCode || !courseData.courseName || !courseData.creditUnits || !courseData.lecturerId) {
+                throw new Error('Please fill in all required fields');
+            }
+            
+            if (!courseData.lectureDay || !courseData.startTime || !courseData.endTime || !courseData.lectureVenue) {
+                throw new Error('Please fill in all lecture schedule fields');
+            }
+            
+            if (courseData.startTime >= courseData.endTime) {
+                throw new Error('End time must be after start time');
+            }
+            
+            if (courseData.testWeight + courseData.assignmentWeight + courseData.examWeight > 100) {
+                throw new Error('Total assessment weight cannot exceed 100%');
+            }
+            
+            const departmentPath = `Departments/${userDepartment}/Courses`;
+            const db = firebase.firestore();
+            
+            if (currentCourseId) {
+                // Update existing course
+                await db.collection(departmentPath).doc(currentCourseId).update(courseData);
+                
+                // Update lecturer's course list
+                await updateLecturerCourseInUserDoc(lecturerId, currentCourseId, courseData);
+                
+                window.SchoolApp.SchoolUtils.showToast('Course updated successfully!', 'success');
+            } else {
+                // Add new course
+                courseData.createdAt = new Date().toISOString();
+                courseData.createdBy = AuthManager.getCurrentUser().uid;
+                courseData.createdByName = userData.fullName || 'Unknown';
+                
+                // Mark venue as occupied
+                await updateVenueStatus(courseData.lectureVenue, 'occupied', userDepartment);
+                
+                // Add course to department
+                const courseRef = await db.collection(departmentPath).add(courseData);
+                
+                // Add course to lecturer's user document
+                await addCourseToLecturer(lecturerId, courseRef.id, courseData);
+                
+                window.SchoolApp.SchoolUtils.showToast('Course added successfully!', 'success');
+            }
+            
+            closeAllModals();
+        } catch (error) {
+            window.SchoolApp.SchoolUtils.showToast('Error saving course: ' + error.message, 'error');
+        } finally {
+            saveBtn.innerHTML = originalText;
+            saveBtn.disabled = false;
+        }
+    }
+
+    // Add course to lecturer's user document
+    async function addCourseToLecturer(lecturerId, courseId, courseData) {
+        try {
+            const db = firebase.firestore();
+            const lecturerRef = db.collection('users').doc(lecturerId);
+            
+            const courseInfo = {
+                courseId: courseId,
+                courseCode: courseData.courseCode,
+                courseName: courseData.courseName,
+                lectureDay: courseData.lectureDay,
+                startTime: courseData.startTime,
+                endTime: courseData.endTime,
+                lectureVenue: courseData.lectureVenue,
+                department: courseData.department,
+                level: courseData.level
+            };
+            
+            // Get current courses array
+            const lecturerDoc = await lecturerRef.get();
+            const currentCourses = lecturerDoc.exists ? (lecturerDoc.data().courses || []) : [];
+            
+            // Add new course
+            currentCourses.push(courseInfo);
+            
+            // Update lecturer document
+            await lecturerRef.update({
+                courses: currentCourses,
+                updatedAt: new Date().toISOString()
+            });
+            
+        } catch (error) {
+            console.error('Error adding course to lecturer:', error);
+        }
+    }
+
+    // Update course in lecturer's user document
+    async function updateLecturerCourseInUserDoc(lecturerId, courseId, courseData) {
+        try {
+            const db = firebase.firestore();
+            const lecturerRef = db.collection('users').doc(lecturerId);
+            
+            const updatedCourseInfo = {
+                courseId: courseId,
+                courseCode: courseData.courseCode,
+                courseName: courseData.courseName,
+                lectureDay: courseData.lectureDay,
+                startTime: courseData.startTime,
+                endTime: courseData.endTime,
+                lectureVenue: courseData.lectureVenue,
+                department: courseData.department,
+                level: courseData.level
+            };
+            
+            // Get current courses array
+            const lecturerDoc = await lecturerRef.get();
+            const currentCourses = lecturerDoc.exists ? (lecturerDoc.data().courses || []) : [];
+            
+            // Find and update the course
+            const courseIndex = currentCourses.findIndex(c => c.courseId === courseId);
+            if (courseIndex !== -1) {
+                currentCourses[courseIndex] = updatedCourseInfo;
+                
+                // Update lecturer document
+                await lecturerRef.update({
+                    courses: currentCourses,
+                    updatedAt: new Date().toISOString()
+                });
+            } else {
+                // Course not found in lecturer's list, add it
+                currentCourses.push(updatedCourseInfo);
+                await lecturerRef.update({
+                    courses: currentCourses,
+                    updatedAt: new Date().toISOString()
+                });
+            }
+            
+        } catch (error) {
+            console.error('Error updating course in lecturer document:', error);
+        }
+    }
+
+    async function updateVenueStatus(venueName, status, occupiedBy) {
+        try {
+            // Update venue status in school config
+            const db = firebase.firestore();
+            const configDoc = await db.collection('schoolConfig').doc('main').get();
+            if (configDoc.exists) {
+                const config = configDoc.data();
+                const venues = config.venues || [];
+                
+                const updatedVenues = venues.map(venue => {
+                    if (venue.name === venueName) {
+                        return {
+                            ...venue,
+                            status: status === 'occupied' ? 'occupied' : 'active',
+                            occupiedBy: status === 'occupied' ? occupiedBy : '',
+                            occupiedAt: status === 'occupied' ? new Date().toISOString() : ''
+                        };
+                    }
+                    return venue;
+                });
+                
+                await db.collection('schoolConfig').doc('main').update({
+                    venues: updatedVenues
+                });
+            }
+        } catch (error) {
+            console.error('Error updating venue status:', error);
+        }
+    }
+
+    function deleteCoursePrompt(courseId) {
+        const course = courses.find(c => c.id === courseId);
+        if (!course) return;
+        
+        currentCourseId = courseId;
+        document.getElementById('delete-course-name').textContent = course.courseName;
+        document.getElementById('delete-course-code').textContent = course.courseCode;
+        document.getElementById('delete-modal').classList.add('active');
+    }
+
+    // When deleting a course, remove it from lecturer's document
+    async function removeCourseFromLecturer(lecturerId, courseId) {
+        try {
+            const db = firebase.firestore();
+            const lecturerRef = db.collection('users').doc(lecturerId);
+            
+            // Get current courses array
+            const lecturerDoc = await lecturerRef.get();
+            if (!lecturerDoc.exists) return;
+            
+            const currentCourses = lecturerDoc.data().courses || [];
+            
+            // Remove the course
+            const updatedCourses = currentCourses.filter(c => c.courseId !== courseId);
+            
+            // Update lecturer document
+            await lecturerRef.update({
+                courses: updatedCourses,
+                updatedAt: new Date().toISOString()
+            });
+            
+        } catch (error) {
+            console.error('Error removing course from lecturer:', error);
+        }
+    }
+
+    async function confirmDeleteCourse() {
+        if (!currentCourseId) return;
+        
+        const deleteBtn = document.getElementById('confirm-delete-btn');
+        const originalText = deleteBtn.innerHTML;
+        deleteBtn.innerHTML = '<div class="spinner"></div> Deleting...';
+        deleteBtn.disabled = true;
+        
+        try {
+            const course = courses.find(c => c.id === currentCourseId);
+            const departmentPath = `Departments/${userDepartment}/Courses`;
+            const db = firebase.firestore();
+            
+            // Free up the venue
+            if (course.lectureVenue) {
+                await updateVenueStatus(course.lectureVenue, 'available', '');
+            }
+            
+            // Remove course from lecturer's document
+            if (course.lecturerId) {
+                await removeCourseFromLecturer(course.lecturerId, currentCourseId);
+            }
+            
+            // Delete the course
+            await db.collection(departmentPath).doc(currentCourseId).delete();
+            
+            window.SchoolApp.SchoolUtils.showToast('Course deleted successfully!', 'success');
+            closeAllModals();
+        } catch (error) {
+            window.SchoolApp.SchoolUtils.showToast('Error deleting course: ' + error.message, 'error');
+        } finally {
+            deleteBtn.innerHTML = originalText;
+            deleteBtn.disabled = false;
+        }
+    }
+
+    function filterCourses() {
+        const searchTerm = document.getElementById('search-courses').value.toLowerCase();
+        const filteredCourses = courses.filter(course => {
+            // Get lecturer name for search
+            let lecturerName = course.lecturerName || '';
+            if (course.lecturerId) {
+                const lecturer = lecturers.find(l => l.id === course.lecturerId);
+                if (lecturer) {
+                    lecturerName = lecturer.fullName;
+                }
+            }
+            
+            return (
+                course.courseCode.toLowerCase().includes(searchTerm) ||
+                course.courseName.toLowerCase().includes(searchTerm) ||
+                lecturerName.toLowerCase().includes(searchTerm) ||
+                (course.department && course.department.toLowerCase().includes(searchTerm))
+            );
+        });
+        
+        // Temporarily update display with filtered results
+        const originalCourses = [...courses];
+        courses = filteredCourses;
+        updateCoursesDisplay();
+        courses = originalCourses;
+    }
+
+    function toggleView(viewType) {
+        const tableView = document.getElementById('tableView');
+        const cardView = document.getElementById('cardView');
+        const tableViewBtn = document.getElementById('tableViewBtn');
+        const cardViewBtn = document.getElementById('cardViewBtn');
+        
+        if (viewType === 'table') {
+            tableView.style.display = 'block';
+            cardView.style.display = 'none';
+            tableViewBtn.classList.add('active');
+            cardViewBtn.classList.remove('active');
+        } else {
+            tableView.style.display = 'none';
+            cardView.style.display = 'block';
+            tableViewBtn.classList.remove('active');
+            cardViewBtn.classList.add('active');
+        }
+    }
+
+    function closeAllModals() {
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.classList.remove('active');
+        });
+        currentCourseId = null;
+    }
+
+    function formatTime(timeString) {
+        if (!timeString) return '';
+        const [hours, minutes] = timeString.split(':');
+        const hour = parseInt(hours);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const hour12 = hour % 12 || 12;
+        return `${hour12}:${minutes} ${ampm}`;
+    }
+    
+    // Helper function to show loading state
+    function showLoading(show, text = 'Loading...') {
+        const overlay = document.getElementById('loading-overlay');
+        const loadingText = overlay.querySelector('.loading-text');
+        
+        if (show) {
+            loadingText.textContent = text;
+            overlay.style.display = 'flex';
+        } else {
+            overlay.style.display = 'none';
+        }
+    }
+</script>
+</body>
+</html>

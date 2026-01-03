@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Registration</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --primary: #920f09f3;
+            --primary-light: #920f0921;
+            --secondary: #705e03;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --info: #3498db;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --text-color: #333;
+            --text-muted: #6c757d;
+            --border-color: #dee2e6;
+            --card-bg: #fff;
+            --body-bg: #f5f7fb;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 6px 12px rgba(0, 0, 0, 0.15);
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--body-bg);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .main {
+            background-color: white;
+            color: var(--text-color);
+            display: block;
+            flex-direction: column;
+            min-height: 100vh;
+            position: fixed;
+            top: 0px;
+            left: 0px;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+          }
+
+        .container {
+            max-width: 1200px;
+            margin-top: 40px;
+            padding: 20px;
+        }
+
+        .page-title {
+            margin: 20px 0;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .registration-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 80vh;
+            margin-top: 20px;
+        }
+
+        .registration-form {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .registration-form h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            transition: var(--transition);
+        }
+
+        .form-control:disabled {
+            background-color: #f8f9fa;
+            color: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .form-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .form-footer .btn {
+            min-width: 120px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 20px;
+            border-radius: var(--radius-md);
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        .toast.success {
+            background-color: var(--success);
+        }
+
+        .toast.error {
+            background-color: var(--danger);
+        }
+
+        .toast.warning {
+            background-color: var(--warning);
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--secondary);
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #27ae60;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+        }
+
+        .modal.open {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            margin-top: 55px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 83vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-md);
+            position: relative;
+        }
+
+        .modal-header {
+            padding: 10px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        }
+
+        .modal-header h2 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+
+        .close-modal:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Activation Code Styles */
+        .activation-codes-container {
+            margin-top: 30px;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow);
+        }
+
+        .activation-codes-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .activation-codes-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+        }
+
+        .activation-code-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .activation-code-item:last-child {
+            border-bottom: none;
+        }
+
+        .activation-code-info {
+            flex: 1;
+        }
+
+        .activation-code-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .generated-code {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: var(--primary-light);
+            border-radius: var(--radius-md);
+            text-align: center;
+        }
+
+        .generated-code h4 {
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+
+        .code-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: white;
+            border-radius: var(--radius-sm);
+            border: 1px dashed var(--primary);
+        }
+
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-color);
+            border-left: 2px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Loading state */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.3s ease;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-text {
+            margin-top: 15px;
+            font-size: 18px;
+            color: var(--primary);
+        }
+
+        .large-spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid var(--border-color);
+            border-left: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        /* Fix for modal stacking */
+        #confirmation-modal {
+            z-index: 1001;
+        }
+
+        #delete-confirmation-modal {
+            z-index: 1002;
+        }
+
+        #delete-all-confirmation-modal {
+            z-index: 1003;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+            
+            .form-footer {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .form-footer .btn {
+                width: 100%;
+            }
+            
+            .header-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .activation-code-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .activation-code-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .registration-form {
+                padding: 20px;
+            }
+            
+            .modal-body {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+  
+  <div class="main">
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="large-spinner"></div>
+        <div class="loading-text">Loading...</div>
+    </div>
+
+    <div class="container">
+        <h1 class="page-title">
+            <i class="fas fa-user-plus"></i> Register New User
+        </h1>
+
+        <div class="header-actions">
+            <button class="btn btn-primary" id="activation-code-btn">
+                <i class="fas fa-key"></i> Activation Code
+            </button>
+        </div>
+
+        <div class="registration-container">
+            <form class="registration-form" id="registration-form">
+                <h2><i class="fas fa-user-circle"></i> User Information</h2>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="fullName">Full Name *</label>
+                        <input type="text" id="fullName" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Phone Number *</label>
+                        <input type="tel" id="phone" class="form-control" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email Address *</label>
+                    <input type="email" id="email" class="form-control" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="password">Password *</label>
+                        <input type="text" id="password" class="form-control" value="ccv001" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm Password *</label>
+                        <input type="text" id="confirmPassword" class="form-control" value="ccv001" disabled>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="address">Address</label>
+                    <textarea id="address" class="form-control" rows="3"></textarea>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="city">City</label>
+                        <input type="text" id="city" value="Malumfashi" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="state">State</label>
+                        <input type="text" id="state" value="Katsina" class="form-control">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="role">Role *</label>
+                        <select id="role" class="form-control" required>
+                            <option value="">Select a role</option>
+                            <option value="customer">Customer</option>
+                            <option value="employee">Employee</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="status">Status *</label>
+                        <select id="status" class="form-control" required>
+                            <option value="active">Active</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-footer">
+                    <button type="button" class="btn btn-danger" id="reset-btn">
+                        <i class="fas fa-redo"></i> Reset Form
+                    </button>
+                    <button type="button" class="btn btn-primary" id="register-user-btn">
+                        <i class="fas fa-user-plus"></i> Register User
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal" id="confirmation-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-shield-alt"></i> Admin Verification</h2>
+                <button class="close-modal" id="close-confirmation-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmation-message">Please enter your password to register the user:</p>
+                <div class="form-group">
+                    <label for="admin-password">Admin Password *</label>
+                    <input type="password" id="admin-password" class="form-control" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" id="cancel-confirmation-btn">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button class="btn btn-primary" id="confirm-registration-btn">
+                    <i class="fas fa-check"></i> Confirm Registration
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activation Code Modal -->
+    <div class="modal" id="activation-code-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-key"></i> Activation Code Generator</h2>
+                <button class="close-modal" id="close-activation-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="activation-phone">Phone Number *</label>
+                    <input type="tel" id="activation-phone" class="form-control" required>
+                </div>
+                
+                <button class="btn btn-primary" id="generate-code-btn">
+                    <i class="fas fa-cog"></i> Generate Code
+                </button>
+                
+                <div id="generated-code-section" class="generated-code" style="display: none;">
+                    <h4>Generated Activation Code</h4>
+                    <div class="code-value" id="generated-code-value"></div>
+                    <button class="btn btn-success" id="copy-code-btn">
+                        <i class="fas fa-copy"></i> Copy Code
+                    </button>
+                </div>
+                
+                <div class="activation-codes-container">
+                    <div class="activation-codes-header">
+                        <h3>Generated Codes</h3>
+                        <button class="btn btn-danger" id="delete-all-codes-btn">
+                            <i class="fas fa-trash"></i> Delete All
+                        </button>
+                    </div>
+                    
+                    <div class="activation-codes-list" id="activation-codes-list">
+                        <!-- Activation codes will be loaded here -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" id="close-activation-bottom-btn">
+                    <i class="fas fa-times"></i> Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal" id="delete-confirmation-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-exclamation-triangle"></i> Confirm Deletion</h2>
+                <button class="close-modal" id="close-delete-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="delete-confirmation-message">Are you sure you want to delete this activation code?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" id="cancel-delete-btn">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button class="btn btn-danger" id="confirm-delete-btn">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete All Confirmation Modal -->
+    <div class="modal" id="delete-all-confirmation-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-exclamation-triangle"></i> Confirm Deletion</h2>
+                <button class="close-modal" id="close-delete-all-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="delete-all-confirmation-message">Are you sure you want to delete ALL activation codes? This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" id="cancel-delete-all-btn">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button class="btn btn-danger" id="confirm-delete-all-btn">
+                    <i class="fas fa-trash"></i> Delete All
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+    
+    <div id="header"></div>
+    
+    </div>
+
+    <script src="js/header.js"></script>
+
+    <!-- blogger header -->
+    <script id="header-script"></script>
+    
+    <script>
+    // Firebase configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyCnhGOC4W80gSBjGhC_DdzeYZxalHkkrTQ",
+        authDomain: "chindo-communication-ventures.firebaseapp.com",
+        databaseURL: "https://chindo-communication-ventures-default-rtdb.firebaseio.com",
+        projectId: "chindo-communication-ventures",
+        storageBucket: "chindo-communication-ventures.firebasestorage.app",
+        messagingSenderId: "319470226437",
+        appId: "1:319470226437:web:32fab5ed59075d4094206c",
+        measurementId: "G-FY0YG8PPBL"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // DOM elements
+    const registrationForm = document.getElementById('registration-form');
+    const resetBtn = document.getElementById('reset-btn');
+    const registerUserBtn = document.getElementById('register-user-btn');
+    const toast = document.getElementById('toast');
+    const roleSelect = document.getElementById('role');
+    const statusSelect = document.getElementById('status');
+    const loadingOverlay = document.getElementById('loading-overlay');
+    
+    // Confirmation modal elements
+    const confirmationModal = document.getElementById('confirmation-modal');
+    const closeConfirmationModal = document.getElementById('close-confirmation-modal');
+    const cancelConfirmationBtn = document.getElementById('cancel-confirmation-btn');
+    const confirmRegistrationBtn = document.getElementById('confirm-registration-btn');
+    const adminPassword = document.getElementById('admin-password');
+    const confirmationMessage = document.getElementById('confirmation-message');
+    
+    // Activation code modal elements
+    const activationCodeBtn = document.getElementById('activation-code-btn');
+    const activationCodeModal = document.getElementById('activation-code-modal');
+    const closeActivationModal = document.getElementById('close-activation-modal');
+    const closeActivationBottomBtn = document.getElementById('close-activation-bottom-btn');
+    const activationPhone = document.getElementById('activation-phone');
+    const generateCodeBtn = document.getElementById('generate-code-btn');
+    const generatedCodeSection = document.getElementById('generated-code-section');
+    const generatedCodeValue = document.getElementById('generated-code-value');
+    const copyCodeBtn = document.getElementById('copy-code-btn');
+    const activationCodesList = document.getElementById('activation-codes-list');
+    const deleteAllCodesBtn = document.getElementById('delete-all-codes-btn');
+    
+    // Delete confirmation modal elements
+    const deleteConfirmationModal = document.getElementById('delete-confirmation-modal');
+    const closeDeleteModal = document.getElementById('close-delete-modal');
+    const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+    const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+    const deleteConfirmationMessage = document.getElementById('delete-confirmation-message');
+    
+    // Delete all confirmation modal elements
+    const deleteAllConfirmationModal = document.getElementById('delete-all-confirmation-modal');
+    const closeDeleteAllModal = document.getElementById('close-delete-all-modal');
+    const cancelDeleteAllBtn = document.getElementById('cancel-delete-all-btn');
+    const confirmDeleteAllBtn = document.getElementById('confirm-delete-all-btn');
+    const deleteAllConfirmationMessage = document.getElementById('delete-all-confirmation-message');
+    
+    // App state
+    let currentAdmin = null;
+    let adminPasswordValue = '';
+    let activationCodes = [];
+    let codeToDelete = null;
+    const MAX_ACTIVATION_CODES = 100;
+
+    // Show/hide loading overlay
+    function showLoading(show = true, text = "Loading...") {
+        if (show) {
+            loadingOverlay.querySelector('.loading-text').textContent = text;
+            loadingOverlay.classList.remove('hidden');
+        } else {
+            loadingOverlay.classList.add('hidden');
+        }
+    }
+
+    // Show toast message
+    function showToast(message, type = 'success') {
+        toast.textContent = message;
+        toast.className = `toast ${type} show`;
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    }
+
+    // Update status options based on role selection
+    function updateStatusOptions() {
+        const role = roleSelect.value;
+        const currentStatus = statusSelect.value;
+        
+        // Clear existing options
+        statusSelect.innerHTML = '';
+        
+        if (role === 'customer') {
+            statusSelect.innerHTML = `
+                <option value="active" ${currentStatus === 'active' ? 'selected' : ''}>Active</option>
+                <option value="inactive" ${currentStatus === 'inactive' ? 'selected' : ''}>Inactive</option>
+                <option value="regular" ${currentStatus === 'regular' ? 'selected' : ''}>Regular</option>
+            `;
+        } else if (role === 'employee') {
+            statusSelect.innerHTML = `
+                <option value="active" ${currentStatus === 'active' ? 'selected' : ''}>Active</option>
+                <option value="inactive" ${currentStatus === 'inactive' ? 'selected' : ''}>Inactive</option>
+            `;
+        } else {
+            statusSelect.innerHTML = '<option value="active">Active</option>';
+        }
+    }
+
+    // Check if current user is admin
+    function checkAdminAuth() {
+        return new Promise((resolve, reject) => {
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    currentAdmin = user;
+                    // Check if user is admin in Firestore
+                    db.collection('users').doc(user.uid).get()
+                        .then(doc => {
+                            if (doc.exists && doc.data().role === 'admin') {
+                                resolve(true);
+                            } else {
+                                showToast('Access denied. Admin privileges required.', 'error');
+                                setTimeout(() => {
+                                    window.location.href = 'index.html';
+                                }, 2000);
+                                resolve(false);
+                            }
+                        })
+                        .catch(error => {
+                            showToast('Error verifying admin access: ' + error.message, 'error');
+                            setTimeout(() => {
+                                window.location.href = 'index.html';
+                            }, 2000);
+                            resolve(false);
+                        });
+                } else {
+                    showToast('Please login as admin to register users', 'error');
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 2000);
+                    resolve(false);
+                }
+            });
+        });
+    }
+
+    // Initialize the app
+    function initApp() {
+        showLoading(true, "Checking admin privileges...");
+        
+        // Check if user is admin
+        checkAdminAuth().then(isAdmin => {
+            showLoading(false);
+            
+            if (!isAdmin) {
+                // Disable form if not admin
+                registrationForm.style.opacity = '0.6';
+                registrationForm.style.pointerEvents = 'none';
+                showToast('Please login as administrator to access this page', 'warning');
+                return;
+            }
+            
+            // Set up event listeners only if admin
+            setupEventListeners();
+            
+            // Set default password
+            document.getElementById('password').value = 'ccv001';
+            document.getElementById('confirmPassword').value = 'ccv001';
+            
+            // Set up role change listener
+            roleSelect.addEventListener('change', updateStatusOptions);
+            
+            // Load activation codes
+            loadActivationCodes();
+        });
+    }
+
+    // Set up event listeners
+    function setupEventListeners() {
+        // Registration button
+        registerUserBtn.addEventListener('click', () => {
+            // Validate form first
+            if (!validateForm()) {
+                return;
+            }
+            
+            // Show confirmation modal
+            confirmationMessage.textContent = 'Please enter your password to register the user:';
+            confirmationModal.classList.add('open');
+        });
+        
+        // Reset form
+        resetBtn.addEventListener('click', resetForm);
+        
+        // Confirmation modal
+        closeConfirmationModal.addEventListener('click', () => {
+            confirmationModal.classList.remove('open');
+            adminPassword.value = '';
+        });
+        
+        cancelConfirmationBtn.addEventListener('click', () => {
+            confirmationModal.classList.remove('open');
+            adminPassword.value = '';
+        });
+        
+        confirmRegistrationBtn.addEventListener('click', confirmRegistration);
+        
+        adminPassword.addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') {
+                confirmRegistration();
+            }
+        });
+        
+        // Activation code modal
+        activationCodeBtn.addEventListener('click', () => {
+            activationCodeModal.classList.add('open');
+        });
+        
+        closeActivationModal.addEventListener('click', () => {
+            activationCodeModal.classList.remove('open');
+        });
+        
+        closeActivationBottomBtn.addEventListener('click', () => {
+            activationCodeModal.classList.remove('open');
+        });
+        
+        generateCodeBtn.addEventListener('click', () => {
+            // Show confirmation modal for activation code generation
+            confirmationMessage.textContent = 'Please enter your password to generate an activation code:';
+            confirmationModal.classList.add('open');
+            confirmationModal.setAttribute('data-action', 'generate-code');
+        });
+        
+        copyCodeBtn.addEventListener('click', copyActivationCode);
+        
+        deleteAllCodesBtn.addEventListener('click', () => {
+            // Show confirmation modal for deleting all codes
+            confirmationMessage.textContent = 'Please enter your password to delete all activation codes:';
+            confirmationModal.classList.add('open');
+            confirmationModal.setAttribute('data-action', 'delete-all-codes');
+        });
+        
+        // Delete confirmation modal
+        closeDeleteModal.addEventListener('click', () => {
+            deleteConfirmationModal.classList.remove('open');
+            codeToDelete = null;
+        });
+        
+        cancelDeleteBtn.addEventListener('click', () => {
+            deleteConfirmationModal.classList.remove('open');
+            codeToDelete = null;
+        });
+        
+        confirmDeleteBtn.addEventListener('click', () => {
+            deleteConfirmationModal.classList.remove('open');
+            if (codeToDelete) {
+                // Show confirmation modal for deleting a single code
+                confirmationMessage.textContent = 'Please enter your password to delete this activation code:';
+                confirmationModal.classList.add('open');
+                confirmationModal.setAttribute('data-action', 'delete-code');
+            }
+        });
+        
+        // Delete all confirmation modal
+        closeDeleteAllModal.addEventListener('click', () => {
+            deleteAllConfirmationModal.classList.remove('open');
+        });
+        
+        cancelDeleteAllBtn.addEventListener('click', () => {
+            deleteAllConfirmationModal.classList.remove('open');
+        });
+        
+        confirmDeleteAllBtn.addEventListener('click', () => {
+            deleteAllConfirmationModal.classList.remove('open');
+            deleteAllActivationCodes();
+        });
+    }
+
+    // Validate form data
+    function validateForm() {
+        // Get form values
+        const fullName = document.getElementById('fullName').value.trim();
+        const phone = document.getElementById('phone').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        const role = document.getElementById('role').value;
+        const status = document.getElementById('status').value;
+        
+        // Check if all required fields are filled
+        if (!fullName || !phone || !email || !password || !confirmPassword || !role || !status) {
+            showToast('Please fill in all required fields', 'error');
+            return false;
+        }
+        
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            showToast('Please enter a valid email address', 'error');
+            return false;
+        }
+        
+        // Validate phone number (basic validation)
+        const phoneRegex = /^[\+]?[0-9]{10,15}$/;
+        if (!phoneRegex.test(phone.replace(/\s/g, ''))) {
+            showToast('Please enter a valid phone number', 'error');
+            return false;
+        }
+        
+        // Check if passwords match
+        if (password !== confirmPassword) {
+            showToast('Passwords do not match', 'error');
+            return false;
+        }
+        
+        // Check password length
+        if (password.length < 6) {
+            showToast('Password must be at least 6 characters long', 'error');
+            return false;
+        }
+        
+        return true;
+    }
+
+    // Confirm registration with admin password
+    function confirmRegistration() {
+        const password = adminPassword.value.trim();
+        const action = confirmationModal.getAttribute('data-action') || 'register-user';
+        
+        if (!password) {
+            showToast('Please enter your password', 'error');
+            return;
+        }
+        
+        // Store the password for re-authentication
+        adminPasswordValue = password;
+        
+        // Show loading state
+        confirmRegistrationBtn.innerHTML = '<div class="loading-spinner"></div> Verifying...';
+        confirmRegistrationBtn.disabled = true;
+        
+        // Reauthenticate admin
+        const credential = firebase.auth.EmailAuthProvider.credential(
+            currentAdmin.email, 
+            password
+        );
+        
+        currentAdmin.reauthenticateWithCredential(credential)
+            .then(() => {
+                // Password is correct, proceed with the action
+                confirmationModal.classList.remove('open');
+                adminPassword.value = '';
+                
+                switch(action) {
+                    case 'register-user':
+                        handleRegistration();
+                        break;
+                    case 'generate-code':
+                        generateActivationCode();
+                        break;
+                    case 'delete-code':
+                        deleteActivationCode(codeToDelete);
+                        codeToDelete = null;
+                        break;
+                    case 'delete-all-codes':
+                        deleteAllConfirmationModal.classList.add('open');
+                        break;
+                }
+            })
+            .catch(error => {
+                console.error('Authentication error:', error);
+                showToast('Incorrect password. Please try again.', 'error');
+            })
+            .finally(() => {
+                // Reset button state
+                confirmRegistrationBtn.innerHTML = '<i class="fas fa-check"></i> Confirm Registration';
+                confirmRegistrationBtn.disabled = false;
+                confirmationModal.removeAttribute('data-action');
+            });
+    }
+
+    // Handle registration form submission
+    function handleRegistration() {
+        // Get form values
+        const fullName = document.getElementById('fullName').value.trim();
+        const phone = document.getElementById('phone').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const address = document.getElementById('address').value.trim();
+        const city = document.getElementById('city').value.trim();
+        const state = document.getElementById('state').value.trim();
+        const role = document.getElementById('role').value;
+        const status = document.getElementById('status').value;
+        
+        // Disable submit button and show loading state
+        registerUserBtn.disabled = true;
+        registerUserBtn.innerHTML = '<div class="loading-spinner"></div> Registering...';
+        
+        // Create a temporary auth instance to create the user
+        const tempApp = firebase.initializeApp(firebaseConfig, "TempApp");
+        const tempAuth = tempApp.auth();
+        
+        // Create user in Firebase Auth
+        tempAuth.createUserWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+                const user = userCredential.user;
+                
+                // Save additional user data to Firestore
+                return db.collection('users').doc(user.uid).set({
+                    uid: user.uid,
+                    fullName: fullName,
+                    phone: phone,
+                    email: email,
+                    address: address,
+                    city: city,
+                    state: state,
+                    role: role,
+                    status: status,
+                    createdBy: currentAdmin.uid, // Track which admin created this user
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            })
+            .then(() => {
+                showToast('User registered successfully!', 'success');
+                resetForm();
+            })
+            .catch((error) => {
+                console.error('Registration error:', error);
+                let errorMessage = 'Registration failed. ';
+                
+                if (error.code === 'auth/email-already-in-use') {
+                    errorMessage += 'Email is already in use.';
+                } else if (error.code === 'auth/weak-password') {
+                    errorMessage += 'Password is too weak.';
+                } else {
+                    errorMessage += error.message;
+                }
+                
+                showToast(errorMessage, 'error');
+            })
+            .finally(() => {
+                // Re-enable submit button
+                registerUserBtn.disabled = false;
+                registerUserBtn.innerHTML = '<i class="fas fa-user-plus"></i> Register User';
+                
+                // Clean up temporary auth instance
+                tempApp.delete();
+            });
+    }
+
+    // Reset form
+    function resetForm() {
+        registrationForm.reset();
+        document.getElementById('password').value = 'ccv001';
+        document.getElementById('confirmPassword').value = 'ccv001';
+        document.getElementById('city').value = 'Malumfashi';
+        document.getElementById('state').value = 'Katsina';
+        updateStatusOptions();
+    }
+
+    // Generate activation code
+    function generateActivationCode() {
+        const phone = activationPhone.value.trim();
+        
+        if (!phone) {
+            showToast('Please enter a phone number', 'error');
+            return;
+        }
+        
+        // Check if we've reached the limit
+        if (activationCodes.length >= MAX_ACTIVATION_CODES) {
+            showToast('Reached the limit. Delete one to generate a code.', 'warning');
+            return;
+        }
+        
+        // Show loading state
+        generateCodeBtn.disabled = true;
+        generateCodeBtn.innerHTML = '<div class="loading-spinner"></div> Generating...';
+        
+        // Get activation code settings from Firestore
+        db.collection('settings').doc('activationCode').get()
+            .then(doc => {
+                let secretValue = 'ccv@123456';
+                
+                if (doc.exists) {
+                    secretValue = doc.data().value || 'ccv@123456';
+                }
+                
+                // Generate a 10-character code using the original reliable method
+                const timestamp = Date.now();
+                const rawString = `${timestamp}${phone}${secretValue}`;
+                
+                // Create a more complex hash using multiple iterations
+                let hash1 = 0, hash2 = 0;
+                
+                for (let i = 0; i < rawString.length; i++) {
+                    const char = rawString.charCodeAt(i);
+                    hash1 = ((hash1 << 5) - hash1) + char;
+                    hash1 = hash1 & hash1;
+                    
+                    hash2 = ((hash2 << 7) - hash2) + char;
+                    hash2 = hash2 & hash2;
+                }
+                
+                // Combine both hashes and ensure 10 characters (original method)
+                const combinedHash = Math.abs(hash1) * Math.abs(hash2 || 1);
+                let code = combinedHash.toString(36).toUpperCase();
+                
+                // Pad with zeros if needed to reach 10 characters (original padding method)
+                while (code.length < 10) {
+                    code = '0' + code;
+                }
+                
+                // Take exactly 10 characters
+                code = code.substring(0, 10);
+                
+                // Ensure we have exactly 10 characters (fallback if still less than 10)
+                if (code.length < 10) {
+                    // Use alternative method to ensure 10 characters
+                    const padding = '0'.repeat(10 - code.length);
+                    code = padding + code;
+                }
+                
+                // Save the code to Firestore
+                return db.collection('activationCodes').add({
+                    code: code,
+                    phone: phone,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    createdBy: currentAdmin.uid,
+                    used: false
+                }).then(() => {
+                    // Show the generated code
+                    generatedCodeValue.textContent = code;
+                    generatedCodeSection.style.display = 'block';
+                    
+                    activationPhone.value = '';
+                    
+                    // Reload activation codes
+                    loadActivationCodes();
+                    
+                    showToast('Activation code generated successfully!', 'success');
+                });
+            })
+            .catch(error => {
+                console.error('Error generating activation code:', error);
+                showToast('Error generating activation code: ' + error.message, 'error');
+            })
+            .finally(() => {
+                // Reset button state
+                generateCodeBtn.disabled = false;
+                generateCodeBtn.innerHTML = '<i class="fas fa-cog"></i> Generate Code';
+            });
+    }
+
+    // Copy activation code to clipboard
+    function copyActivationCode() {
+        const code = generatedCodeValue.textContent;
+        
+        navigator.clipboard.writeText(code)
+            .then(() => {
+                showToast('Code copied to clipboard!', 'success');
+            })
+            .catch(err => {
+                console.error('Failed to copy code: ', err);
+                showToast('Failed to copy code', 'error');
+            });
+    }
+
+    // Load activation codes from Firestore
+    function loadActivationCodes() {
+        activationCodesList.innerHTML = '<p>Loading codes...</p>';
+        
+        db.collection('activationCodes')
+            .orderBy('createdAt', 'desc')
+            .get()
+            .then(snapshot => {
+                activationCodes = [];
+                activationCodesList.innerHTML = '';
+                
+                if (snapshot.empty) {
+                    activationCodesList.innerHTML = '<p>No activation codes generated yet.</p>';
+                    return;
+                }
+                
+                snapshot.forEach(doc => {
+                    const codeData = doc.data();
+                    activationCodes.push({
+                        id: doc.id,
+                        ...codeData
+                    });
+                    
+                    const codeItem = document.createElement('div');
+                    codeItem.className = 'activation-code-item';
+                    
+                    const date = codeData.createdAt ? 
+                        new Date(codeData.createdAt.toDate()).toLocaleDateString() : 'Unknown date';
+                    
+                    codeItem.innerHTML = `
+                        <div class="activation-code-info">
+                            <strong>${codeData.code}</strong>
+                            <div>Phone: ${codeData.phone}</div>
+                            <div>Created: ${date}</div>
+                            <div>Status: ${codeData.used ? 'Used' : 'Unused'}</div>
+                        </div>
+                        <div class="activation-code-actions">
+                            <button class="btn btn-success copy-code-item-btn" data-code="${codeData.code}">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                            <button class="btn btn-danger delete-code-btn" data-id="${doc.id}">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    `;
+                    
+                    activationCodesList.appendChild(codeItem);
+                });
+                
+                // Add event listeners to copy buttons
+                document.querySelectorAll('.copy-code-item-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const code = e.currentTarget.getAttribute('data-code');
+                        navigator.clipboard.writeText(code)
+                            .then(() => {
+                                showToast('Code copied to clipboard!', 'success');
+                            })
+                            .catch(err => {
+                                console.error('Failed to copy code: ', err);
+                                showToast('Failed to copy code', 'error');
+                            });
+                    });
+                });
+                
+                // Add event listeners to delete buttons
+                document.querySelectorAll('.delete-code-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const codeId = e.currentTarget.getAttribute('data-id');
+                        showDeleteConfirmation(codeId);
+                    });
+                });
+            })
+            .catch(error => {
+                console.error('Error loading codes:', error);
+                activationCodesList.innerHTML = '<p>Error loading activation codes.</p>';
+            });
+    }
+
+    // Show delete confirmation modal
+    function showDeleteConfirmation(codeId) {
+        const code = activationCodes.find(c => c.id === codeId);
+        if (code) {
+            codeToDelete = codeId;
+            deleteConfirmationMessage.textContent = `Are you sure you want to delete activation code "${code.code}" for phone ${code.phone}?`;
+            deleteConfirmationModal.classList.add('open');
+        }
+    }
+
+    // Delete activation code
+    function deleteActivationCode(codeId) {
+        db.collection('activationCodes').doc(codeId).delete()
+            .then(() => {
+                showToast('Activation code deleted successfully!', 'success');
+                loadActivationCodes();
+            })
+            .catch(error => {
+                console.error('Error deleting code:', error);
+                showToast('Error deleting code: ' + error.message, 'error');
+            });
+    }
+
+    // Delete all activation codes
+    function deleteAllActivationCodes() {
+        // Show loading state
+        deleteAllCodesBtn.disabled = true;
+        deleteAllCodesBtn.innerHTML = '<div class="loading-spinner"></div> Deleting...';
+        
+        // Get all codes and delete them one by one
+        db.collection('activationCodes').get()
+            .then(snapshot => {
+                const deletePromises = [];
+                snapshot.forEach(doc => {
+                    deletePromises.push(doc.ref.delete());
+                });
+                
+                return Promise.all(deletePromises);
+            })
+            .then(() => {
+                showToast('All activation codes deleted successfully!', 'success');
+                loadActivationCodes();
+            })
+            .catch(error => {
+                console.error('Error deleting all codes:', error);
+                showToast('Error deleting codes: ' + error.message, 'error');
+            })
+            .finally(() => {
+                // Reset button state
+                deleteAllCodesBtn.disabled = false;
+                deleteAllCodesBtn.innerHTML = '<i class="fas fa-trash"></i> Delete All';
+            });
+    }
+
+    // Initialize the application
+    document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* CSS Variables for Theming */
+        :root {
+            --primary: #4361ee;
+            --secondary: #3a0ca3;
+            --success: #4cc9f0;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --text-color: #333;
+            --bg-color: #fff;
+            --sidebar-bg: linear-gradient(135deg, #4a6fa5, #166088);
+            --header-bg: linear-gradient(10deg, #0054e3, #75f9a6);
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        /* Dark Mode Variables */
+        .dark-mode {
+            --text-color: #f8f9fa;
+            --bg-color: #121212;
+            --light-gray: #2d2d2d;
+            --gray: #adb5bd;
+            --sidebar-bg: linear-gradient(135deg, #1a1a2e, #16213e);
+            --header-bg: linear-gradient(10deg, #033b9d, #046829);
+        }
+
+        /* Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: var(--transition);
+            padding-bottom: 70px; /* Space for bottom navigation */
+            min-height: 100vh;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Dashboard Styles */
+        .welcome-banner {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: var(--shadow);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: var(--bg-color);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-right: 15px;
+        }
+
+        .stat-details h3 {
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+
+        .stat-details p {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        .recent-activities {
+            background: var(--bg-color);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 1rem;
+        }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-content h4 {
+            margin-bottom: 5px;
+            font-size: 1rem;
+        }
+
+        .activity-content p {
+            color: var(--gray);
+            font-size: 0.85rem;
+        }
+
+        .activity-time {
+            color: var(--gray);
+            font-size: 0.8rem;
+        }
+
+        /* Responsive Design */
+        @media (min-width: 769px) {
+            .main-content {
+                margin-left: 280px;
+                padding-bottom: 30px;
+            }
+            
+            body {
+                padding-bottom: 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .courses-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Dashboard Tab -->
+        <div id="dashboard-tab" class="tab-container active">
+            <div class="welcome-banner">
+                <h1>Welcome back, Student!</h1>
+                <p>You have 3 upcoming assignments and 2 new messages</p>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background-color: rgba(79, 70, 229, 0.1); color: #4f46e5;">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3>5</h3>
+                        <p>Active Courses</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon" style="background-color: rgba(14, 165, 233, 0.1); color: #0ea5e9;">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3>12</h3>
+                        <p>Assignments Due</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon" style="background-color: rgba(34, 197, 94, 0.1); color: #22c55e;">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3>87%</h3>
+                        <p>Average Grade</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="recent-activities">
+                <h2 style="margin-bottom: 20px;">Recent Activities</h2>
+                
+                <div class="activity-item">
+                    <div class="activity-icon" style="background-color: rgba(79, 70, 229, 0.1); color: #4f46e5;">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div class="activity-content">
+                        <h4>Submitted Assignment</h4>
+                        <p>Calculus Week 5 Problem Set</p>
+                    </div>
+                    <div class="activity-time">2 hours ago</div>
+                </div>
+                
+                <div class="activity-item">
+                    <div class="activity-icon" style="background-color: rgba(234, 179, 8, 0.1); color: #eab308;">
+                        <i class="fas fa-comment"></i>
+                    </div>
+                    <div class="activity-content">
+                        <h4>New Comment</h4>
+                        <p>On Physics Discussion Board</p>
+                    </div>
+                    <div class="activity-time">5 hours ago</div>
+                </div>
+                
+                <div class="activity-item">
+                    <div class="activity-icon" style="background-color: rgba(239, 68, 68, 0.1); color: #ef4444;">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                    <div class="activity-content">
+                        <h4>Grade Updated</h4>
+                        <p>English Literature Midterm: A-</p>
+                    </div>
+                    <div class="activity-time">1 day ago</div>
+                </div>
+            </div>
+        </div>
+        
+    </main>
+
+</body>
+</html>

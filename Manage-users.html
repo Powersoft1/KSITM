@@ -1,0 +1,1936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Management - KSITM CTE</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Student Management Page Styles */
+        .main {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            flex: 1;
+        }
+        
+        .a-header {
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--dark);
+            padding: 20px 0;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 1.6rem;
+            font-weight: bold;
+            text-decoration: none;
+            color: var(--primary);
+        }
+
+        .logo-img {
+            height: 50px;
+            width: 50px;
+            border-radius: 50%;
+            border: 3px solid var(--primary);
+            object-fit: cover;
+        }
+
+        .logo-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+
+        .logo-subtitle {
+            font-size: 0.9rem;
+            color: var(--gray);
+            font-weight: 400;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .page-title {
+            margin: 30px 0;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .page-title h1 {
+            font-size: 2.5rem;
+            color: white;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        /* Control Panel */
+        .control-panel {
+            background: white;
+            padding: 25px;
+            border-radius: var(--radius-lg);
+            margin-bottom: 25px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 300px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 45px 12px 20px;
+            border: 2px solid var(--light-gray);
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(146, 15, 9, 0.2);
+        }
+
+        .search-box i {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .filter-select {
+            padding: 10px 15px;
+            border: 2px solid var(--light-gray);
+            border-radius: var(--radius-md);
+            background: white;
+            color: var(--dark);
+            font-size: 0.95rem;
+            min-width: 150px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* Main Content */
+        .user-list-section {
+            background: white;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+        }
+
+        .section-header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-header h2 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.4rem;
+            margin: 0;
+        }
+
+        .section-content {
+            padding: 20px;
+            max-height: 700px;
+            overflow-y: auto;
+        }
+
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .user-table th {
+            background: var(--light-gray);
+            color: var(--dark);
+            font-weight: 600;
+            padding: 15px;
+            text-align: left;
+            border-bottom: 2px solid var(--light-gray);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .user-table td {
+            padding: 15px;
+            border-bottom: 1px solid var(--light-gray);
+            vertical-align: middle;
+        }
+
+        .user-table tr:hover {
+            background-color: rgba(146, 15, 9, 0.05);
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .user-info-cell {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-details {
+            flex: 1;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 3px;
+        }
+
+        .user-email {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+
+        .online-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .status-online {
+            background: rgba(46, 204, 113, 0.1);
+            color: var(--success);
+        }
+
+        .status-offline {
+            background: rgba(108, 117, 125, 0.1);
+            color: var(--gray);
+        }
+
+        .last-seen {
+            font-size: 0.85rem;
+            color: var(--gray);
+            margin-top: 2px;
+        }
+
+        .role-select, .status-select {
+            padding: 6px 12px;
+            border: 2px solid var(--light-gray);
+            border-radius: var(--radius-sm);
+            background: white;
+            color: var(--dark);
+            font-size: 0.9rem;
+            cursor: pointer;
+            min-width: 140px;
+            transition: var(--transition);
+        }
+
+        .role-select:focus, .status-select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .role-select.student {
+            border-color: #4361ee;
+            color: #4361ee;
+        }
+
+        .role-select.student-admin {
+            border-color: #f72585;
+            color: #f72585;
+        }
+
+        .status-select.active {
+            border-color: var(--success);
+            color: var(--success);
+        }
+
+        .status-select.inactive {
+            border-color: var(--warning);
+            color: var(--warning);
+        }
+
+        .status-select.suspended {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-view {
+            background: var(--info);
+            color: white;
+        }
+
+        .btn-view:hover {
+            background: #2980b9;
+        }
+
+        .btn-promote {
+            background: #7209b7;
+            color: white;
+        }
+
+        .btn-promote:hover {
+            background: #560bad;
+        }
+
+        /* Permission Notice */
+        .permission-notice {
+            background: linear-gradient(135deg, #7209b7, #3a0ca3);
+            color: white;
+            padding: 15px;
+            border-radius: var(--radius-md);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: var(--shadow);
+        }
+
+        .permission-notice i {
+            font-size: 1.5rem;
+        }
+
+        .permission-notice p {
+            margin: 0;
+            font-size: 1rem;
+            flex: 1;
+        }
+
+        /* Statistics */
+        .stats-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: var(--radius-lg);
+            text-align: center;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            border-top: 5px solid var(--primary);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-card.students {
+            border-top-color: #4361ee;
+        }
+
+        .stat-card.admins {
+            border-top-color: #f72585;
+        }
+
+        .stat-card.online {
+            border-top-color: #2ecc71;
+        }
+
+        .stat-card.active {
+            border-top-color: #3498db;
+        }
+
+        .stat-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .stat-card.students .stat-icon {
+            color: #4361ee;
+        }
+
+        .stat-card.admins .stat-icon {
+            color: #f72585;
+        }
+
+        .stat-card.online .stat-icon {
+            color: #2ecc71;
+        }
+
+        .stat-card.active .stat-icon {
+            color: #3498db;
+        }
+
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: var(--dark);
+        }
+
+        .stat-label {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        /* Bulk Actions */
+        .bulk-actions {
+            background: white;
+            padding: 20px;
+            border-radius: var(--radius-lg);
+            margin-bottom: 25px;
+            box-shadow: var(--shadow);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .bulk-select {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .bulk-select input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .bulk-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--gray);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: var(--dark);
+        }
+
+        /* User Details Modal */
+        .user-details-modal .modal-content {
+            max-width: 800px;
+        }
+
+        .user-details-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .user-details-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .user-details-info {
+            flex: 1;
+        }
+
+        .user-details-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 5px;
+        }
+
+        .user-details-role {
+            display: inline-block;
+            padding: 4px 12px;
+            background: var(--primary-light);
+            color: var(--primary);
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .user-details-body {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .detail-group {
+            margin-bottom: 15px;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .detail-value {
+            color: var(--text-color);
+            padding: 8px 12px;
+            background: var(--light-gray);
+            border-radius: var(--radius-sm);
+            min-height: 38px;
+            display: flex;
+            align-items: center;
+        }
+
+        .editable-field {
+            background: white;
+            border: 2px solid var(--light-gray);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .editable-field:hover {
+            border-color: var(--primary);
+            background: rgba(146, 15, 9, 0.05);
+        }
+
+        .activity-log {
+            grid-column: 1 / -1;
+            margin-top: 10px;
+        }
+
+        .activity-log-item {
+            padding: 10px;
+            border-bottom: 1px solid var(--light-gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .activity-log-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-action {
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        .activity-time {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            transition: var(--transition);
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid var(--light-gray);
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        .loading-text {
+            font-size: 1.2rem;
+            color: var(--dark);
+            font-weight: 500;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .control-panel {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .search-box {
+                min-width: 100%;
+            }
+            
+            .filter-controls {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .user-table {
+                display: block;
+                overflow-x: auto;
+            }
+            
+            .user-table th,
+            .user-table td {
+                white-space: nowrap;
+                min-width: 120px;
+            }
+            
+            .page-title h1 {
+                font-size: 2rem;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .logo {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .bulk-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .bulk-buttons {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .control-panel {
+                padding: 20px;
+            }
+            
+            .filter-select {
+                min-width: 120px;
+            }
+            
+            .stats-summary {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .user-details-body {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+  
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay" style="display: flex;">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="loading-text">Loading Student Management...</div>
+    </div>
+
+    <div class="main">
+        <div class="a-header">
+            <div class="header-content">
+                <a href="index.html" class="logo">
+                    <img src="https://via.placeholder.com/50x50/4361ee/ffffff?text=S" alt="KSITM CTE" class="logo-img">
+                    <div class="logo-text">
+                        <div class="logo-title">KSITM CTE</div>
+                        <div class="logo-subtitle">Student Management System</div>
+                    </div>
+                </a>
+                <div class="user-info">
+                    <span class="user-greeting" id="user-greeting"></span>
+                    <a href="dashboard.html" class="btn btn-outline btn-sm">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="container">
+            <div class="page-title">
+                <h1><i class="fas fa-user-graduate"></i> Student Management</h1>
+            </div>
+
+            <!-- Permission Notice -->
+            <div class="permission-notice" id="permission-notice">
+                <i class="fas fa-user-shield"></i>
+                <p id="permission-message">You have permission to manage students and student admins. You can change roles and statuses.</p>
+            </div>
+
+            <!-- Statistics Summary -->
+            <div class="stats-summary" id="stats-summary">
+                <div class="stat-card students">
+                    <div class="stat-icon">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                    <div class="stat-number" id="students-count">0</div>
+                    <div class="stat-label">Total Students</div>
+                </div>
+                <div class="stat-card admins">
+                    <div class="stat-icon">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <div class="stat-number" id="admins-count">0</div>
+                    <div class="stat-label">Student Admins</div>
+                </div>
+                <div class="stat-card online">
+                    <div class="stat-icon">
+                        <i class="fas fa-signal"></i>
+                    </div>
+                    <div class="stat-number" id="online-count">0</div>
+                    <div class="stat-label">Online Now</div>
+                </div>
+                <div class="stat-card active">
+                    <div class="stat-icon">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <div class="stat-number" id="active-count">0</div>
+                    <div class="stat-label">Active Users</div>
+                </div>
+            </div>
+
+            <!-- Bulk Actions -->
+            <div class="bulk-actions" id="bulk-actions" style="display: none;">
+                <div class="bulk-select">
+                    <input type="checkbox" id="select-all-checkbox" onchange="toggleSelectAll(this.checked)">
+                    <label for="select-all-checkbox">Select All (<span id="selected-count">0</span> selected)</label>
+                </div>
+                <div class="bulk-buttons">
+                    <button class="btn btn-primary btn-sm" onclick="bulkUpdateRole('Student')">
+                        <i class="fas fa-user-graduate"></i> Set as Student
+                    </button>
+                    <button class="btn btn-promote btn-sm" onclick="bulkUpdateRole('Student Admin')">
+                        <i class="fas fa-user-shield"></i> Set as Student Admin
+                    </button>
+                    <button class="btn btn-success btn-sm" onclick="bulkUpdateStatus('Active')">
+                        <i class="fas fa-check"></i> Activate
+                    </button>
+                    <button class="btn btn-warning btn-sm" onclick="bulkUpdateStatus('Inactive')">
+                        <i class="fas fa-pause"></i> Deactivate
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="bulkUpdateStatus('Suspended')">
+                        <i class="fas fa-ban"></i> Suspend
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="clearSelection()">
+                        <i class="fas fa-times"></i> Clear Selection
+                    </button>
+                </div>
+            </div>
+
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <div class="search-box">
+                    <input type="text" id="search-input" placeholder="Search students by name, email, or registration number...">
+                    <i class="fas fa-search"></i>
+                </div>
+                
+                <div class="filter-controls">
+                    <select class="filter-select" id="role-filter">
+                        <option value="">All Roles</option>
+                        <option value="Student">Student</option>
+                        <option value="Student Admin">Student Admin</option>
+                    </select>
+                    
+                    <select class="filter-select" id="status-filter">
+                        <option value="">All Status</option>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                        <option value="Suspended">Suspended</option>
+                        <option value="Pending">Pending</option>
+                    </select>
+                    
+                    <select class="filter-select" id="department-filter">
+                        <option value="">All Departments</option>
+                        <!-- Populated dynamically -->
+                    </select>
+                    
+                    <select class="filter-select" id="level-filter">
+                        <option value="">All Levels</option>
+                        <!-- Populated dynamically -->
+                    </select>
+                    
+                    <button class="btn btn-primary" id="export-btn">
+                        <i class="fas fa-file-export"></i> Export
+                    </button>
+                </div>
+            </div>
+
+            <!-- User List Section -->
+            <div class="user-list-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-users"></i> Student Users</h2>
+                    <div class="text-muted" id="total-users-count">0 users</div>
+                </div>
+                
+                <div class="section-content">
+                    <table class="user-table">
+                        <thead>
+                            <tr>
+                                <th width="30">
+                                    <input type="checkbox" id="header-checkbox" onchange="toggleSelectAll(this.checked)">
+                                </th>
+                                <th>Student</th>
+                                <th>Registration No</th>
+                                <th>Department</th>
+                                <th>Level</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Last Seen</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-table-body">
+                            <!-- Users will be populated here -->
+                        </tbody>
+                    </table>
+                    
+                    <div id="empty-state" class="empty-state" style="display: none;">
+                        <i class="fas fa-users-slash"></i>
+                        <h3>No Students Found</h3>
+                        <p>Try adjusting your search or filters</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Details Modal -->
+        <div class="modal user-details-modal" id="user-details-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><i class="fas fa-user-circle"></i> Student Details</h2>
+                    <button class="close-modal" id="close-user-details">&times;</button>
+                </div>
+                <div id="user-details-content">
+                    <!-- User details will be loaded here -->
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" id="close-details-btn">
+                        <i class="fas fa-times"></i> Close
+                    </button>
+                    <button class="btn btn-primary" id="save-details-btn" style="display: none;">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="toast" class="toast"></div>
+    </div>
+
+    <!-- Include the consolidated school app JS -->
+    <script src="js/school-app.js"></script>
+    
+    <!-- Student Management Script -->
+    <script>
+        // Student Management Page Specific Functions
+        let currentUser = null;
+        let userData = null;
+        let allUsers = [];
+        let filteredUsers = [];
+        let selectedUsers = new Set();
+        let realtimeListeners = [];
+        let schoolConfig = null;
+        let editingUserId = null;
+
+        // Page-specific authentication functions
+        const AuthManager = {
+            currentUser: null,
+            userData: null,
+
+            initialize: function() {
+                return new Promise((resolve, reject) => {
+                    firebase.auth().onAuthStateChanged(async (user) => {
+                        if (user) {
+                            this.currentUser = user;
+                            await this.loadUserData(user.uid);
+                            resolve(user);
+                        } else {
+                            this.currentUser = null;
+                            this.userData = null;
+                            resolve(null);
+                        }
+                    });
+                });
+            },
+
+            loadUserData: async function(uid) {
+                try {
+                    const doc = await firebase.firestore().collection('users').doc(uid).get();
+                    if (doc.exists) {
+                        this.userData = { uid, ...doc.data() };
+                        localStorage.setItem('currentUser', JSON.stringify(this.userData));
+                    }
+                } catch (error) {
+                    console.error("Error loading user data:", error);
+                }
+            },
+
+            getCurrentUser: function() {
+                return this.currentUser;
+            },
+
+            getUserData: function() {
+                return this.userData;
+            },
+
+            getRole: function() {
+                return this.userData?.role || 'Student';
+            },
+
+            canManageStudents: function() {
+                const allowedRoles = ['Admin', 'HOD'];
+                return this.userData && allowedRoles.includes(this.userData.role);
+            }
+        };
+
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            initializePage();
+        });
+
+        // Initialize the page
+        async function initializePage() {
+            try {
+                showLoading(true, 'Checking permissions...');
+                
+                // Initialize Firebase and check authentication
+                await AuthManager.initialize();
+                
+                // Check if user is logged in
+                currentUser = AuthManager.getCurrentUser();
+                if (!currentUser) {
+                    showMessage('Please login to access this page', 'error');
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 2000);
+                    return;
+                }
+                
+                // Load user data
+                userData = AuthManager.getUserData();
+                if (!userData) {
+                    showMessage('Loading user data...', 'info');
+                    userData = await AuthManager.loadUserData(currentUser.uid);
+                }
+                
+                // Check if user has permission (Admin or HOD)
+                if (!AuthManager.canManageStudents()) {
+                    showMessage('Access denied. Admin or HOD privileges required.', 'error');
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 3000);
+                    return;
+                }
+                
+                // Update UI with user info
+                document.getElementById('user-greeting').innerHTML = `
+                    <i class="fas fa-user-circle"></i> ${userData.fullName} (${userData.role})
+                `;
+                
+                // Update permission message
+                const permissionMessage = userData.role === 'HOD' 
+                    ? 'You have permission to manage students and student admins in your department. You can change roles and statuses.'
+                    : 'You have full permission to manage all students and student admins. You can change roles and statuses.';
+                document.getElementById('permission-message').textContent = permissionMessage;
+                
+                // Load school config
+                await loadSchoolConfig();
+                
+                // Setup event listeners
+                setupEventListeners();
+                
+                // Load users (only students and student admins)
+                await loadUsers();
+                
+                // Setup real-time updates
+                setupRealtimeListeners();
+                
+                showMessage('Student management panel ready.', 'success');
+                
+            } catch (error) {
+                console.error('Initialization error:', error);
+                showMessage('Error initializing: ' + error.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function setupEventListeners() {
+            // Search functionality
+            document.getElementById('search-input').addEventListener('input', function() {
+                filterUsers();
+            });
+            
+            // Filter functionality
+            document.getElementById('role-filter').addEventListener('change', filterUsers);
+            document.getElementById('status-filter').addEventListener('change', filterUsers);
+            document.getElementById('department-filter').addEventListener('change', filterUsers);
+            document.getElementById('level-filter').addEventListener('change', filterUsers);
+            
+            // Export functionality
+            document.getElementById('export-btn').addEventListener('click', exportUsers);
+            
+            // Modal close buttons
+            document.getElementById('close-user-details').addEventListener('click', closeUserDetailsModal);
+            document.getElementById('close-details-btn').addEventListener('click', closeUserDetailsModal);
+            document.getElementById('save-details-btn').addEventListener('click', saveUserChanges);
+        }
+
+        async function loadSchoolConfig() {
+            try {
+                const doc = await firebase.firestore().collection('schoolConfig').doc('main').get();
+                if (doc.exists) {
+                    schoolConfig = doc.data();
+                    populateFilterDropdowns();
+                }
+            } catch (error) {
+                console.error('Error loading school config:', error);
+            }
+        }
+
+        function populateFilterDropdowns() {
+            // Populate department filter (for HOD, only show their department)
+            const deptFilter = document.getElementById('department-filter');
+            const departments = schoolConfig?.departments || [];
+            
+            // If user is HOD, only show their department
+            if (userData.role === 'HOD' && userData.department) {
+                const option = document.createElement('option');
+                option.value = userData.department;
+                option.textContent = userData.department;
+                deptFilter.appendChild(option);
+            } else {
+                // Admin can see all departments
+                departments.forEach(dept => {
+                    const option = document.createElement('option');
+                    option.value = dept;
+                    option.textContent = dept;
+                    deptFilter.appendChild(option);
+                });
+            }
+            
+            // Populate level filter
+            const levelFilter = document.getElementById('level-filter');
+            const levels = schoolConfig?.academicLevels || [];
+            levels.forEach(level => {
+                const option = document.createElement('option');
+                option.value = level;
+                option.textContent = level;
+                levelFilter.appendChild(option);
+            });
+        }
+
+        async function loadUsers() {
+            try {
+                showLoading(true, 'Loading students...');
+                
+                let query = firebase.firestore().collection('users');
+                
+                // Filter by role (Student or Student Admin)
+                query = query.where('role', 'in', ['Student', 'Student Admin']);
+                
+                // If user is HOD, filter by department
+                if (userData.role === 'HOD' && userData.department) {
+                    query = query.where('department', '==', userData.department);
+                }
+                
+                const snapshot = await query.get();
+                
+                allUsers = [];
+                snapshot.forEach(doc => {
+                    const user = { id: doc.id, ...doc.data() };
+                    allUsers.push(user);
+                });
+                
+                // Load activity data for each user
+                await loadUserActivities();
+                
+                // Update statistics
+                updateStatistics();
+                
+                // Apply initial filter
+                filterUsers();
+                
+            } catch (error) {
+                console.error('Error loading users:', error);
+                showMessage('Error loading users: ' + error.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function loadUserActivities() {
+            // Load activity logs for each user
+            for (let user of allUsers) {
+                try {
+                    const activitySnapshot = await firebase.firestore().collection('userActivities')
+                        .where('userId', '==', user.id)
+                        .orderBy('timestamp', 'desc')
+                        .limit(10)
+                        .get();
+                    
+                    user.activities = [];
+                    activitySnapshot.forEach(doc => {
+                        user.activities.push(doc.data());
+                    });
+                    
+                    // Calculate total visits
+                    user.totalVisits = user.activities?.length || 0;
+                    
+                    // Calculate online status (last activity within 5 minutes)
+                    const lastActivity = user.activities[0];
+                    if (lastActivity) {
+                        const lastSeen = new Date(lastActivity.timestamp);
+                        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+                        user.isOnline = lastSeen > fiveMinutesAgo;
+                        user.lastSeen = lastActivity.timestamp;
+                    } else {
+                        user.isOnline = false;
+                        user.lastSeen = null;
+                    }
+                    
+                } catch (error) {
+                    console.error(`Error loading activities for user ${user.id}:`, error);
+                    user.activities = [];
+                    user.totalVisits = 0;
+                    user.isOnline = false;
+                    user.lastSeen = null;
+                }
+            }
+        }
+
+        function setupRealtimeListeners() {
+            // Listen for user changes
+            let query = firebase.firestore().collection('users')
+                .where('role', 'in', ['Student', 'Student Admin']);
+            
+            // If user is HOD, filter by department
+            if (userData.role === 'HOD' && userData.department) {
+                query = query.where('department', '==', userData.department);
+            }
+            
+            const userListener = query.onSnapshot(snapshot => {
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === 'modified') {
+                        const updatedUser = { id: change.doc.id, ...change.doc.data() };
+                        const index = allUsers.findIndex(u => u.id === updatedUser.id);
+                        if (index !== -1) {
+                            // Preserve activity data
+                            updatedUser.activities = allUsers[index].activities;
+                            updatedUser.totalVisits = allUsers[index].totalVisits;
+                            updatedUser.isOnline = allUsers[index].isOnline;
+                            updatedUser.lastSeen = allUsers[index].lastSeen;
+                            
+                            allUsers[index] = updatedUser;
+                            updateUserRow(updatedUser);
+                            updateStatistics();
+                        }
+                    } else if (change.type === 'removed') {
+                        const index = allUsers.findIndex(u => u.id === change.doc.id);
+                        if (index !== -1) {
+                            allUsers.splice(index, 1);
+                            filterUsers();
+                        }
+                    }
+                });
+            });
+            
+            realtimeListeners.push(userListener);
+        }
+
+        function filterUsers() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const roleFilter = document.getElementById('role-filter').value;
+            const statusFilter = document.getElementById('status-filter').value;
+            const departmentFilter = document.getElementById('department-filter').value;
+            const levelFilter = document.getElementById('level-filter').value;
+            
+            filteredUsers = allUsers.filter(user => {
+                // Search filter
+                const matchesSearch = !searchTerm || 
+                    (user.fullName?.toLowerCase().includes(searchTerm) ||
+                     user.email?.toLowerCase().includes(searchTerm) ||
+                     user.regNumber?.toLowerCase().includes(searchTerm));
+                
+                // Role filter
+                const matchesRole = !roleFilter || user.role === roleFilter;
+                
+                // Status filter
+                const matchesStatus = !statusFilter || user.status === statusFilter;
+                
+                // Department filter
+                const matchesDepartment = !departmentFilter || user.department === departmentFilter;
+                
+                // Level filter
+                const matchesLevel = !levelFilter || user.level === levelFilter;
+                
+                return matchesSearch && matchesRole && matchesStatus && matchesDepartment && matchesLevel;
+            });
+            
+            displayUsers();
+            updateStatistics();
+        }
+
+        function displayUsers() {
+            const tbody = document.getElementById('user-table-body');
+            const emptyState = document.getElementById('empty-state');
+            
+            if (filteredUsers.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.style.display = 'block';
+                document.getElementById('bulk-actions').style.display = 'none';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            
+            // Sort by role (Student Admins first), then by name
+            filteredUsers.sort((a, b) => {
+                if (a.role === 'Student Admin' && b.role !== 'Student Admin') return -1;
+                if (a.role !== 'Student Admin' && b.role === 'Student Admin') return 1;
+                return (a.fullName || '').localeCompare(b.fullName || '');
+            });
+            
+            let html = '';
+            filteredUsers.forEach((user, index) => {
+                const initials = getInitials(user.fullName);
+                const lastSeenText = user.lastSeen 
+                    ? window.SchoolApp.SchoolUtils.formatDate(user.lastSeen)
+                    : 'Never';
+                const isSelected = selectedUsers.has(user.id);
+                
+                html += `
+                    <tr data-user-id="${user.id}">
+                        <td>
+                            <input type="checkbox" class="user-checkbox" 
+                                   data-user-id="${user.id}"
+                                   ${isSelected ? 'checked' : ''}
+                                   onchange="toggleUserSelection('${user.id}', this.checked)">
+                        </td>
+                        <td>
+                            <div class="user-info-cell">
+                                <div class="user-avatar" style="background: ${getAvatarColor(user.fullName)}">
+                                    ${initials}
+                                </div>
+                                <div class="user-details">
+                                    <div class="user-name">${user.fullName || 'N/A'}</div>
+                                    <div class="user-email">${user.email || 'N/A'}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>${user.regNumber || 'N/A'}</td>
+                        <td>${user.department || 'N/A'}</td>
+                        <td>${user.level || 'N/A'}</td>
+                        <td>
+                            <select class="role-select ${user.role?.toLowerCase().replace(' ', '-')}" 
+                                    data-user-id="${user.id}"
+                                    onchange="updateUserRole('${user.id}', this.value)">
+                                <option value="Student" ${user.role === 'Student' ? 'selected' : ''}>Student</option>
+                                <option value="Student Admin" ${user.role === 'Student Admin' ? 'selected' : ''}>Student Admin</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select class="status-select ${user.status?.toLowerCase()}" 
+                                    data-user-id="${user.id}"
+                                    onchange="updateUserStatus('${user.id}', this.value)">
+                                <option value="Active" ${user.status === 'Active' ? 'selected' : ''}>Active</option>
+                                <option value="Inactive" ${user.status === 'Inactive' ? 'selected' : ''}>Inactive</option>
+                                <option value="Suspended" ${user.status === 'Suspended' ? 'selected' : ''}>Suspended</option>
+                                <option value="Pending" ${user.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                            </select>
+                        </td>
+                        <td>
+                            <div class="online-status ${user.isOnline ? 'status-online' : 'status-offline'}">
+                                <i class="fas fa-circle" style="font-size: 0.6rem;"></i>
+                                ${user.isOnline ? 'Online' : 'Offline'}
+                            </div>
+                            <div class="last-seen">${lastSeenText}</div>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn btn-view btn-icon" onclick="viewUserDetails('${user.id}')" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                ${user.role === 'Student' ? `
+                                    <button class="btn btn-promote btn-icon" onclick="promoteToAdmin('${user.id}')" title="Promote to Student Admin">
+                                        <i class="fas fa-shield-alt"></i>
+                                    </button>
+                                ` : `
+                                    <button class="btn btn-warning btn-icon" onclick="demoteToStudent('${user.id}')" title="Demote to Student">
+                                        <i class="fas fa-user-graduate"></i>
+                                    </button>
+                                `}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+            document.getElementById('total-users-count').textContent = `${filteredUsers.length} users`;
+            
+            // Show/hide bulk actions
+            if (selectedUsers.size > 0) {
+                document.getElementById('bulk-actions').style.display = 'flex';
+                document.getElementById('selected-count').textContent = selectedUsers.size;
+            } else {
+                document.getElementById('bulk-actions').style.display = 'none';
+            }
+            
+            // Update header checkbox
+            const allChecked = filteredUsers.length > 0 && filteredUsers.every(user => selectedUsers.has(user.id));
+            document.getElementById('header-checkbox').checked = allChecked;
+        }
+
+        function updateUserRow(user) {
+            const row = document.querySelector(`tr[data-user-id="${user.id}"]`);
+            if (!row) return;
+            
+            const roleSelect = row.querySelector('.role-select');
+            const statusSelect = row.querySelector('.status-select');
+            const onlineStatus = row.querySelector('.online-status');
+            const lastSeen = row.querySelector('.last-seen');
+            const promoteBtn = row.querySelector('.btn-promote');
+            const demoteBtn = row.querySelector('.btn-warning');
+            
+            if (roleSelect) {
+                roleSelect.className = `role-select ${user.role?.toLowerCase().replace(' ', '-')}`;
+                roleSelect.value = user.role || 'Student';
+            }
+            
+            if (statusSelect) {
+                statusSelect.className = `status-select ${user.status?.toLowerCase()}`;
+                statusSelect.value = user.status || 'Active';
+            }
+            
+            if (onlineStatus && lastSeen) {
+                onlineStatus.className = `online-status ${user.isOnline ? 'status-online' : 'status-offline'}`;
+                onlineStatus.innerHTML = `<i class="fas fa-circle" style="font-size: 0.6rem;"></i> ${user.isOnline ? 'Online' : 'Offline'}`;
+                
+                const lastSeenText = user.lastSeen 
+                    ? window.SchoolApp.SchoolUtils.formatDate(user.lastSeen)
+                    : 'Never';
+                lastSeen.textContent = lastSeenText;
+            }
+            
+            // Update action buttons
+            if (promoteBtn && demoteBtn) {
+                if (user.role === 'Student') {
+                    promoteBtn.style.display = 'inline-block';
+                    demoteBtn.style.display = 'none';
+                } else {
+                    promoteBtn.style.display = 'none';
+                    demoteBtn.style.display = 'inline-block';
+                }
+            }
+        }
+
+        function updateStatistics() {
+            let studentsCount = 0;
+            let adminsCount = 0;
+            let onlineCount = 0;
+            let activeCount = 0;
+            
+            filteredUsers.forEach(user => {
+                if (user.role === 'Student') studentsCount++;
+                if (user.role === 'Student Admin') adminsCount++;
+                if (user.isOnline) onlineCount++;
+                if (user.status === 'Active') activeCount++;
+            });
+            
+            document.getElementById('students-count').textContent = studentsCount;
+            document.getElementById('admins-count').textContent = adminsCount;
+            document.getElementById('online-count').textContent = onlineCount;
+            document.getElementById('active-count').textContent = activeCount;
+        }
+
+        // Selection Management
+        function toggleUserSelection(userId, isSelected) {
+            if (isSelected) {
+                selectedUsers.add(userId);
+            } else {
+                selectedUsers.delete(userId);
+            }
+            
+            updateSelectionUI();
+        }
+
+        function toggleSelectAll(isSelected) {
+            if (isSelected) {
+                filteredUsers.forEach(user => selectedUsers.add(user.id));
+            } else {
+                filteredUsers.forEach(user => selectedUsers.delete(user.id));
+            }
+            
+            // Update all checkboxes
+            document.querySelectorAll('.user-checkbox').forEach(checkbox => {
+                checkbox.checked = isSelected;
+            });
+            
+            updateSelectionUI();
+        }
+
+        function updateSelectionUI() {
+            const selectedCount = selectedUsers.size;
+            document.getElementById('selected-count').textContent = selectedCount;
+            
+            if (selectedCount > 0) {
+                document.getElementById('bulk-actions').style.display = 'flex';
+            } else {
+                document.getElementById('bulk-actions').style.display = 'none';
+            }
+            
+            // Update header checkbox
+            const allChecked = filteredUsers.length > 0 && filteredUsers.every(user => selectedUsers.has(user.id));
+            document.getElementById('header-checkbox').checked = allChecked;
+        }
+
+        function clearSelection() {
+            selectedUsers.clear();
+            document.querySelectorAll('.user-checkbox').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            updateSelectionUI();
+        }
+
+        // User Management Functions
+        async function updateUserRole(userId, newRole) {
+            if (!['Student', 'Student Admin'].includes(newRole)) {
+                showMessage('Invalid role selected', 'error');
+                return;
+            }
+            
+            try {
+                await firebase.firestore().collection('users').doc(userId).update({
+                    role: newRole,
+                    updatedAt: new Date().toISOString()
+                });
+                
+                // Log the role change
+                await logRoleChange(userId, newRole);
+                
+                showMessage(`User role updated to ${newRole}`, 'success');
+            } catch (error) {
+                console.error('Error updating user role:', error);
+                showMessage('Error updating role: ' + error.message, 'error');
+            }
+        }
+
+        async function updateUserStatus(userId, newStatus) {
+            if (!['Active', 'Inactive', 'Suspended', 'Pending'].includes(newStatus)) {
+                showMessage('Invalid status selected', 'error');
+                return;
+            }
+            
+            try {
+                await firebase.firestore().collection('users').doc(userId).update({
+                    status: newStatus,
+                    updatedAt: new Date().toISOString()
+                });
+                
+                // Log the status change
+                await logStatusChange(userId, newStatus);
+                
+                showMessage(`User status updated to ${newStatus}`, 'success');
+            } catch (error) {
+                console.error('Error updating user status:', error);
+                showMessage('Error updating status: ' + error.message, 'error');
+            }
+        }
+
+        async function promoteToAdmin(userId) {
+            await updateUserRole(userId, 'Student Admin');
+        }
+
+        async function demoteToStudent(userId) {
+            await updateUserRole(userId, 'Student');
+        }
+
+        // Bulk Operations
+        async function bulkUpdateRole(newRole) {
+            if (selectedUsers.size === 0) {
+                showMessage('No users selected', 'warning');
+                return;
+            }
+            
+            if (!confirm(`Change role to "${newRole}" for ${selectedUsers.size} selected users?`)) {
+                return;
+            }
+            
+            try {
+                const batch = firebase.firestore().batch();
+                const timestamp = new Date().toISOString();
+                
+                for (const userId of selectedUsers) {
+                    const userRef = firebase.firestore().collection('users').doc(userId);
+                    batch.update(userRef, {
+                        role: newRole,
+                        updatedAt: timestamp
+                    });
+                }
+                
+                await batch.commit();
+                
+                // Log bulk operation
+                await logBulkOperation('ROLE_CHANGED', newRole, selectedUsers.size);
+                
+                showMessage(`Updated ${selectedUsers.size} users to ${newRole}`, 'success');
+                clearSelection();
+            } catch (error) {
+                console.error('Error bulk updating roles:', error);
+                showMessage('Error updating roles: ' + error.message, 'error');
+            }
+        }
+
+        async function bulkUpdateStatus(newStatus) {
+            if (selectedUsers.size === 0) {
+                showMessage('No users selected', 'warning');
+                return;
+            }
+            
+            if (!confirm(`Change status to "${newStatus}" for ${selectedUsers.size} selected users?`)) {
+                return;
+            }
+            
+            try {
+                const batch = firebase.firestore().batch();
+                const timestamp = new Date().toISOString();
+                
+                for (const userId of selectedUsers) {
+                    const userRef = firebase.firestore().collection('users').doc(userId);
+                    batch.update(userRef, {
+                        status: newStatus,
+                        updatedAt: timestamp
+                    });
+                }
+                
+                await batch.commit();
+                
+                // Log bulk operation
+                await logBulkOperation('STATUS_CHANGED', newStatus, selectedUsers.size);
+                
+                showMessage(`Updated ${selectedUsers.size} users to ${newStatus}`, 'success');
+                clearSelection();
+            } catch (error) {
+                console.error('Error bulk updating status:', error);
+                showMessage('Error updating status: ' + error.message, 'error');
+            }
+        }
+
+        async function logRoleChange(userId, newRole) {
+            try {
+                const logData = {
+                    action: 'USER_ROLE_CHANGED',
+                    targetUserId: userId,
+                    newRole: newRole,
+                    performedBy: userData.uid,
+                    performedByName: userData.fullName,
+                    timestamp: new Date().toISOString()
+                };
+                
+                await firebase.firestore().collection('auditLogs').add(logData);
+            } catch (error) {
+                console.error('Error logging role change:', error);
+            }
+        }
+
+        async function logStatusChange(userId, newStatus) {
+            try {
+                const logData = {
+                    action: 'USER_STATUS_CHANGED',
+                    targetUserId: userId,
+                    newStatus: newStatus,
+                    performedBy: userData.uid,
+                    performedByName: userData.fullName,
+                    timestamp: new Date().toISOString()
+                };
+                
+                await firebase.firestore().collection('auditLogs').add(logData);
+            } catch (error) {
+                console.error('Error logging status change:', error);
+            }
+        }
+
+        async function logBulkOperation(action, value, count) {
+            try {
+                const logData = {
+                    action: `BULK_${action}`,
+                    value: value,
+                    affectedUsers: count,
+                    performedBy: userData.uid,
+                    performedByName: userData.fullName,
+                    timestamp: new Date().toISOString()
+                };
+                
+                await firebase.firestore().collection('auditLogs').add(logData);
+            } catch (error) {
+                console.error('Error logging bulk operation:', error);
+            }
+        }
+
+        async function viewUserDetails(userId) {
+            try {
+                showLoading(true, 'Loading student details...');
+                
+                const user = allUsers.find(u => u.id === userId);
+                if (!user) {
+                    throw new Error('Student not found');
+                }
+                
+                // Load detailed activity logs
+                const activitySnapshot = await firebase.firestore().collection('userActivities')
+                    .where('userId', '==', userId)
+                    .orderBy('timestamp', 'desc')
+                    .limit(20)
+                    .get();
+                
+                const activities = [];
+                activitySnapshot.forEach(doc => {
+                    activities.push(doc.data());
+                });
+                
+                editingUserId = userId;
+                displayUserDetails(user, activities);
+                
+            } catch (error) {
+                console.error('Error loading student details:', error);
+                showMessage('Error loading details: ' + error.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function displayUserDetails(user, activities) {
+            const modalContent = `
+                <div class="user-details-header">
+                    <div class="user-details-avatar" style="background: ${getAvatarColor(user.fullName)}">
+                        ${getInitials(user.fullName)}
+                    </div>
+                    <div class="user-details-info">
+                        <div class="user-details-name">${user.fullName}</div>
+                        <span class="user-details-role">${user.role}</span>
+                        <div style="margin-top: 10px;">
+                            <span class="badge ${user.status === 'Active' ? 'badge-success' : 'badge-warning'}">
+                                ${user.status}
+                            </span>
+                            <span class="badge ${user.isOnline ? 'badge-success' : 'badge-secondary'}" style="margin-left: 10px;">
+                                ${user.isOnline ? 'Online' : 'Offline'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="user-details-body">
+                    <div class="detail-group">
+                        <span class="detail-label">Email</span>
+                        <div class="detail-value">${user.email || 'N/A'}</div>
+                    </div>
+                    
+                    <div class="detail-group">
+                        <span class="detail-label">Phone</span>
+                        <div class="detail-value">${user.phone || 'N/A'}</div>
+                    </div>
+                    
+                    <div class="detail-group">
+                        <span class="detail-label">Registration Number</span>
+                        <div class="detail-value">${user.regNumber || 'N/A'}</div>
+                    </div>
+                    
+                    <div class="detail-group">
+                        <span class="detail-label">Department</span>
+                        <div class="detail-value">${user.department || 'N/A'}</div>
+                    </div>
+                    
+                    <div class="detail-group">
+                        <span class="detail-label">Faculty</span>
+                        <div class="detail-value">${user.faculty || 'N/A'}</div>
+                    </div>
+                    
+                    <div class="detail-group">
+                        <span class="detail-label">Academic Level</span>
+                        <div class="detail-value">${user.level || 'N/A'}</div>
+                    </div>
+                    
+                    <div class="detail-group">
+                        <span class="detail-label">Entry Year</span>
+                        <div class="detail-value">${user.entryYear || 'N/A'}</div>
+                    </div>
+                    
+                    <div class="detail-group">
+                        <span class="detail-label">JAMB Number</span>
+                        <div class="detail-value">${user.jambNumber || 'N/A'}</div>
+                    </div>
+                    
+                    <div class="detail-group">
+                        <span class="detail-label">Account Created</span>
+                        <div class="detail-value">${window.SchoolApp.SchoolUtils.formatDate(user.createdAt)}</div>
+                    </div>
+                    
+                    <div class="detail-group">
+                        <span class="detail-label">Last Login</span>
+                        <div class="detail-value">${window.SchoolApp.SchoolUtils.formatDate(user.lastLoginAt)}</div>
+                    </div>
+                    
+                    <div class="detail-group">
+                        <span class="detail-label">Total Visits</span>
+                        <div class="detail-value">${user.totalVisits || 0}</div>
+                    </div>
+                    
+                    <div class="detail-group">
+                        <span class="detail-label">Role</span>
+                        <select class="detail-value editable-field" id="detail-role" style="width: 100%;">
+                            <option value="Student" ${user.role === 'Student' ? 'selected' : ''}>Student</option>
+                            <option value="Student Admin" ${user.role === 'Student Admin' ? 'selected' : ''}>Student Admin</option>
+                        </select>
+                    </div>
+                    
+                    <div class="detail-group">
+                        <span class="detail-label">Status</span>
+                        <select class="detail-value editable-field" id="detail-status" style="width: 100%;">
+                            <option value="Active" ${user.status === 'Active' ? 'selected' : ''}>Active</option>
+                            <option value="Inactive" ${user.status === 'Inactive' ? 'selected' : ''}>Inactive</option>
+                            <option value="Suspended" ${user.status === 'Suspended' ? 'selected' : ''}>Suspended</option>
+                            <option value="Pending" ${user.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                        </select>
+                    </div>
+                    
+                    <div class="detail-group activity-log">
+                        <span class="detail-label">Recent Activity</span>
+                        <div style="margin-top: 10px; max-height: 200px; overflow-y: auto;">
+                            ${activities.length > 0 ? 
+                                activities.map(activity => `
+                                    <div class="activity-log-item">
+                                        <span class="activity-action">${activity.action || 'Visited site'}</span>
+                                        <span class="activity-time">${window.SchoolApp.SchoolUtils.formatDate(activity.timestamp)}</span>
+                                    </div>
+                                `).join('') : 
+                                '<div class="text-center text-muted" style="padding: 20px;">No activity recorded</div>'
+                            }
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('user-details-content').innerHTML = modalContent;
+            document.getElementById('save-details-btn').style.display = 'inline-block';
+            document.getElementById('user-details-modal').classList.add('active');
+        }
+
+        async function saveUserChanges() {
+            try {
+                const newRole = document.getElementById('detail-role').value;
+                const newStatus = document.getElementById('detail-status').value;
+                
+                await firebase.firestore().collection('users').doc(editingUserId).update({
+                    role: newRole,
+                    status: newStatus,
+                    updatedAt: new Date().toISOString()
+                });
+                
+                // Log both changes
+                await logRoleChange(editingUserId, newRole);
+                await logStatusChange(editingUserId, newStatus);
+                
+                showMessage('User details updated successfully', 'success');
+                closeUserDetailsModal();
+            } catch (error) {
+                console.error('Error saving user changes:', error);
+                showMessage('Error saving changes: ' + error.message, 'error');
+            }
+        }
+
+        function closeUserDetailsModal() {
+            document.getElementById('user-details-modal').classList.remove('active');
+            editingUserId = null;
+        }
+
+        function exportUsers() {
+            // Simple CSV export
+            const headers = ['Name', 'Email', 'Reg Number', 'Department', 'Level', 'Role', 'Status', 'Last Seen', 'Total Visits'];
+            const rows = filteredUsers.map(user => [
+                user.fullName,
+                user.email,
+                user.regNumber,
+                user.department,
+                user.level,
+                user.role,
+                user.status,
+                user.lastSeen ? window.SchoolApp.SchoolUtils.formatDate(user.lastSeen) : 'Never',
+                user.totalVisits || 0
+            ]);
+            
+            const csvContent = [
+                headers.join(','),
+                ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+            ].join('\n');
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `students_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            showMessage('Student data exported successfully', 'success');
+        }
+
+        function getInitials(name) {
+            if (!name) return 'U';
+            return name.split(' ')
+                .map(part => part.charAt(0))
+                .join('')
+                .toUpperCase()
+                .substring(0, 2);
+        }
+
+        function getAvatarColor(name) {
+            const colors = [
+                'linear-gradient(135deg, #4361ee, #3a0ca3)',
+                'linear-gradient(135deg, #f72585, #7209b7)',
+                'linear-gradient(135deg, #4cc9f0, #4361ee)',
+                'linear-gradient(135deg, #4895ef, #3f37c9)',
+                'linear-gradient(135deg, #560bad, #3a0ca3)',
+                'linear-gradient(135deg, #7209b7, #560bad)'
+            ];
+            
+            if (!name) return colors[0];
+            const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            return colors[hash % colors.length];
+        }
+
+        function showLoading(show, text = 'Loading...') {
+            const overlay = document.getElementById('loading-overlay');
+            const loadingText = document.getElementById('loading-text');
+            
+            if (show) {
+                loadingText.textContent = text;
+                overlay.style.display = 'flex';
+            } else {
+                overlay.style.display = 'none';
+            }
+        }
+
+        function showMessage(message, type = 'success') {
+            window.SchoolApp.SchoolUtils.showToast(message, type);
+        }
+
+        // Cleanup realtime listeners when page is unloaded
+        window.addEventListener('beforeunload', () => {
+            realtimeListeners.forEach(unsubscribe => {
+                if (unsubscribe && typeof unsubscribe === 'function') {
+                    unsubscribe();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

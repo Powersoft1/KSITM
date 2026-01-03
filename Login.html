@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Login - KSITM CTE Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    
+    <link rel="stylesheet" href="css/style.css">
+<style>
+    /* Login Page Specific Styles */
+    body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .login-container {
+        width: 100%;
+        max-width: 450px;
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-md);
+        overflow: hidden;
+        animation: slideUp 0.5s ease;
+    }
+
+    .login-header {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        padding: 30px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .login-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+        background-size: 30px 30px;
+        opacity: 0.1;
+    }
+
+    .logo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        margin-bottom: 15px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .logo-img {
+        height: 60px;
+        width: 60px;
+        border-radius: 50%;
+        border: 3px solid white;
+        object-fit: cover;
+    }
+
+    .logo-text {
+        text-align: left;
+    }
+
+    .logo-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .logo-subtitle {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        font-weight: 400;
+    }
+
+    .login-header h2 {
+        font-size: 1.5rem;
+        margin-top: 10px;
+        font-weight: 500;
+        position: relative;
+        z-index: 1;
+    }
+
+    .login-content {
+        padding: 30px;
+    }
+
+    .login-tabs {
+        display: flex;
+        margin-bottom: 25px;
+        border-bottom: 2px solid var(--light-gray);
+    }
+
+    .tab-btn {
+        flex: 1;
+        padding: 15px;
+        background: none;
+        border: none;
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--gray);
+        cursor: pointer;
+        transition: var(--transition);
+        position: relative;
+    }
+
+    .tab-btn.active {
+        color: var(--primary);
+    }
+
+    .tab-btn.active::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: var(--primary);
+    }
+
+    .tab-btn:hover:not(.active) {
+        color: var(--dark);
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .login-btn {
+        width: 100%;
+        padding: 16px;
+        background-color: var(--primary);
+        color: white;
+        border: none;
+        border-radius: var(--radius-md);
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .login-btn:hover {
+        background-color: var(--secondary);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .login-btn:active {
+        transform: translateY(0);
+    }
+
+    .login-footer {
+        margin-top: 25px;
+        text-align: center;
+    }
+
+    .login-links {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .login-link {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        transition: var(--transition);
+    }
+
+    .login-link:hover {
+        color: var(--secondary);
+        text-decoration: underline;
+    }
+
+    .register-link {
+        color: var(--gray);
+        font-size: 0.95rem;
+    }
+
+    .register-link a {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 500;
+        margin-left: 5px;
+    }
+
+    .register-link a:hover {
+        text-decoration: underline;
+    }
+
+    .info-text {
+        background-color: var(--light-gray);
+        padding: 15px;
+        border-radius: var(--radius-md);
+        margin-bottom: 20px;
+        font-size: 0.9rem;
+        color: var(--gray);
+    }
+
+    .info-text i {
+        color: var(--info);
+        margin-right: 8px;
+    }
+
+    .identifier-examples {
+        font-size: 0.85rem;
+        color: var(--gray);
+        margin-top: 5px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .identifier-examples span {
+        background: var(--light-gray);
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+    }
+
+    /* Login History Dropdown */
+    .login-history-container {
+        position: relative;
+        width: 100%;
+    }
+
+    .login-history-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid var(--light-gray);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-md);
+        z-index: 1000;
+        margin-top: 5px;
+        max-height: 250px;
+        overflow-y: auto;
+        display: none;
+        animation: fadeIn 0.2s ease;
+    }
+
+    .login-history-dropdown.show {
+        display: block;
+    }
+
+    .login-history-header {
+        padding: 10px 15px;
+        border-bottom: 1px solid var(--light-gray);
+        font-size: 0.85rem;
+        color: var(--gray);
+        font-weight: 500;
+        background: var(--light-gray);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .clear-history-btn {
+        background: none;
+        border: none;
+        color: var(--danger);
+        font-size: 0.8rem;
+        cursor: pointer;
+        padding: 2px 8px;
+        border-radius: 3px;
+        transition: var(--transition);
+    }
+
+    .clear-history-btn:hover {
+        background: var(--danger-light);
+    }
+
+    .login-history-item {
+        padding: 10px 15px;
+        cursor: pointer;
+        transition: var(--transition);
+        border-bottom: 1px solid #f5f5f5;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .login-history-item:hover {
+        background: var(--light-gray);
+    }
+
+    .login-history-item:last-child {
+        border-bottom: none;
+    }
+
+    .history-identifier {
+        flex: 1;
+        font-size: 0.95rem;
+        color: var(--dark);
+    }
+
+    .history-time {
+        font-size: 0.8rem;
+        color: var(--gray);
+    }
+
+    .history-icon {
+        color: var(--primary);
+        font-size: 0.9rem;
+    }
+
+    .no-history {
+        padding: 20px;
+        text-align: center;
+        color: var(--gray);
+        font-size: 0.9rem;
+    }
+
+    .history-info {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 5px;
+        font-size: 0.8rem;
+        color: var(--info);
+    }
+
+    @media (max-width: 480px) {
+        .login-container {
+            max-width: 100%;
+        }
+        
+        .login-header {
+            padding: 20px;
+        }
+        
+        .login-content {
+            padding: 20px;
+        }
+        
+        .logo {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .logo-text {
+            text-align: center;
+        }
+        
+        .login-tabs {
+            flex-direction: column;
+        }
+        
+        .tab-btn {
+            padding: 12px;
+        }
+        
+        .login-links {
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .login-history-dropdown {
+            position: fixed;
+            top: auto;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            max-height: 200px;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
+        }
+    }
+</style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="logo">
+                <img src="images/logo.png" alt="KSITM CTE" class="logo-img">
+                <div class="logo-text">
+                    <div class="logo-title">KSITM CTE</div>
+                    <div class="logo-subtitle">College of Technical Education</div>
+                </div>
+            </div>
+            <h2>Student Portal Login</h2>
+        </div>
+        
+        <div class="login-content">
+            <!-- Alert Messages -->
+            <div class="alert alert-error" id="error-alert">
+                <i class="fas fa-exclamation-circle"></i>
+                <span id="error-message"></span>
+            </div>
+            
+            <div class="alert alert-success" id="success-alert">
+                <i class="fas fa-check-circle"></i>
+                <span id="success-message"></span>
+            </div>
+            
+            <!-- Tabs -->
+            <div class="login-tabs">
+                <button class="tab-btn active" data-tab="student-login">Student Login</button>
+                <button class="tab-btn" data-tab="admin-login">Admin Login</button>
+            </div>
+            
+            <!-- Student Login Tab -->
+            <div class="tab-content active" id="student-login">
+                <div class="info-text">
+                    <i class="fas fa-info-circle"></i>
+                    You can login using your email, registration number, JAMB number, or phone number.
+                </div>
+                
+                <form id="student-login-form">
+                    <div class="form-group">
+                        <label for="student-identifier">Email / Reg Number / JAMB / Phone</label>
+                        <div class="login-history-container">
+                            <input type="text" id="student-identifier" class="form-control" required 
+                                   placeholder="Enter your email, registration number, JAMB number, or phone"
+                                   autocomplete="off">
+                            <div class="history-info">
+                                <i class="fas fa-history"></i>
+                                <span>Recent logins will appear here when you focus on this field</span>
+                            </div>
+                            
+                            <!-- Login History Dropdown -->
+                            <div class="login-history-dropdown" id="login-history-dropdown">
+                                <div class="login-history-header">
+                                    <span>Recent Logins</span>
+                                    <button type="button" class="clear-history-btn" id="clear-history-btn">
+                                        <i class="fas fa-trash-alt"></i> Clear All
+                                    </button>
+                                </div>
+                                <div id="login-history-list">
+                                    <!-- Login history items will be inserted here -->
+                                </div>
+                            </div>
+                        </div>
+                        <div class="identifier-examples">
+                            <span>student@ksitm.edu.ng</span>
+                            <span>KSITM/CTE/24/001</span>
+                            <span>12345678AB</span>
+                            <span>+2348000000000</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="student-password">Password</label>
+                        <div class="password-container">
+                            <input type="password" id="student-password" class="form-control" required 
+                                   placeholder="Enter your password">
+                            <button type="button" class="toggle-password" id="toggle-student-password">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="login-btn" id="student-login-btn">
+                        <i class="fas fa-sign-in-alt"></i> Login as Student
+                    </button>
+                </form>
+                
+                <div class="login-footer">
+                    <div class="login-links">
+                        <a href="#" class="login-link" id="forgot-password-link">
+                            <i class="fas fa-key"></i> Forgot Password?
+                        </a>
+                        <a href="#" class="login-link" id="need-activation-link">
+                            <i class="fas fa-question-circle"></i> Need Activation Code?
+                        </a>
+                    </div>
+                    
+                    <div class="register-link">
+                        New student? <a href="signup.html">Create your account</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Admin Login Tab -->
+            <div class="tab-content" id="admin-login">
+                <div class="info-text">
+                    <i class="fas fa-info-circle"></i>
+                    Admin login for staff, lecturers, and administrative personnel.
+                </div>
+                
+                <form id="admin-login-form">
+                    <div class="form-group">
+                        <label for="admin-email">Email Address</label>
+                        <input type="email" id="admin-email" class="form-control" required 
+                               placeholder="admin@ksitm.edu.ng">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="admin-password">Password</label>
+                        <div class="password-container">
+                            <input type="password" id="admin-password" class="form-control" required 
+                                   placeholder="Enter your password">
+                            <button type="button" class="toggle-password" id="toggle-admin-password">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="login-btn" id="admin-login-btn">
+                        <i class="fas fa-user-shield"></i> Login as Admin
+                    </button>
+                </form>
+                
+                <div class="login-footer">
+                    <div class="login-links">
+                        <a href="#" class="login-link" id="admin-forgot-password">
+                            <i class="fas fa-key"></i> Forgot Password?
+                        </a>
+                    </div>
+                    
+                    <div class="register-link">
+                        Need admin access? <a href="contact.html">Contact IT Support</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div class="modal" id="forgot-password-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-key"></i> Reset Password</h3>
+                <button class="close-modal" id="close-forgot-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Enter your email, registration number, or phone number to reset your password.</p>
+                <div class="form-group">
+                    <label for="reset-identifier">Email / Reg Number / Phone</label>
+                    <input type="text" id="reset-identifier" class="form-control" 
+                           placeholder="Enter your email, registration number, or phone">
+                </div>
+                <div class="alert alert-warning" id="reset-alert" style="display: none;">
+                    <i class="fas fa-info-circle"></i>
+                    <span id="reset-message"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancel-reset-btn">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button class="btn btn-primary" id="send-reset-btn">
+                    <i class="fas fa-paper-plane"></i> Send Reset Link
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include the consolidated school app JS -->
+    <script src="js/school-app.js"></script>
+    
+    <!-- Login Page Script -->
+    <!-- Add this script to the end of Login.html before </body> -->
+
+<script>
+    // Login page specific functions
+    document.addEventListener('DOMContentLoaded', function() {
+        setupEventListeners();
+        hideAlerts();
+        loadLoginHistory();
+    });
+
+    // Page-specific authentication functions
+    const AuthManager = {
+        currentUser: null,
+        userData: null,
+
+        initialize: function() {
+            return new Promise((resolve, reject) => {
+                firebase.auth().onAuthStateChanged(async (user) => {
+                    if (user) {
+                        this.currentUser = user;
+                        await this.loadUserData(user.uid);
+                        resolve(user);
+                    } else {
+                        this.currentUser = null;
+                        this.userData = null;
+                        resolve(null);
+                    }
+                });
+            });
+        },
+
+        loadUserData: async function(uid) {
+            try {
+                const doc = await firebase.firestore().collection('users').doc(uid).get();
+                if (doc.exists) {
+                    this.userData = { uid, ...doc.data() };
+                    localStorage.setItem('currentUser', JSON.stringify(this.userData));
+                }
+            } catch (error) {
+                console.error("Error loading user data:", error);
+            }
+        },
+
+        getCurrentUser: function() {
+            return this.currentUser;
+        },
+
+        getUserData: function() {
+            return this.userData;
+        },
+
+        getRole: function() {
+            return this.userData?.role || 'Student';
+        },
+
+        login: async function(email, password) {
+            try {
+                const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+                
+                // Update last login
+                await firebase.firestore().collection('users').doc(userCredential.user.uid).update({
+                    lastLoginAt: new Date().toISOString()
+                });
+                
+                await this.loadUserData(userCredential.user.uid);
+                return { success: true, user: userCredential.user };
+            } catch (error) {
+                let errorMessage = 'Login failed';
+                switch (error.code) {
+                    case 'auth/user-not-found':
+                        errorMessage = 'User not found';
+                        break;
+                    case 'auth/wrong-password':
+                        errorMessage = 'Incorrect password';
+                        break;
+                    case 'auth/invalid-email':
+                        errorMessage = 'Invalid email format';
+                        break;
+                    default:
+                        errorMessage = error.message;
+                }
+                return { success: false, error: errorMessage };
+            }
+        },
+
+        logout: async function() {
+            try {
+                await firebase.auth().signOut();
+                this.currentUser = null;
+                this.userData = null;
+                localStorage.removeItem('currentUser');
+                return { success: true };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        },
+
+        forgotPassword: async function(email) {
+            try {
+                await firebase.auth().sendPasswordResetEmail(email);
+                return { success: true };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+    };
+
+    // Login History Management
+    const LoginHistory = {
+        STORAGE_KEY: 'ksitm_login_history',
+        MAX_HISTORY_ITEMS: 5,
+
+        getHistory: function() {
+            try {
+                const history = localStorage.getItem(this.STORAGE_KEY);
+                return history ? JSON.parse(history) : [];
+            } catch (error) {
+                console.error('Error reading login history:', error);
+                return [];
+            }
+        },
+
+        saveHistory: function(history) {
+            try {
+                localStorage.setItem(this.STORAGE_KEY, JSON.stringify(history));
+            } catch (error) {
+                console.error('Error saving login history:', error);
+            }
+        },
+
+        addLogin: function(identifier) {
+            if (!identifier || identifier.trim() === '') return;
+            
+            let history = this.getHistory();
+            
+            // Remove if already exists (to avoid duplicates)
+            history = history.filter(item => item.identifier !== identifier);
+            
+            // Add to beginning of array
+            history.unshift({
+                identifier: identifier,
+                timestamp: new Date().toISOString(),
+                lastUsed: new Date().toLocaleString()
+            });
+            
+            // Keep only max items
+            if (history.length > this.MAX_HISTORY_ITEMS) {
+                history = history.slice(0, this.MAX_HISTORY_ITEMS);
+            }
+            
+            this.saveHistory(history);
+        },
+
+        removeLogin: function(identifier) {
+            let history = this.getHistory();
+            history = history.filter(item => item.identifier !== identifier);
+            this.saveHistory(history);
+        },
+
+        clearHistory: function() {
+            localStorage.removeItem(this.STORAGE_KEY);
+        }
+    };
+
+    function setupEventListeners() {
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                this.classList.add('active');
+                const tabId = this.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+        
+        // Student login form
+        const studentLoginForm = document.getElementById('student-login-form');
+        if (studentLoginForm) {
+            studentLoginForm.addEventListener('submit', handleStudentLogin);
+        }
+        
+        // Admin login form
+        const adminLoginForm = document.getElementById('admin-login-form');
+        if (adminLoginForm) {
+            adminLoginForm.addEventListener('submit', handleAdminLogin);
+        }
+        
+        // Password visibility toggles
+        document.getElementById('toggle-student-password').addEventListener('click', function() {
+            togglePasswordVisibility('student-password', this);
+        });
+        
+        document.getElementById('toggle-admin-password').addEventListener('click', function() {
+            togglePasswordVisibility('admin-password', this);
+        });
+        
+        // Forgot password link
+        document.getElementById('forgot-password-link').addEventListener('click', function(e) {
+            e.preventDefault();
+            showForgotPasswordModal('student');
+        });
+        
+        document.getElementById('admin-forgot-password').addEventListener('click', function(e) {
+            e.preventDefault();
+            showForgotPasswordModal('admin');
+        });
+        
+        // Need activation code link
+        document.getElementById('need-activation-link').addEventListener('click', function(e) {
+            e.preventDefault();
+            showActivationModal();
+        });
+        
+        // Modal close buttons
+        document.getElementById('close-forgot-modal').addEventListener('click', closeForgotPasswordModal);
+        document.getElementById('cancel-reset-btn').addEventListener('click', closeForgotPasswordModal);
+        document.getElementById('send-reset-btn').addEventListener('click', handlePasswordReset);
+        
+        // Login history functionality
+        setupLoginHistoryListeners();
+    }
+
+    function setupLoginHistoryListeners() {
+        const identifierInput = document.getElementById('student-identifier');
+        const historyDropdown = document.getElementById('login-history-dropdown');
+        const clearHistoryBtn = document.getElementById('clear-history-btn');
+        
+        // Show history on focus
+        identifierInput.addEventListener('focus', function() {
+            loadLoginHistory();
+            historyDropdown.classList.add('show');
+        });
+        
+        // Hide history when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!identifierInput.contains(event.target) && !historyDropdown.contains(event.target)) {
+                historyDropdown.classList.remove('show');
+            }
+        });
+        
+        // Clear history button
+        clearHistoryBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            clearLoginHistory();
+        });
+        
+        // Handle clicks on history items
+        historyDropdown.addEventListener('click', function(e) {
+            const historyItem = e.target.closest('.login-history-item');
+            if (historyItem) {
+                const identifier = historyItem.dataset.identifier;
+                if (identifier) {
+                    identifierInput.value = identifier;
+                    historyDropdown.classList.remove('show');
+                    document.getElementById('student-password').focus();
+                }
+            }
+        });
+        
+        // Remove history item on delete button click
+        historyDropdown.addEventListener('click', function(e) {
+            if (e.target.classList.contains('delete-history-item') || 
+                e.target.closest('.delete-history-item')) {
+                e.stopPropagation();
+                const historyItem = e.target.closest('.login-history-item');
+                if (historyItem) {
+                    const identifier = historyItem.dataset.identifier;
+                    if (identifier) {
+                        LoginHistory.removeLogin(identifier);
+                        loadLoginHistory();
+                    }
+                }
+            }
+        });
+    }
+
+    function loadLoginHistory() {
+        const historyList = document.getElementById('login-history-list');
+        const history = LoginHistory.getHistory();
+        
+        if (history.length === 0) {
+            historyList.innerHTML = `
+                <div class="no-history">
+                    <i class="fas fa-history fa-2x" style="opacity: 0.3; margin-bottom: 10px;"></i>
+                    <p>No recent logins found</p>
+                    <p style="font-size: 0.8rem; color: var(--gray); margin-top: 5px;">
+                        Your successful logins will appear here
+                    </p>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '';
+        history.forEach(item => {
+            const timeAgo = getTimeAgo(item.timestamp);
+            const displayText = truncateText(item.identifier, 25);
+            
+            html += `
+                <div class="login-history-item" data-identifier="${item.identifier}">
+                    <div class="history-icon">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="history-identifier" title="${item.identifier}">
+                        ${displayText}
+                        <div style="font-size: 0.8rem; color: var(--info);">
+                            <i class="fas fa-clock"></i> ${timeAgo}
+                        </div>
+                    </div>
+                    <button class="delete-history-item" style="background: none; border: none; color: var(--danger); cursor: pointer; padding: 5px;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+        });
+        
+        historyList.innerHTML = html;
+    }
+
+    function clearLoginHistory() {
+        if (confirm('Are you sure you want to clear all login history?')) {
+            LoginHistory.clearHistory();
+            loadLoginHistory();
+            showAlert('Login history cleared', 'success');
+        }
+    }
+
+    function getTimeAgo(timestamp) {
+        const now = new Date();
+        const past = new Date(timestamp);
+        const diffMs = now - past;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+        
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins} min ago`;
+        if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+        if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+        return past.toLocaleDateString();
+    }
+
+    function truncateText(text, maxLength) {
+        if (text.length <= maxLength) return text;
+        return text.substring(0, maxLength - 3) + '...';
+    }
+
+    // Toggle password visibility
+    function togglePasswordVisibility(inputId, button) {
+        const input = document.getElementById(inputId);
+        const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+        input.setAttribute('type', type);
+        button.innerHTML = type === 'password' ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
+    }
+
+    // Handle student login
+    async function handleStudentLogin(e) {
+        e.preventDefault();
+        
+        const identifier = document.getElementById('student-identifier').value.trim();
+        const password = document.getElementById('student-password').value;
+        
+        if (!identifier || !password) {
+            showAlert('Please enter your credentials', 'error');
+            return;
+        }
+        
+        try {
+            // Show loading
+            const loginBtn = document.getElementById('student-login-btn');
+            const originalText = loginBtn.innerHTML;
+            loginBtn.innerHTML = '<div class="spinner"></div> Logging in...';
+            loginBtn.disabled = true;
+            
+            let email = identifier;
+            
+            // If identifier is not an email, search for user
+            if (!identifier.includes('@')) {
+                const userEmail = await findUserEmail(identifier);
+                if (!userEmail) {
+                    showAlert('User not found. Please check your credentials.', 'error');
+                    loginBtn.innerHTML = originalText;
+                    loginBtn.disabled = false;
+                    return;
+                }
+                email = userEmail;
+            }
+            
+            const result = await AuthManager.login(email, password);
+            
+            if (result.success) {
+                // Save successful login to history
+                LoginHistory.addLogin(identifier);
+                
+                showAlert('Login successful! Redirecting...', 'success');
+                
+                // Redirect to dashboard after delay
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1000);
+            } else {
+                showAlert('Login failed: ' + result.error, 'error');
+                loginBtn.innerHTML = originalText;
+                loginBtn.disabled = false;
+            }
+        } catch (error) {
+            showAlert('Login error: ' + error.message, 'error');
+            const loginBtn = document.getElementById('student-login-btn');
+            loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login as Student';
+            loginBtn.disabled = false;
+        }
+    }
+
+    // Find user email by identifier (reg number, phone, etc.)
+    async function findUserEmail(identifier) {
+        try {
+            // Search by registration number
+            let snapshot = await firebase.firestore().collection('users')
+                .where('regNumber', '==', identifier)
+                .limit(1)
+                .get();
+            
+            if (!snapshot.empty) {
+                return snapshot.docs[0].data().email;
+            }
+            
+            // Search by phone number
+            snapshot = await firebase.firestore().collection('users')
+                .where('phone', '==', identifier)
+                .limit(1)
+                .get();
+            
+            if (!snapshot.empty) {
+                return snapshot.docs[0].data().email;
+            }
+            
+            // Search by JAMB number if field exists
+            snapshot = await firebase.firestore().collection('users')
+                .where('jambNumber', '==', identifier)
+                .limit(1)
+                .get();
+            
+            if (!snapshot.empty) {
+                return snapshot.docs[0].data().email;
+            }
+            
+            return null;
+        } catch (error) {
+            console.error('Error finding user:', error);
+            return null;
+        }
+    }
+
+    // Handle admin login
+    async function handleAdminLogin(e) {
+        e.preventDefault();
+        
+        const email = document.getElementById('admin-email').value.trim();
+        const password = document.getElementById('admin-password').value;
+        
+        if (!email || !password) {
+            showAlert('Please enter your credentials', 'error');
+            return;
+        }
+        
+        if (!email.includes('@')) {
+            showAlert('Please enter a valid email address', 'error');
+            return;
+        }
+        
+        try {
+            // Show loading
+            const loginBtn = document.getElementById('admin-login-btn');
+            const originalText = loginBtn.innerHTML;
+            loginBtn.innerHTML = '<div class="spinner"></div> Logging in...';
+            loginBtn.disabled = true;
+            
+            const result = await AuthManager.login(email, password);
+            
+            if (result.success) {
+                // Check if user is admin
+                const userData = AuthManager.getUserData();
+                const adminRoles = ['Admin', 'Lecturer', 'Registrar', 'HOD', 'Dean'];
+                
+                if (userData && adminRoles.includes(userData.role)) {
+                    showAlert('Admin login successful! Redirecting...', 'success');
+                    
+                    // Redirect to admin dashboard
+                    setTimeout(() => {
+                        window.location.href = 'admin-dashboard.html';
+                    }, 1000);
+                } else {
+                    showAlert('Access denied. Admin privileges required.', 'error');
+                    await AuthManager.logout();
+                    loginBtn.innerHTML = originalText;
+                    loginBtn.disabled = false;
+                }
+            } else {
+                showAlert('Login failed: ' + result.error, 'error');
+                loginBtn.innerHTML = originalText;
+                loginBtn.disabled = false;
+            }
+        } catch (error) {
+            showAlert('Login error: ' + error.message, 'error');
+            const loginBtn = document.getElementById('admin-login-btn');
+            loginBtn.innerHTML = '<i class="fas fa-user-shield"></i> Login as Admin';
+            loginBtn.disabled = false;
+        }
+    }
+
+    // Show forgot password modal
+    function showForgotPasswordModal(type) {
+        const modal = document.getElementById('forgot-password-modal');
+        modal.classList.add('active');
+        
+        // Clear previous messages
+        document.getElementById('reset-alert').style.display = 'none';
+        document.getElementById('reset-identifier').value = '';
+        
+        // Update placeholder based on type
+        const placeholder = type === 'student' 
+            ? 'Enter your email, registration number, or phone' 
+            : 'Enter your admin email address';
+        document.getElementById('reset-identifier').placeholder = placeholder;
+    }
+
+    // Close forgot password modal
+    function closeForgotPasswordModal() {
+        const modal = document.getElementById('forgot-password-modal');
+        modal.classList.remove('active');
+    }
+
+    // Handle password reset
+    async function handlePasswordReset() {
+        const identifier = document.getElementById('reset-identifier').value.trim();
+        
+        if (!identifier) {
+            showResetAlert('Please enter your email, registration number, or phone', 'warning');
+            return;
+        }
+        
+        try {
+            // Show loading
+            const sendBtn = document.getElementById('send-reset-btn');
+            const originalText = sendBtn.innerHTML;
+            sendBtn.innerHTML = '<div class="spinner"></div> Sending...';
+            sendBtn.disabled = true;
+            
+            let email = identifier;
+            
+            // If identifier is not an email, search for user
+            if (!identifier.includes('@')) {
+                const userEmail = await findUserEmail(identifier);
+                if (!userEmail) {
+                    showResetAlert('User not found. Please check your identifier.', 'error');
+                    sendBtn.innerHTML = originalText;
+                    sendBtn.disabled = false;
+                    return;
+                }
+                email = userEmail;
+            }
+            
+            const result = await AuthManager.forgotPassword(email);
+            
+            if (result.success) {
+                showResetAlert('Password reset email sent! Check your inbox.', 'success');
+                
+                // Close modal after delay
+                setTimeout(() => {
+                    closeForgotPasswordModal();
+                }, 2000);
+            } else {
+                showResetAlert('Error: ' + result.error, 'error');
+                sendBtn.innerHTML = originalText;
+                sendBtn.disabled = false;
+            }
+        } catch (error) {
+            showResetAlert('Error: ' + error.message, 'error');
+            const sendBtn = document.getElementById('send-reset-btn');
+            sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Reset Link';
+            sendBtn.disabled = false;
+        }
+    }
+
+    // Show reset alert
+    function showResetAlert(message, type) {
+        const alertDiv = document.getElementById('reset-alert');
+        const messageSpan = document.getElementById('reset-message');
+        
+        alertDiv.className = `alert alert-${type}`;
+        messageSpan.textContent = message;
+        alertDiv.style.display = 'flex';
+    }
+
+    // Show activation modal
+    function showActivationModal() {
+        // Create activation modal
+        const modalId = 'activation-help-modal';
+        let modal = document.getElementById(modalId);
+        
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = modalId;
+            modal.innerHTML = `
+                <div class="activation-modal-overlay">
+                    <div class="activation-modal-content">
+                        <div class="activation-modal-header">
+                            <h3><i class="fas fa-key"></i> Need Activation Code?</h3>
+                            <button class="activation-close-modal">&times;</button>
+                        </div>
+                        <div class="activation-modal-body">
+                            <p>Activation codes are required for new student registration. You can get one by:</p>
+                            <ul>
+                                <li>Contacting the school administration office</li>
+                                <li>Visiting the ICT department</li>
+                                <li>Emailing: admission@ksitm.edu.ng</li>
+                                <li>Calling: +234 800 000 0000</li>
+                            </ul>
+                            <p>If you already have an activation code, proceed to registration.</p>
+                        </div>
+                        <div class="activation-modal-footer">
+                            <button class="activation-modal-btn activation-modal-btn-close">Close</button>
+                            <a href="signup.html" class="activation-modal-btn activation-modal-btn-register">
+                                <i class="fas fa-user-plus"></i> Go to Registration
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Add styles
+            const style = document.createElement('style');
+            style.textContent = `
+                #${modalId} .activation-modal-overlay {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0,0,0,0.7);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 10000;
+                    animation: fadeIn 0.3s ease;
+                }
+                #${modalId} .activation-modal-content {
+                    background: white;
+                    border-radius: 12px;
+                    width: 90%;
+                    max-width: 500px;
+                    overflow: hidden;
+                    box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+                    animation: slideUp 0.3s ease;
+                }
+                #${modalId} .activation-modal-header {
+                    background: linear-gradient(135deg, #4361ee, #3a0ca3);
+                    color: white;
+                    padding: 20px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+                #${modalId} .activation-modal-body {
+                    padding: 25px;
+                    color: #333;
+                    line-height: 1.6;
+                }
+                #${modalId} .activation-modal-body ul {
+                    margin: 15px 0;
+                    padding-left: 20px;
+                }
+                #${modalId} .activation-modal-body li {
+                    margin-bottom: 8px;
+                }
+                #${modalId} .activation-modal-footer {
+                    padding: 20px;
+                    border-top: 1px solid #eee;
+                    display: flex;
+                    justify-content: space-between;
+                    gap: 15px;
+                }
+                #${modalId} .activation-modal-btn {
+                    padding: 10px 20px;
+                    border: none;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-weight: 500;
+                    text-decoration: none;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                    transition: all 0.3s ease;
+                }
+                #${modalId} .activation-modal-btn-close {
+                    background: #f5f5f5;
+                    color: #333;
+                }
+                #${modalId} .activation-modal-btn-close:hover {
+                    background: #e0e0e0;
+                }
+                #${modalId} .activation-modal-btn-register {
+                    background: #4361ee;
+                    color: white;
+                }
+                #${modalId} .activation-modal-btn-register:hover {
+                    background: #3a0ca3;
+                }
+                #${modalId} .activation-close-modal {
+                    background: none;
+                    border: none;
+                    color: white;
+                    font-size: 24px;
+                    cursor: pointer;
+                    width: 30px;
+                    height: 30px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 50%;
+                    transition: background 0.3s ease;
+                }
+                #${modalId} .activation-close-modal:hover {
+                    background: rgba(255,255,255,0.2);
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes slideUp {
+                    from {
+                        opacity: 0;
+                        transform: translateY(30px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // Close handlers
+            const closeBtn = modal.querySelector('.activation-close-modal');
+            const closeBtn2 = modal.querySelector('.activation-modal-btn-close');
+            
+            const closeModal = () => {
+                modal.remove();
+                style.remove();
+            };
+            
+            closeBtn.onclick = closeModal;
+            closeBtn2.onclick = closeModal;
+            
+            // Close on overlay click
+            modal.querySelector('.activation-modal-overlay').onclick = (e) => {
+                if (e.target === modal.querySelector('.activation-modal-overlay')) {
+                    closeModal();
+                }
+            };
+        }
+        
+        modal.style.display = 'block';
+    }
+
+    // Show alert message
+    function showAlert(message, type = 'error') {
+        hideAlerts();
+        
+        const alertDiv = document.getElementById(`${type}-alert`);
+        const messageSpan = document.getElementById(`${type}-message`);
+        
+        if (alertDiv && messageSpan) {
+            alertDiv.style.display = 'flex';
+            messageSpan.textContent = message;
+            
+            // Auto-hide success messages
+            if (type === 'success') {
+                setTimeout(() => {
+                    alertDiv.style.display = 'none';
+                }, 3000);
+            }
+        }
+    }
+
+    // Hide all alerts
+    function hideAlerts() {
+        document.getElementById('error-alert').style.display = 'none';
+        document.getElementById('success-alert').style.display = 'none';
+    }
+</script>
+</body>
+</html>

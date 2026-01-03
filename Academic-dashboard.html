@@ -1,0 +1,1844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KSITM CTE - Student Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <!-- Shared CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .main {
+            background-color: white;
+            color: var(--text-color);
+            display: block;
+            flex-direction: column;
+            min-height: 100vh;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header Section */
+        .school-header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 20px 0;
+            border-radius: var(--radius-lg);
+            margin-bottom: 30px;
+            box-shadow: var(--shadow-md);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .school-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 30px 30px;
+            opacity: 0.1;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .school-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .school-logo {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 3px solid white;
+            overflow: hidden;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .school-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .school-text h1 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+            font-weight: 700;
+        }
+
+        .school-text p {
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255,255,255,0.1);
+            padding: 10px 20px;
+            border-radius: var(--radius-md);
+            backdrop-filter: blur(10px);
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .user-profile:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: white;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            overflow: hidden;
+        }
+
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .user-details h3 {
+            font-size: 1rem;
+            margin-bottom: 3px;
+        }
+
+        .user-details p {
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+
+        /* Image Marquee Section - Enhanced */
+        .image-marquee-container {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            padding: 20px 0;
+            margin: 0 0 30px 0;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            position: relative;
+            box-shadow: var(--shadow-md);
+        }
+
+        .image-marquee {
+            display: flex;
+            animation: marqueeScroll 40s linear infinite;
+            gap: 25px;
+            padding: 0 15px;
+        }
+
+        .marquee-item {
+            flex: 0 0 auto;
+            width: 320px;
+            height: 200px;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            perspective: 1000px;
+        }
+
+        .marquee-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: scale(1.1) rotateY(5deg);
+        }
+
+        .marquee-item:hover {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .marquee-item:hover img {
+            transform: scale(1.2) rotateY(0deg) rotate(3deg);
+            filter: brightness(1.2) contrast(1.1);
+        }
+
+        .marquee-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(146, 15, 9, 0.4), rgba(112, 94, 3, 0.4));
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            z-index: 1;
+        }
+
+        .marquee-item:hover::before {
+            opacity: 1;
+        }
+
+        .image-overlay {
+            position: absolute;
+            bottom: -100%;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.9));
+            color: white;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 2;
+            backdrop-filter: blur(5px);
+        }
+
+        .marquee-item:hover .image-overlay {
+            bottom: 0;
+        }
+
+        .image-overlay h4 {
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .image-overlay p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        @keyframes marqueeScroll {
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(calc(-320px * 7 - 25px * 7));
+            }
+        }
+
+        /* Pause animation on hover */
+        .image-marquee-container:hover .image-marquee {
+            animation-play-state: paused;
+        }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 25px;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            animation: fadeInUp 0.8s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.5s ease;
+        }
+
+        .card:hover::before {
+            transform: scaleX(1);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-header {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--light-gray);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            color: var(--primary);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* School Status */
+        .school-status-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: var(--primary-light);
+            border-radius: var(--radius-md);
+            margin-bottom: 20px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .status-open {
+            background-color: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        .status-closed {
+            background-color: var(--danger);
+            animation: none;
+        }
+
+        .status-break {
+            background-color: var(--warning);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(46, 204, 113, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+        }
+
+        /* Current Lecture */
+        .current-lecture {
+            background: linear-gradient(135deg, #4361ee, #3a0ca3);
+            color: white;
+            padding: 20px;
+            border-radius: var(--radius-md);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            animation: slideInLeft 0.5s ease;
+        }
+
+        .current-lecture-icon {
+            font-size: 2.5rem;
+            animation: bounce 3s infinite ease-in-out;
+        }
+
+        @keyframes bounce {
+            0%, 100% { 
+                transform: translateY(0) scale(1) rotate(0deg); 
+            }
+            25% { 
+                transform: translateY(-15px) scale(1.1) rotate(5deg); 
+            }
+            75% { 
+                transform: translateY(-5px) scale(0.95) rotate(-5deg); 
+            }
+        }
+
+        .lecture-info h4 {
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+
+        /* Recent Activities */
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: var(--light);
+            border-radius: var(--radius-md);
+            margin-bottom: 10px;
+            transition: var(--transition);
+            border-left: 4px solid var(--primary);
+            animation: slideInLeft 0.5s ease;
+        }
+
+        .activity-item:hover {
+            transform: translateX(8px);
+            background: var(--primary-light);
+            box-shadow: var(--shadow);
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .activity-content h4 {
+            font-size: 1rem;
+            margin-bottom: 5px;
+        }
+
+        .activity-time {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+
+        /* Notices */
+        .notice-container {
+            background-color: var(--primary-light);
+            padding: 18px;
+            border-radius: var(--radius-md);
+            margin-bottom: 15px;
+            border-left: 4px solid var(--primary);
+            animation: slideInRight 0.5s ease;
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .notice-container:hover {
+            transform: translateX(5px);
+            background-color: #4361ee15;
+        }
+
+        .notice-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: linear-gradient(to bottom, var(--primary), var(--secondary));
+        }
+
+        .notice-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .notice-date {
+            font-size: 0.85rem;
+            color: var(--gray);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Priority Badges */
+        .priority-high {
+            background-color: rgba(231, 76, 60, 0.2);
+            color: var(--danger);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .priority-medium {
+            background-color: rgba(243, 156, 18, 0.2);
+            color: var(--warning);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .priority-low {
+            background-color: rgba(46, 204, 113, 0.2);
+            color: var(--success);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Quick Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-card {
+            background: var(--light);
+            border-radius: var(--radius-md);
+            padding: 15px;
+            text-align: center;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.7s ease;
+        }
+
+        .stat-card:hover::before {
+            left: 100%;
+        }
+
+        .stat-card:hover {
+            background: var(--primary-light);
+            transform: translateY(-5px);
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            background: var(--primary);
+            color: white;
+            font-size: 1.2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: var(--transition);
+            animation: statIconFloat 3s infinite ease-in-out;
+        }
+
+        @keyframes statIconFloat {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-5px) scale(1.05); }
+        }
+
+        .stat-card:hover .stat-icon {
+            animation: statIconRotate 0.5s ease-in-out, statIconFloat 3s infinite ease-in-out;
+        }
+
+        @keyframes statIconRotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 5px 0;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+
+        /* Timetable */
+        .timetable-container {
+            margin-top: 15px;
+        }
+
+        .timetable-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--light-gray);
+            transition: var(--transition);
+        }
+
+        .timetable-row:hover {
+            background-color: var(--primary-light);
+            border-radius: var(--radius-sm);
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        .timetable-row:last-child {
+            border-bottom: none;
+        }
+
+        .timetable-course {
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .timetable-time {
+            color: var(--gray);
+            font-weight: 500;
+        }
+
+        .timetable-venue {
+            background: var(--light);
+            padding: 3px 8px;
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+        }
+
+        /* Academic Calendar */
+        .calendar-event {
+            background: var(--light);
+            padding: 15px;
+            border-radius: var(--radius-md);
+            margin-bottom: 12px;
+            border-left: 3px solid var(--primary);
+            transition: var(--transition);
+        }
+
+        .calendar-event:hover {
+            background: var(--primary-light);
+            transform: translateX(5px);
+        }
+
+        .event-title {
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: var(--primary);
+        }
+
+        .event-date {
+            font-size: 0.85rem;
+            color: var(--gray);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Quick Actions */
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .action-card {
+            background: var(--light);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            text-align: center;
+            transition: var(--transition);
+            text-decoration: none;
+            color: var(--text-color);
+            display: block;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.7s ease;
+        }
+
+        .action-card:hover::before {
+            left: 100%;
+        }
+
+        .action-card:hover {
+            background: var(--primary-light);
+            transform: translateY(-5px);
+            color: var(--primary);
+        }
+
+        .action-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            background: var(--primary);
+            color: white;
+            font-size: 1.5rem;
+            transition: var(--transition);
+        }
+
+        .action-card:hover .action-icon {
+            background: var(--secondary);
+            transform: scale(1.1);
+        }
+
+        .action-label {
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        /* Footer */
+        .footer {
+            background: linear-gradient(135deg, var(--dark), #2c3e50);
+            color: white;
+            padding: 30px 0;
+            margin-top: 40px;
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        }
+
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 30px;
+        }
+
+        .footer-links a {
+            color: white;
+            text-decoration: none;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary-light);
+            transform: translateX(5px);
+        }
+
+        .footer-copyright {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.7);
+        }
+
+        /* Loading Spinner */
+        .loading-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 300px;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid var(--light-gray);
+            border-left: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+            
+            .school-info {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .action-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .footer-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .footer-links {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            
+            .timetable-row {
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            .marquee-item {
+                width: 280px;
+                height: 180px;
+            }
+            
+            @keyframes marqueeScroll {
+                0% {
+                    transform: translateX(0);
+                }
+                100% {
+                    transform: translateX(calc(-280px * 7 - 25px * 7));
+                }
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+            
+            .marquee-item {
+                width: 250px;
+                height: 160px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main">
+        <div class="container">
+            <!-- Header Section -->
+            <header class="school-header">
+                <div class="header-content">
+                    <div class="school-info">
+                        <div class="school-logo" id="school-logo">
+                            <!-- Logo will be loaded here -->
+                        </div>
+                        <div class="school-text">
+                            <h1 id="school-name">KSITM CTE</h1>
+                            <p id="school-slogan">College of Technical Education</p>
+                        </div>
+                    </div>
+                    <div class="user-profile" id="user-profile">
+                        <div class="user-avatar" id="user-avatar">
+                            <!-- Avatar will be loaded here -->
+                        </div>
+                        <div class="user-details">
+                            <h3 id="user-name">Loading...</h3>
+                            <p id="user-role">Student</p>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Image Marquee Section -->
+            <div class="image-marquee-container">
+                <div class="image-marquee" id="image-marquee">
+                    <!-- Images will be loaded here dynamically -->
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loading-state" class="loading-container">
+                <div class="loading-spinner"></div>
+                <p style="margin-top: 15px; color: var(--primary); font-weight: 500;">Loading Dashboard...</p>
+            </div>
+
+            <!-- Dashboard Content -->
+            <div id="dashboard-content" style="display: none;">
+                <!-- School Status & Current Lecture -->
+                <div class="dashboard-grid">
+                    <!-- School Status -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title"><i class="fas fa-school"></i> School Status</h2>
+                        </div>
+                        <div id="school-status-container">
+                            <!-- Dynamic content will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Current Lecture -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title"><i class="fas fa-chalkboard-teacher"></i> Current Lecture</h2>
+                        </div>
+                        <div id="current-lecture-container">
+                            <!-- Dynamic content will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title"><i class="fas fa-chart-bar"></i> Quick Stats</h2>
+                        </div>
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-book"></i>
+                                </div>
+                                <div class="stat-value" id="total-courses">0</div>
+                                <div class="stat-label">Enrolled Courses</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-tasks"></i>
+                                </div>
+                                <div class="stat-value" id="pending-assignments">0</div>
+                                <div class="stat-label">Pending Assignments</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-clipboard-check"></i>
+                                </div>
+                                <div class="stat-value" id="upcoming-tests">0</div>
+                                <div class="stat-label">Upcoming Tests</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-calendar-check"></i>
+                                </div>
+                                <div class="stat-value" id="attendance-rate">0%</div>
+                                <div class="stat-label">Attendance Rate</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Today's Timetable -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title"><i class="fas fa-calendar-day"></i> Today's Schedule</h2>
+                            <span id="current-date" class="timetable-time"></span>
+                        </div>
+                        <div class="timetable-container" id="timetable-container">
+                            <!-- Timetable will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activities & Notifications -->
+                <div class="dashboard-grid">
+                    <!-- Recent Assignments & Tests -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title"><i class="fas fa-history"></i> Recent Activities</h2>
+                        </div>
+                        <div id="activities-container">
+                            <!-- Activities will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Important Notifications -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title"><i class="fas fa-bell"></i> Important Notifications</h2>
+                        </div>
+                        <div id="notifications-container">
+                            <!-- Notifications will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions & Academic Info -->
+                <div class="dashboard-grid">
+                    <!-- Quick Actions -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title"><i class="fas fa-bolt"></i> Quick Actions</h2>
+                        </div>
+                        <div class="action-grid">
+                            <a href="profile.html" class="action-card">
+                                <div class="action-icon">
+                                    <i class="fas fa-user-edit"></i>
+                                </div>
+                                <div class="action-label">Edit Profile</div>
+                            </a>
+                            <a href="courses.html" class="action-card">
+                                <div class="action-icon">
+                                    <i class="fas fa-book-open"></i>
+                                </div>
+                                <div class="action-label">My Courses</div>
+                            </a>
+                            <a href="results.html" class="action-card">
+                                <div class="action-icon">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <div class="action-label">View Results</div>
+                            </a>
+                            <a href="timetable.html" class="action-card">
+                                <div class="action-icon">
+                                    <i class="fas fa-calendar"></i>
+                                </div>
+                                <div class="action-label">Full Timetable</div>
+                            </a>
+                            <a href="assignments.html" class="action-card">
+                                <div class="action-icon">
+                                    <i class="fas fa-file-alt"></i>
+                                </div>
+                                <div class="action-label">Assignments</div>
+                            </a>
+                            <a href="library.html" class="action-card">
+                                <div class="action-icon">
+                                    <i class="fas fa-book-reader"></i>
+                                </div>
+                                <div class="action-label">Library</div>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Academic Information -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title"><i class="fas fa-graduation-cap"></i> Academic Information</h2>
+                        </div>
+                        <div id="academic-info-container">
+                            <!-- Academic info will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upcoming Events -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title"><i class="fas fa-calendar-alt"></i> Upcoming Events</h2>
+                    </div>
+                    <div id="calendar-container">
+                        <!-- Calendar events will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-container">
+                <div class="footer-content">
+                    <div class="footer-brand">
+                        <h3 style="color: white;" id="footer-school-name">KSITM CTE</h3>
+                        <p>College of Technical Education - Student Portal</p>
+                    </div>
+                    <div class="footer-links">
+                        <a href="contact.html">
+                            <i class="fas fa-envelope"></i> Contact Support
+                        </a>
+                        <a href="faq.html">
+                            <i class="fas fa-question-circle"></i> FAQ
+                        </a>
+                        <a href="privacy.html">
+                            <i class="fas fa-shield-alt"></i> Privacy Policy
+                        </a>
+                    </div>
+                </div>
+                <div class="footer-copyright">
+                    <p>&copy; 2025 KSITM College of Technical Education. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include school app JS -->
+    <script src="js/school-app.js"></script>
+    
+    <!-- School Dashboard Script -->
+    <script>
+        // Dashboard data
+        let userData = null;
+        let courses = [];
+        let assignments = [];
+        let tests = [];
+        let notifications = [];
+        let schoolConfig = null;
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', async function() {
+            await initializeDashboard();
+        });
+
+        async function initializeDashboard() {
+            try {
+                // Check authentication
+                const user = await checkAuth();
+                if (!user) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
+                // Load all dashboard data
+                await loadDashboardData();
+                
+                // Hide loading and show content
+                document.getElementById('loading-state').style.display = 'none';
+                document.getElementById('dashboard-content').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Dashboard initialization error:', error);
+                window.SchoolApp.SchoolUtils.showToast('Error loading dashboard', 'error');
+            }
+        }
+
+        async function checkAuth() {
+            return new Promise((resolve) => {
+                window.SchoolApp.auth.onAuthStateChanged((user) => {
+                    resolve(user);
+                });
+            });
+        }
+
+        async function loadDashboardData() {
+            try {
+                const user = await checkAuth();
+                if (!user) return;
+
+                // Load user data
+                const userDoc = await window.SchoolApp.db.collection('users').doc(user.uid).get();
+                if (userDoc.exists) {
+                    userData = userDoc.data();
+                    loadUserProfile();
+                }
+
+                // Load school config
+                const configDoc = await window.SchoolApp.db.collection('schoolConfig').doc('main').get();
+                if (configDoc.exists) {
+                    schoolConfig = configDoc.data();
+                    loadSchoolInfo();
+                }
+
+                // Load all other data
+                await Promise.all([
+                    loadImageMarquee(),
+                    loadSchoolStatus(),
+                    loadCoursesAndTimetable(),
+                    loadAssignmentsAndTests(),
+                    loadNotifications(),
+                    loadCalendarEvents(),
+                    loadAcademicInfo()
+                ]);
+                
+                // Update stats
+                updateStats();
+                
+                // Update current date
+                updateCurrentDate();
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+                window.SchoolApp.SchoolUtils.showToast('Error loading dashboard data', 'error');
+            }
+        }
+
+        function loadUserProfile() {
+            if (!userData) return;
+            
+            // Update user name
+            document.getElementById('user-name').textContent = userData.fullName || userData.email || 'Student';
+            document.getElementById('user-role').textContent = userData.role || 'Student';
+            
+            // Update avatar
+            const avatarContainer = document.getElementById('user-avatar');
+            if (userData.profilePicture) {
+                avatarContainer.innerHTML = `<img src="${userData.profilePicture}" alt="Profile">`;
+            } else {
+                const names = (userData.fullName || 'Student').split(' ');
+                const initials = names[0].charAt(0) + (names.length > 1 ? names[names.length - 1].charAt(0) : '');
+                avatarContainer.textContent = initials;
+            }
+        }
+
+        function loadSchoolInfo() {
+            if (!schoolConfig) return;
+            
+            // Update school info
+            document.getElementById('school-name').textContent = schoolConfig.name || 'KSITM CTE';
+            document.getElementById('school-slogan').textContent = schoolConfig.slogan || 'College of Technical Education';
+            document.getElementById('footer-school-name').textContent = schoolConfig.name || 'KSITM CTE';
+            
+            // Update logo
+            const logoContainer = document.getElementById('school-logo');
+            if (schoolConfig.logo) {
+                logoContainer.innerHTML = `<img src="${schoolConfig.logo}" alt="School Logo">`;
+            } else {
+                logoContainer.innerHTML = '<i class="fas fa-graduation-cap"></i>';
+                logoContainer.style.fontSize = '2rem';
+            }
+        }
+
+        function loadImageMarquee() {
+            const marqueeContainer = document.getElementById('image-marquee');
+            const images = [
+                {
+                    url: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
+                    title: 'Campus View',
+                    description: 'Beautiful campus environment'
+                },
+                {
+                    url: 'https://images.unsplash.com/photo-1562774053-701939374585?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
+                    title: 'Library',
+                    description: 'State-of-the-art learning facility'
+                },
+                {
+                    url: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
+                    title: 'Laboratory',
+                    description: 'Modern science labs'
+                },
+                {
+                    url: 'https://images.unsplash.com/photo-1542744095-fcf48d80b0fd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
+                    title: 'Classroom',
+                    description: 'Interactive learning spaces'
+                },
+                {
+                    url: 'https://images.unsplash.com/photo-1524178234883-043d5c3f3cf4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
+                    title: 'Cafeteria',
+                    description: 'Student dining area'
+                },
+                {
+                    url: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
+                    title: 'Sports Complex',
+                    description: 'Athletic facilities'
+                },
+                {
+                    url: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
+                    title: 'Auditorium',
+                    description: 'Events and seminars'
+                }
+            ];
+
+            // Add 7 copies for smooth continuous scroll
+            for (let i = 0; i < 7; i++) {
+                images.forEach(img => {
+                    const marqueeItem = document.createElement('div');
+                    marqueeItem.className = 'marquee-item';
+                    marqueeItem.innerHTML = `
+                        <img src="${img.url}" alt="${img.title}">
+                        <div class="image-overlay">
+                            <h4>${img.title}</h4>
+                            <p>${img.description}</p>
+                        </div>
+                    `;
+                    marqueeContainer.appendChild(marqueeItem);
+                });
+            }
+        }
+
+        async function loadSchoolStatus() {
+            try {
+                let status = 'open';
+                let message = 'School is OPEN';
+                let semester = 'Loading semester information...';
+                let colorClass = 'status-open';
+
+                if (schoolConfig) {
+                    // Check if school is open based on school config
+                    if (schoolConfig.isOpen !== undefined) {
+                        status = schoolConfig.isOpen ? 'open' : 'closed';
+                        message = schoolConfig.isOpen ? 'School is OPEN' : 'School is CLOSED';
+                        colorClass = schoolConfig.isOpen ? 'status-open' : 'status-closed';
+                        
+                        if (schoolConfig.isBreak) {
+                            status = 'break';
+                            message = 'School is on BREAK';
+                            colorClass = 'status-break';
+                        }
+                    }
+                    
+                    if (schoolConfig.currentSemester) {
+                        semester = `Semester: ${schoolConfig.currentSemester}`;
+                    }
+                }
+
+                const statusHTML = `
+                    <div class="school-status-container">
+                        <div class="status-dot ${colorClass}"></div>
+                        <div>
+                            <h3><strong>${message}</strong></h3>
+                            <p id="current-semester">${semester}</p>
+                            ${userData && userData.department ? `<p id="user-department" style="margin-top: 5px;"><strong>Department:</strong> ${userData.department}</p>` : ''}
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('school-status-container').innerHTML = statusHTML;
+            } catch (error) {
+                console.error('Error loading school status:', error);
+            }
+        }
+
+        async function loadCoursesAndTimetable() {
+            try {
+                const db = window.SchoolApp.db;
+                const userDepartment = userData?.department;
+                
+                if (!userDepartment) return;
+
+                // Load courses for the user's department
+                const coursesSnapshot = await db.collection('Departments')
+                    .doc(userDepartment)
+                    .collection('Courses')
+                    .where('status', '==', 'active')
+                    .get();
+                
+                courses = [];
+                coursesSnapshot.forEach(doc => {
+                    courses.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+
+                // Update total courses count
+                document.getElementById('total-courses').textContent = courses.length;
+
+                // Load today's timetable
+                const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+                const todayCourses = courses.filter(course => course.lectureDay === today);
+                
+                displayTimetable(todayCourses);
+                checkCurrentLecture(todayCourses);
+            } catch (error) {
+                console.error('Error loading courses:', error);
+            }
+        }
+
+        function displayTimetable(todayCourses) {
+            const container = document.getElementById('timetable-container');
+            
+            if (todayCourses.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--gray); padding: 20px;">No classes scheduled for today</p>';
+                return;
+            }
+
+            // Sort courses by start time
+            todayCourses.sort((a, b) => {
+                return convertTimeToMinutes(a.startTime) - convertTimeToMinutes(b.startTime);
+            });
+
+            let timetableHTML = '';
+            todayCourses.forEach(course => {
+                const isCurrent = checkIfCurrentLecture(course);
+                const rowClass = isCurrent ? 'style="background: var(--primary-light);"' : '';
+                
+                timetableHTML += `
+                    <div class="timetable-row" ${rowClass}>
+                        <div class="timetable-course">
+                            <i class="fas fa-book"></i>
+                            ${course.courseCode}
+                        </div>
+                        <div class="timetable-time">
+                            ${formatTime(course.startTime)} - ${formatTime(course.endTime)}
+                        </div>
+                        <div class="timetable-venue">
+                            ${course.lectureVenue || 'TBA'}
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = timetableHTML;
+        }
+
+        function checkCurrentLecture(todayCourses) {
+            const now = new Date();
+            const currentHour = now.getHours();
+            const currentMinute = now.getMinutes();
+            const currentTime = currentHour * 60 + currentMinute;
+
+            let currentLecture = null;
+
+            todayCourses.forEach(course => {
+                const startTime = convertTimeToMinutes(course.startTime);
+                const endTime = convertTimeToMinutes(course.endTime);
+                
+                if (currentTime >= startTime && currentTime <= endTime) {
+                    currentLecture = course;
+                }
+            });
+
+            displayCurrentLecture(currentLecture);
+        }
+
+        function checkIfCurrentLecture(course) {
+            const now = new Date();
+            const currentHour = now.getHours();
+            const currentMinute = now.getMinutes();
+            const currentTime = currentHour * 60 + currentMinute;
+            
+            const startTime = convertTimeToMinutes(course.startTime);
+            const endTime = convertTimeToMinutes(course.endTime);
+            
+            return currentTime >= startTime && currentTime <= endTime;
+        }
+
+        function displayCurrentLecture(lecture) {
+            const container = document.getElementById('current-lecture-container');
+            
+            if (!lecture) {
+                container.innerHTML = `
+                    <div class="current-lecture">
+                        <div class="current-lecture-icon">
+                            <i class="fas fa-coffee"></i>
+                        </div>
+                        <div class="lecture-info">
+                            <h4>No Lecture Currently</h4>
+                            <p>Enjoy your free time or check upcoming classes</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="current-lecture">
+                    <div class="current-lecture-icon">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                    </div>
+                    <div class="lecture-info">
+                        <h4>${lecture.courseName} (${lecture.courseCode})</h4>
+                        <p><strong>Time:</strong> ${formatTime(lecture.startTime)} - ${formatTime(lecture.endTime)}</p>
+                        <p><strong>Venue:</strong> ${lecture.lectureVenue || 'TBA'}</p>
+                        ${lecture.lecturerName ? `<p><strong>Lecturer:</strong> ${lecture.lecturerName}</p>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        async function loadAssignmentsAndTests() {
+            try {
+                const db = window.SchoolApp.db;
+                const userDepartment = userData?.department;
+                
+                if (!userDepartment) return;
+
+                assignments = [];
+                tests = [];
+
+                // Load assignments from all courses
+                for (const course of courses) {
+                    const assignmentsSnapshot = await db.collection('Departments')
+                        .doc(userDepartment)
+                        .collection('Courses')
+                        .doc(course.id)
+                        .collection('Assignments')
+                        .where('status', '==', 'active')
+                        .get();
+                    
+                    assignmentsSnapshot.forEach(doc => {
+                        assignments.push({
+                            courseId: course.id,
+                            courseCode: course.courseCode,
+                            courseName: course.courseName,
+                            ...doc.data()
+                        });
+                    });
+
+                    // Load tests
+                    const testsSnapshot = await db.collection('Departments')
+                        .doc(userDepartment)
+                        .collection('Courses')
+                        .doc(course.id)
+                        .collection('Tests')
+                        .where('status', '==', 'active')
+                        .get();
+                    
+                    testsSnapshot.forEach(doc => {
+                        tests.push({
+                            courseId: course.id,
+                            courseCode: course.courseCode,
+                            courseName: course.courseName,
+                            ...doc.data()
+                        });
+                    });
+                }
+
+                // Sort assignments by due date (soonest first)
+                assignments.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+                
+                // Sort tests by date (soonest first)
+                tests.sort((a, b) => new Date(a.testDate) - new Date(b.testDate));
+
+                displayRecentActivities();
+            } catch (error) {
+                console.error('Error loading assignments and tests:', error);
+            }
+        }
+
+        function displayRecentActivities() {
+            const container = document.getElementById('activities-container');
+            
+            const now = new Date();
+            const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            
+            // Get recent assignments (last 7 days)
+            const recentAssignments = assignments
+                .filter(a => new Date(a.dueDate) >= sevenDaysAgo)
+                .slice(0, 5);
+            
+            // Get recent tests (next 7 days)
+            const upcomingTests = tests
+                .filter(t => new Date(t.testDate) >= now && new Date(t.testDate) <= new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000))
+                .slice(0, 3);
+
+            if (recentAssignments.length === 0 && upcomingTests.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--gray); padding: 20px;">No recent activities</p>';
+                return;
+            }
+
+            let activitiesHTML = '';
+            
+            // Add assignments
+            recentAssignments.forEach(assignment => {
+                const dueDate = new Date(assignment.dueDate);
+                const isOverdue = dueDate < now;
+                const daysDiff = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
+                
+                activitiesHTML += `
+                    <div class="activity-item">
+                        <div class="activity-icon" style="background: ${isOverdue ? 'var(--danger)' : 'var(--primary)'}">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <div class="activity-content">
+                            <h4>${assignment.title}</h4>
+                            <p class="activity-time">
+                                ${assignment.courseCode} • Due: ${formatDate(assignment.dueDate)}
+                                ${isOverdue ? '<span class="badge badge-danger" style="margin-left: 10px;">OVERDUE</span>' : ''}
+                            </p>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Add tests
+            upcomingTests.forEach(test => {
+                activitiesHTML += `
+                    <div class="activity-item">
+                        <div class="activity-icon" style="background: var(--warning)">
+                            <i class="fas fa-clipboard-check"></i>
+                        </div>
+                        <div class="activity-content">
+                            <h4>${test.title}</h4>
+                            <p class="activity-time">
+                                ${test.courseCode} • ${formatDate(test.testDate)}
+                            </p>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = activitiesHTML;
+        }
+
+        async function loadNotifications() {
+            try {
+                const db = window.SchoolApp.db;
+                
+                // Load general notifications
+                const notificationsSnapshot = await db.collection('notifications')
+                    .where('status', '==', 'active')
+                    .orderBy('createdAt', 'desc')
+                    .limit(5)
+                    .get();
+                
+                notifications = [];
+                notificationsSnapshot.forEach(doc => {
+                    notifications.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+
+                displayNotifications();
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+            }
+        }
+
+        function displayNotifications() {
+            const container = document.getElementById('notifications-container');
+            
+            if (notifications.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--gray); padding: 20px;">No new notifications</p>';
+                return;
+            }
+
+            let notificationsHTML = '';
+            notifications.forEach(notification => {
+                const priorityClass = notification.priority || 'low';
+                const priorityText = priorityClass.charAt(0).toUpperCase() + priorityClass.slice(1);
+                
+                notificationsHTML += `
+                    <div class="notice-container">
+                        <div class="notice-title">
+                            <i class="fas fa-bullhorn"></i>
+                            ${notification.title}
+                            <span class="priority-${priorityClass}">
+                                <i class="fas fa-exclamation-circle"></i> ${priorityText}
+                            </span>
+                        </div>
+                        <div class="notice-date">
+                            <i class="far fa-clock"></i> ${formatDate(notification.createdAt)}
+                        </div>
+                        <p style="margin: 0; color: var(--dark);">${notification.message}</p>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = notificationsHTML;
+        }
+
+        async function loadAcademicInfo() {
+            try {
+                if (!userData) return;
+
+                const container = document.getElementById('academic-info-container');
+                let html = '<div style="display: grid; gap: 15px;">';
+
+                if (userData.department) {
+                    html += `
+                        <div style="padding: 15px; background: var(--primary-light); border-radius: var(--radius-md); border-left: 4px solid var(--primary);">
+                            <h4 style="margin: 0 0 10px 0; color: var(--primary);"><i class="fas fa-building"></i> Department</h4>
+                            <p style="margin: 0; font-size: 1.1rem; font-weight: 500;">${userData.department}</p>
+                        </div>
+                    `;
+                }
+
+                if (userData.academicYear) {
+                    html += `
+                        <div style="padding: 15px; background: var(--primary-light); border-radius: var(--radius-md); border-left: 4px solid var(--secondary);">
+                            <h4 style="margin: 0 0 10px 0; color: var(--primary);"><i class="fas fa-calendar-alt"></i> Academic Year</h4>
+                            <p style="margin: 0; font-size: 1.1rem; font-weight: 500;">${userData.academicYear}</p>
+                        </div>
+                    `;
+                }
+
+                if (userData.enrollmentDate) {
+                    html += `
+                        <div style="padding: 15px; background: var(--primary-light); border-radius: var(--radius-md); border-left: 4px solid var(--success);">
+                            <h4 style="margin: 0 0 10px 0; color: var(--primary);"><i class="fas fa-user-graduate"></i> Enrollment Date</h4>
+                            <p style="margin: 0; font-size: 1.1rem; font-weight: 500;">${formatDate(userData.enrollmentDate)}</p>
+                        </div>
+                    `;
+                }
+
+                if (userData.studentId) {
+                    html += `
+                        <div style="padding: 15px; background: var(--primary-light); border-radius: var(--radius-md); border-left: 4px solid var(--warning);">
+                            <h4 style="margin: 0 0 10px 0; color: var(--primary);"><i class="fas fa-id-card"></i> Student ID</h4>
+                            <p style="margin: 0; font-size: 1.1rem; font-weight: 500;">${userData.studentId}</p>
+                        </div>
+                    `;
+                }
+
+                html += '</div>';
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading academic info:', error);
+            }
+        }
+
+        async function loadCalendarEvents() {
+            try {
+                const db = window.SchoolApp.db;
+                const now = new Date();
+                const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
+
+                const eventsSnapshot = await db.collection('events')
+                    .where('eventDate', '>=', now.toISOString())
+                    .where('eventDate', '<=', nextMonth.toISOString())
+                    .orderBy('eventDate')
+                    .limit(5)
+                    .get();
+
+                const container = document.getElementById('calendar-container');
+                
+                if (eventsSnapshot.empty) {
+                    container.innerHTML = '<p style="text-align: center; color: var(--gray); padding: 20px;">No upcoming events</p>';
+                    return;
+                }
+
+                let eventsHTML = '';
+                eventsSnapshot.forEach(doc => {
+                    const event = doc.data();
+                    eventsHTML += `
+                        <div class="calendar-event">
+                            <div class="event-title">
+                                <i class="fas fa-calendar-day"></i> ${event.title}
+                            </div>
+                            <div class="event-date">
+                                <i class="far fa-clock"></i> ${formatDate(event.eventDate)}
+                                ${event.venue ? `<span style="margin-left: 15px;"><i class="fas fa-map-marker-alt"></i> ${event.venue}</span>` : ''}
+                            </div>
+                            ${event.description ? `<p style="margin: 10px 0 0 0; color: var(--gray); font-size: 0.9rem;">${event.description}</p>` : ''}
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = eventsHTML;
+            } catch (error) {
+                console.error('Error loading calendar events:', error);
+            }
+        }
+
+        function updateStats() {
+            // Count pending assignments (not submitted, due in future)
+            const now = new Date();
+            const pendingAssignments = assignments.filter(a => {
+                return new Date(a.dueDate) > now && (!a.submitted || a.submitted === false);
+            }).length;
+
+            // Count upcoming tests (next 7 days)
+            const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+            const upcomingTests = tests.filter(t => {
+                const testDate = new Date(t.testDate);
+                return testDate >= now && testDate <= sevenDaysFromNow;
+            }).length;
+
+            document.getElementById('pending-assignments').textContent = pendingAssignments;
+            document.getElementById('upcoming-tests').textContent = upcomingTests;
+            
+            // Calculate attendance rate (mock data - replace with actual data)
+            const attendanceRate = Math.floor(Math.random() * 20) + 80; // Random between 80-100%
+            document.getElementById('attendance-rate').textContent = `${attendanceRate}%`;
+        }
+
+        function updateCurrentDate() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('current-date').textContent = now.toLocaleDateString('en-US', options);
+        }
+
+        // Utility functions
+        function formatTime(timeString) {
+            if (!timeString) return '';
+            const [hours, minutes] = timeString.split(':');
+            const hour = parseInt(hours);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const hour12 = hour % 12 || 12;
+            return `${hour12}:${minutes} ${ampm}`;
+        }
+
+        function convertTimeToMinutes(timeString) {
+            if (!timeString) return 0;
+            const [hours, minutes] = timeString.split(':');
+            return parseInt(hours) * 60 + parseInt(minutes);
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduPortal - Learning Platform</title>
+    
+    <!-- Firebase App and Auth SDKs (required for Header.js) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header container (will be populated by Header.js) -->
+    <div id="header"></div>
+    
+    <!-- Main content area with iframe container -->
+    <main class="iframe-container">
+        <!-- Iframes for different pages with lazy loading -->
+        <iframe id="iframe-1" class="iframe-page" src="about:blank" data-loaded="false"></iframe>
+        <iframe id="iframe-2" class="iframe-page" src="about:blank" data-loaded="false"></iframe>
+        <iframe id="iframe-3" class="iframe-page" src="about:blank" data-loaded="false"></iframe>
+        <iframe id="iframe-4" class="iframe-page" src="about:blank" data-loaded="false"></iframe>
+        <iframe id="iframe-5" class="iframe-page" src="about:blank" data-loaded="false"></iframe>
+    </main>
+    
+    <!-- Include the Header.js script -->
+    <script src="js/Header.js"></script>
+</body>
+</html>

@@ -1,0 +1,2037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Configuration - KSITM CTE Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <link rel="stylesheet" href="css/style.css">
+<style>
+    /* School Config Page Specific Styles */
+    .main-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-md);
+        overflow: hidden;
+    }
+
+    .header {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        padding: 25px 30px;
+    }
+
+    .header h1 {
+        font-size: 2rem;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .header p {
+        opacity: 0.9;
+        font-size: 1rem;
+    }
+
+    .content {
+        padding: 30px;
+    }
+
+    .config-section {
+        background: var(--primary-light);
+        border-radius: var(--radius-lg);
+        padding: 25px;
+        margin-bottom: 30px;
+        box-shadow: var(--shadow);
+    }
+
+    .config-section h2 {
+        color: var(--primary);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.5rem;
+        border-bottom: 2px solid var(--primary);
+        padding-bottom: 10px;
+    }
+
+    /* Logo Preview */
+    .logo-preview-container {
+        display: flex;
+        align-items: flex-start;
+        gap: 20px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .logo-preview {
+        width: 120px;
+        height: 120px;
+        border: 2px dashed var(--gray);
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        background-color: var(--light-gray);
+    }
+
+    .logo-preview img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+
+    .logo-input {
+        flex: 1;
+        min-width: 300px;
+    }
+
+    .logo-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        color: var(--gray);
+    }
+
+    .logo-placeholder i {
+        font-size: 2rem;
+    }
+
+    /* Time and Session Fields */
+    .time-session-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .session-dates {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+        padding: 15px;
+        background-color: rgba(255, 255, 255, 0.5);
+        border-radius: var(--radius-md);
+    }
+
+    /* Array Input Styles */
+    .array-input {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+    }
+
+    .array-input input {
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .array-list {
+        margin-top: 15px;
+        padding: 15px;
+        background: white;
+        border-radius: var(--radius-md);
+        border: 1px solid #dee2e6;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .array-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 15px;
+        border-bottom: 1px solid #eee;
+        transition: var(--transition);
+        background: white;
+        border-radius: var(--radius-sm);
+        margin-bottom: 8px;
+    }
+
+    .array-item:hover {
+        background-color: #f8f9fa;
+        transform: translateX(5px);
+    }
+
+    .array-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+
+    .array-item-content {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 1;
+    }
+
+    .array-item-index {
+        background-color: var(--primary);
+        color: white;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+        font-weight: bold;
+    }
+
+    .array-item-actions {
+        display: flex;
+        gap: 5px;
+    }
+
+    /* Venue Specific Styles */
+    .venue-details {
+        margin-top: 5px;
+        font-size: 0.85rem;
+        color: var(--gray);
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .venue-capacity {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: var(--light-gray);
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+    }
+
+    .venue-type {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: var(--info-light);
+        color: var(--info);
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+    }
+
+    .venue-availability {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+    }
+
+    .venue-available {
+        background: var(--success-light);
+        color: var(--success);
+    }
+
+    .venue-unavailable {
+        background: var(--danger-light);
+        color: var(--danger);
+    }
+
+    /* Venue Form Fields */
+    .venue-fields {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 15px;
+        padding: 15px;
+        background: rgba(255, 255, 255, 0.7);
+        border-radius: var(--radius-md);
+        border: 1px dashed var(--gray);
+    }
+
+    .form-group-sm {
+        margin-bottom: 0;
+    }
+
+    .form-group-sm label {
+        font-size: 0.85rem;
+        margin-bottom: 5px;
+        display: block;
+        color: var(--dark);
+    }
+
+    /* Venue Status Badge */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .status-active {
+        background-color: var(--success-light);
+        color: var(--success);
+    }
+
+    .status-inactive {
+        background-color: var(--danger-light);
+        color: var(--danger);
+    }
+
+    .status-maintenance {
+        background-color: var(--warning-light);
+        color: var(--warning);
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #dee2e6;
+        flex-wrap: wrap;
+    }
+
+    .empty-state {
+        text-align: center;
+        color: var(--gray);
+        padding: 40px 20px;
+    }
+
+    .empty-state i {
+        font-size: 2.5rem;
+        margin-bottom: 15px;
+        opacity: 0.5;
+    }
+
+    .empty-state p {
+        font-size: 1rem;
+    }
+
+    /* Loading Overlay */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.95);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        transition: var(--transition);
+    }
+
+    .loading-spinner {
+        width: 60px;
+        height: 60px;
+        border: 5px solid var(--light-gray);
+        border-top: 5px solid var(--primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 20px;
+    }
+
+    .loading-text {
+        font-size: 1.2rem;
+        color: var(--dark);
+        font-weight: 500;
+    }
+
+    /* Edit Modal */
+    .edit-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10001;
+        opacity: 0;
+        visibility: hidden;
+        transition: var(--transition);
+    }
+
+    .edit-modal.active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .edit-modal-content {
+        background: white;
+        border-radius: var(--radius-lg);
+        width: 90%;
+        max-width: 600px;
+        padding: 30px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+        transform: translateY(20px);
+        transition: transform 0.3s ease;
+    }
+
+    .edit-modal.active .edit-modal-content {
+        transform: translateY(0);
+    }
+
+    .edit-modal-header {
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid var(--primary);
+    }
+
+    .edit-modal-header h3 {
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .edit-modal-footer {
+        margin-top: 25px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 15px;
+    }
+
+    /* Venue Edit Modal */
+    .venue-edit-fields {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+    }
+
+    /* Delete Confirmation Modal */
+    .delete-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10002;
+        opacity: 0;
+        visibility: hidden;
+        transition: var(--transition);
+    }
+
+    .delete-modal.active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .delete-modal-content {
+        background: white;
+        border-radius: var(--radius-lg);
+        width: 90%;
+        max-width: 500px;
+        padding: 0;
+        overflow: hidden;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+        transform: translateY(20px);
+        transition: transform 0.3s ease;
+    }
+
+    .delete-modal.active .delete-modal-content {
+        transform: translateY(0);
+    }
+
+    .delete-modal-header {
+        background: linear-gradient(135deg, var(--danger), #c0392b);
+        color: white;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .delete-modal-header h3 {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .delete-modal-body {
+        padding: 25px;
+        color: var(--dark);
+        line-height: 1.6;
+    }
+
+    .delete-modal-body .warning-icon {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+
+    .delete-modal-body .warning-icon i {
+        font-size: 4rem;
+        color: var(--warning);
+    }
+
+    .delete-modal-body .item-details {
+        background-color: var(--light-gray);
+        padding: 15px;
+        border-radius: var(--radius-sm);
+        margin-top: 15px;
+    }
+
+    .delete-modal-footer {
+        padding: 20px;
+        border-top: 1px solid var(--light-gray);
+        display: flex;
+        justify-content: flex-end;
+        gap: 15px;
+    }
+
+    .delete-modal-footer .btn {
+        min-width: 100px;
+        justify-content: center;
+    }
+
+    /* Toast Notification */
+    .config-toast {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 12px 24px;
+        border-radius: var(--radius-md);
+        color: white;
+        font-weight: 500;
+        z-index: 1000;
+        opacity: 0;
+        transition: opacity 0.3s ease, transform 0.3s ease;
+        max-width: 90%;
+        text-align: center;
+        box-shadow: var(--shadow-md);
+    }
+
+    .config-toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+
+    .config-toast.success {
+        background-color: var(--success);
+    }
+
+    .config-toast.error {
+        background-color: var(--danger);
+    }
+
+    .config-toast.warning {
+        background-color: var(--warning);
+    }
+
+    .config-toast.info {
+        background-color: var(--info);
+    }
+
+    /* School Status Toggle Styles */
+.form-switch {
+    padding-left: 0;
+}
+
+.form-check-input {
+    width: 50px;
+    height: 24px;
+    cursor: pointer;
+}
+
+.form-check-input:checked {
+    background-color: var(--success);
+    border-color: var(--success);
+}
+
+.form-check-label {
+    margin-left: 10px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.status-closed {
+    background-color: var(--danger) !important;
+}
+
+.status-open {
+    background-color: var(--success) !important;
+}
+
+.status-warning {
+    background-color: var(--warning) !important;
+}
+
+/* Closed Reason Container */
+#closed-reason-container {
+    animation: fadeIn 0.3s ease;
+    background-color: rgba(255, 243, 205, 0.3);
+    padding: 15px;
+    border-radius: var(--radius-md);
+    border-left: 4px solid var(--warning);
+}
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 768px) {
+        .array-input {
+            flex-direction: column;
+        }
+        
+        .logo-preview-container {
+            flex-direction: column;
+        }
+        
+        .logo-input {
+            min-width: 100%;
+        }
+        
+        .time-session-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .session-dates {
+            grid-template-columns: 1fr;
+        }
+        
+        .venue-fields {
+            grid-template-columns: 1fr;
+        }
+        
+        .venue-edit-fields {
+            grid-template-columns: 1fr;
+        }
+        
+        .array-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        
+        .array-item-actions {
+            align-self: flex-end;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .content {
+            padding: 20px;
+        }
+        
+        .config-section {
+            padding: 20px;
+        }
+    }
+</style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay" style="display: flex;">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading School Configuration...</div>
+    </div>
+
+    <!-- Edit Item Modal -->
+    <div id="edit-modal" class="edit-modal">
+        <div class="edit-modal-content">
+            <div class="edit-modal-header">
+                <h3><i class="fas fa-edit"></i> <span id="edit-modal-title">Edit Item</span></h3>
+            </div>
+            <div class="edit-modal-body">
+                <div id="edit-simple-form">
+                    <div class="form-group">
+                        <label for="edit-item-value">Value</label>
+                        <input type="text" id="edit-item-value" class="form-control" placeholder="Enter value">
+                    </div>
+                </div>
+                <div id="edit-venue-form" style="display: none;">
+                    <div class="venue-edit-fields">
+                        <div class="form-group">
+                            <label for="edit-venue-name">Venue Name *</label>
+                            <input type="text" id="edit-venue-name" class="form-control" placeholder="e.g., Lecture Hall 1">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-venue-code">Venue Code</label>
+                            <input type="text" id="edit-venue-code" class="form-control" placeholder="e.g., LH1">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-venue-type">Venue Type</label>
+                            <select id="edit-venue-type" class="form-control">
+                                <option value="Lecture Hall">Lecture Hall</option>
+                                <option value="Classroom">Classroom</option>
+                                <option value="Laboratory">Laboratory</option>
+                                <option value="Auditorium">Auditorium</option>
+                                <option value="Seminar Room">Seminar Room</option>
+                                <option value="Conference Room">Conference Room</option>
+                                <option value="Workshop">Workshop</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-venue-capacity">Capacity</label>
+                            <input type="number" id="edit-venue-capacity" class="form-control" min="1" max="1000" placeholder="Number of seats">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-venue-building">Building/Block</label>
+                            <input type="text" id="edit-venue-building" class="form-control" placeholder="e.g., Main Building">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-venue-floor">Floor</label>
+                            <input type="text" id="edit-venue-floor" class="form-control" placeholder="e.g., Ground Floor">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-venue-status">Status</label>
+                            <select id="edit-venue-status" class="form-control">
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                                <option value="maintenance">Under Maintenance</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-venue-equipment">Equipment/Facilities</label>
+                            <input type="text" id="edit-venue-equipment" class="form-control" placeholder="e.g., Projector, Whiteboard, AC">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="edit-modal-footer">
+                <button type="button" class="btn btn-danger" id="cancel-edit-btn">Cancel</button>
+                <button type="button" class="btn btn-success" id="save-edit-btn">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="delete-modal">
+        <div class="delete-modal-content">
+            <div class="delete-modal-header">
+                <h3><i class="fas fa-exclamation-triangle"></i> Confirm Deletion</h3>
+            </div>
+            <div class="delete-modal-body">
+                <div class="warning-icon">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <p>Are you sure you want to delete this item? This action cannot be undone.</p>
+                <div class="item-details">
+                    <p><strong>Type:</strong> <span id="delete-item-type"></span></p>
+                    <p><strong>Item:</strong> <span id="delete-item-name"></span></p>
+                </div>
+                <p class="text-muted mt-20"><small>This will be removed from the database immediately.</small></p>
+            </div>
+            <div class="delete-modal-footer">
+                <button type="button" class="btn btn-danger" id="cancel-delete-btn">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-success" id="confirm-delete-btn">
+                    <div class="spinner" style="display: none;"></div>
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="header">
+            <h1><i class="fas fa-cogs"></i> School Configuration</h1>
+            <p>Manage institution settings, departments, faculties, and venues</p>
+        </div>
+        
+        <div class="content">
+            <form id="school-config-form">
+                <!-- Basic Information -->
+                <div class="config-section">
+                    <h2><i class="fas fa-info-circle"></i> Basic Information</h2>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="school-name">School Name *</label>
+                            <input type="text" id="school-name" class="form-control" required placeholder="Enter school name">
+                        </div>
+                        <div class="form-group">
+                            <label for="school-motto">School Motto</label>
+                            <input type="text" id="school-motto" class="form-control" placeholder="Enter school motto">
+                        </div>
+                    </div>
+                    
+                    <!-- Logo Preview -->
+                    <div class="logo-preview-container">
+                        <div class="logo-preview" id="logo-preview">
+                            <div class="logo-placeholder">
+                                <i class="fas fa-image"></i>
+                                <span>Logo Preview</span>
+                            </div>
+                        </div>
+                        <div class="logo-input">
+                            <label for="school-logo">Logo URL</label>
+                            <div class="array-input">
+                                <input type="url" id="school-logo" class="form-control" placeholder="https://example.com/logo.png">
+                                <button type="button" class="btn btn-secondary" id="clear-logo-btn">
+                                    <i class="fas fa-times"></i> Clear
+                                </button>
+                            </div>
+                            <small class="text-muted">Enter a direct image URL or upload to a service like imgur</small>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="default-city">Default City</label>
+                            <input type="text" id="default-city" class="form-control" placeholder="e.g., Lagos">
+                        </div>
+                        <div class="form-group">
+                            <label for="default-state">Default State</label>
+                            <input type="text" id="default-state" class="form-control" placeholder="e.g., Lagos State">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- School Hours -->
+<div class="config-section">
+    <h2><i class="fas fa-clock"></i> School Hours</h2>
+    
+    <!-- Manual School Status Toggle -->
+    <div class="form-row" style="margin-bottom: 20px;">
+        <div class="form-group">
+            <div class="form-check form-switch" style="display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" id="school-manual-status" class="form-check-input" style="width: 50px; height: 24px;">
+                <label for="school-manual-status" class="form-check-label" style="font-weight: 500;">
+                    <i class="fas fa-power-off"></i> Manual School Status
+                </label>
+                <span class="badge" id="school-status-badge" style="background-color: var(--success); color: white; padding: 4px 10px; border-radius: 12px;">
+                    <i class="fas fa-check-circle"></i> Open
+                </span>
+            </div>
+            <small class="text-muted">Toggle to manually set school as open or closed (overrides regular hours)</small>
+        </div>
+    </div>
+    
+    <!-- Closed Reason Field (Hidden by Default) -->
+    <div id="closed-reason-container" style="display: none; margin-bottom: 20px;">
+        <div class="form-group">
+            <label for="school-closed-reason">
+                <i class="fas fa-exclamation-circle"></i> Reason for Closure
+            </label>
+            <textarea id="school-closed-reason" class="form-control" rows="3" 
+                     placeholder="Explain why the school is closed (e.g., Public holiday, Emergency maintenance, Weather conditions...)"></textarea>
+            <small class="text-muted">This message may be displayed to users when school is closed</small>
+        </div>
+    </div>
+    
+    <div class="time-session-grid">
+        <div class="form-group">
+            <label for="school-open-time">School Opens At</label>
+            <input type="time" id="school-open-time" class="form-control" value="08:00">
+        </div>
+        
+        <div class="form-group">
+            <label for="school-close-time">School Closes At</label>
+            <input type="time" id="school-close-time" class="form-control" value="16:00">
+        </div>
+        
+        <div class="form-group">
+            <label for="academic-weeks">Academic Weeks</label>
+            <input type="number" id="academic-weeks" class="form-control" min="1" max="52" value="16" placeholder="Number of weeks">
+        </div>
+    </div>
+</div>
+                
+                <!-- Academic Session -->
+                <div class="config-section">
+                    <h2><i class="fas fa-calendar-alt"></i> Academic Session</h2>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="academic-session">Academic Session *</label>
+                            <input type="text" id="academic-session" class="form-control" required placeholder="e.g., 2023/2024">
+                        </div>
+                        <div class="form-group">
+                            <label for="current-semester">Current Semester *</label>
+                            <select id="current-semester" class="form-control" required>
+                                <option value="">Select Semester</option>
+                                <option value="First Semester">First Semester</option>
+                                <option value="Second Semester">Second Semester</option>
+                                <option value="Summer Semester">Summer Semester</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="session-dates">
+                        <div class="form-group">
+                            <label for="semester-start">Semester Start Date</label>
+                            <input type="date" id="semester-start" class="form-control">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="semester-end">Semester End Date</label>
+                            <input type="date" id="semester-end" class="form-control">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Academic Levels -->
+                <div class="config-section">
+                    <h2><i class="fas fa-graduation-cap"></i> Academic Levels</h2>
+                    
+                    <div class="form-group">
+                        <div class="array-input">
+                            <input type="text" id="new-level" class="form-control" placeholder="Add new academic level (e.g., 100 Level)">
+                            <button type="button" class="btn btn-primary" id="add-level-btn">
+                                <i class="fas fa-plus"></i> Add
+                            </button>
+                        </div>
+                        <div class="array-list" id="levels-list">
+                            <div class="empty-state">
+                                <i class="fas fa-graduation-cap"></i>
+                                <p>No academic levels added yet</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Departments -->
+                <div class="config-section">
+                    <h2><i class="fas fa-building"></i> Departments</h2>
+                    
+                    <div class="form-group">
+                        <div class="array-input">
+                            <input type="text" id="new-department" class="form-control" placeholder="Add new department">
+                            <button type="button" class="btn btn-primary" id="add-department-btn">
+                                <i class="fas fa-plus"></i> Add
+                            </button>
+                        </div>
+                        <div class="array-list" id="departments-list">
+                            <div class="empty-state">
+                                <i class="fas fa-building"></i>
+                                <p>No departments added yet</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Faculties -->
+                <div class="config-section">
+                    <h2><i class="fas fa-university"></i> Faculties</h2>
+                    
+                    <div class="form-group">
+                        <div class="array-input">
+                            <input type="text" id="new-faculty" class="form-control" placeholder="Add new faculty">
+                            <button type="button" class="btn btn-primary" id="add-faculty-btn">
+                                <i class="fas fa-plus"></i> Add
+                            </button>
+                        </div>
+                        <div class="array-list" id="faculties-list">
+                            <div class="empty-state">
+                                <i class="fas fa-university"></i>
+                                <p>No faculties added yet</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Lecture Venues -->
+                <div class="config-section">
+                    <h2><i class="fas fa-chalkboard-teacher"></i> Lecture Venues</h2>
+                    
+                    <div class="form-group">
+                        <div class="venue-fields">
+                            <div class="form-group-sm">
+                                <label for="new-venue-name">Venue Name *</label>
+                                <input type="text" id="new-venue-name" class="form-control" placeholder="e.g., Lecture Hall 1">
+                            </div>
+                            <div class="form-group-sm">
+                                <label for="new-venue-code">Venue Code</label>
+                                <input type="text" id="new-venue-code" class="form-control" placeholder="e.g., LH1">
+                            </div>
+                            <div class="form-group-sm">
+                                <label for="new-venue-type">Venue Type</label>
+                                <select id="new-venue-type" class="form-control">
+                                    <option value="Lecture Hall">Lecture Hall</option>
+                                    <option value="Classroom">Classroom</option>
+                                    <option value="Laboratory">Laboratory</option>
+                                    <option value="Auditorium">Auditorium</option>
+                                    <option value="Seminar Room">Seminar Room</option>
+                                    <option value="Conference Room">Conference Room</option>
+                                    <option value="Workshop">Workshop</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group-sm">
+                                <label for="new-venue-capacity">Capacity</label>
+                                <input type="number" id="new-venue-capacity" class="form-control" min="1" max="1000" placeholder="Number of seats">
+                            </div>
+                            <div class="form-group-sm">
+                                <label for="new-venue-building">Building/Block</label>
+                                <input type="text" id="new-venue-building" class="form-control" placeholder="e.g., Main Building">
+                            </div>
+                            <div class="form-group-sm">
+                                <label for="new-venue-floor">Floor</label>
+                                <input type="text" id="new-venue-floor" class="form-control" placeholder="e.g., Ground Floor">
+                            </div>
+                            <div class="form-group-sm">
+                                <label for="new-venue-status">Status</label>
+                                <select id="new-venue-status" class="form-control">
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                    <option value="maintenance">Under Maintenance</option>
+                                </select>
+                            </div>
+                            <div class="form-group-sm">
+                                <label for="new-venue-equipment">Equipment/Facilities</label>
+                                <input type="text" id="new-venue-equipment" class="form-control" placeholder="e.g., Projector, Whiteboard, AC">
+                            </div>
+                        </div>
+                        
+                        <div class="array-input">
+                            <button type="button" class="btn btn-primary" id="add-venue-btn">
+                                <i class="fas fa-plus"></i> Add Venue
+                            </button>
+                            <button type="button" class="btn btn-secondary" id="clear-venue-fields-btn">
+                                <i class="fas fa-times"></i> Clear Fields
+                            </button>
+                        </div>
+                        
+                        <div class="array-list" id="venues-list">
+                            <div class="empty-state">
+                                <i class="fas fa-chalkboard-teacher"></i>
+                                <p>No lecture venues added yet</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Student Statuses -->
+                <div class="config-section">
+                    <h2><i class="fas fa-user-check"></i> Student Statuses</h2>
+                    
+                    <div class="form-group">
+                        <div class="array-input">
+                            <input type="text" id="new-status" class="form-control" placeholder="Add new status (e.g., Active)">
+                            <button type="button" class="btn btn-primary" id="add-status-btn">
+                                <i class="fas fa-plus"></i> Add
+                            </button>
+                        </div>
+                        <div class="array-list" id="statuses-list">
+                            <div class="empty-state">
+                                <i class="fas fa-user-check"></i>
+                                <p>No statuses added yet</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- User Roles -->
+                <div class="config-section">
+                    <h2><i class="fas fa-user-tag"></i> User Roles</h2>
+                    
+                    <div class="form-group">
+                        <div class="array-input">
+                            <input type="text" id="new-role" class="form-control" placeholder="Add new role (e.g., Student)">
+                            <button type="button" class="btn btn-primary" id="add-role-btn">
+                                <i class="fas fa-plus"></i> Add
+                            </button>
+                        </div>
+                        <div class="array-list" id="roles-list">
+                            <div class="empty-state">
+                                <i class="fas fa-user-tag"></i>
+                                <p>No roles added yet</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button type="button" class="btn btn-warning" id="load-config-btn">
+                        <i class="fas fa-sync"></i> Load Current Config
+                    </button>
+                    <button type="button" class="btn btn-success" id="save-config-btn">
+                        <i class="fas fa-save"></i> Save Configuration
+                    </button>
+                    <button type="button" class="btn btn-danger" id="reset-config-btn">
+                        <i class="fas fa-redo"></i> Reset to Defaults
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="config-toast" class="config-toast"></div>
+
+    <!-- Include the consolidated school app JS -->
+    <script src="js/school-app.js"></script>
+    
+    <!-- School Configuration Script -->
+<script>
+let schoolConfig = {
+    academicLevels: [],
+    departments: [],
+    faculties: [],
+    venues: [], // Added venues array
+    studentStatuses: [],
+    userRoles: []
+};
+
+let configListener = null;
+let editData = {
+    arrayKey: null,
+    index: null,
+    value: null,
+    isVenue: false
+};
+
+let deleteData = {
+    arrayKey: null,
+    index: null,
+    value: null,
+    isVenue: false
+};
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    initializeConfig();
+});
+
+async function initializeConfig() {
+    showLoading(true);
+    
+    try {
+        // Wait for Firebase to initialize
+        if (!window.SchoolApp || !window.SchoolApp.auth) {
+            setTimeout(initializeConfig, 100);
+            return;
+        }
+        
+        // Check if user is authenticated
+        const auth = window.SchoolApp.auth;
+        const db = window.SchoolApp.db;
+        
+        // Listen for auth state changes
+        auth.onAuthStateChanged(async (user) => {
+            if (!user) {
+                showToast('Access denied. Please login first.', 'error');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 2000);
+                showLoading(false);
+                return;
+            }
+            
+            // Check user role in Firestore
+            try {
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    const allowedRoles = ['Admin', 'Lecturer', 'Registrar', 'HOD', 'Dean'];
+                    
+                    if (!allowedRoles.includes(userData.role)) {
+                        showToast('Access denied. Admin privileges required.', 'error');
+                        setTimeout(() => {
+                            window.location.href = 'dashboard.html';
+                        }, 2000);
+                        showLoading(false);
+                        return;
+                    }
+                }
+                
+                setupEventListeners();
+                setupRealtimeListener();
+                loadSchoolConfig(); // Load initial config
+                showLoading(false);
+            } catch (error) {
+                console.error('Error checking user role:', error);
+                showToast('Error checking permissions: ' + error.message, 'error');
+                showLoading(false);
+            }
+        });
+        
+    } catch (error) {
+        console.error('Initialization error:', error);
+        showToast('Error initializing: ' + error.message, 'error');
+        showLoading(false);
+    }
+}
+
+function setupEventListeners() {
+    // Add buttons - Using direct mapping
+    document.getElementById('add-level-btn').addEventListener('click', () => {
+        addItem('new-level', 'academicLevels');
+    });
+    document.getElementById('add-department-btn').addEventListener('click', () => {
+        addItem('new-department', 'departments');
+    });
+    document.getElementById('add-faculty-btn').addEventListener('click', () => {
+        addItem('new-faculty', 'faculties');
+    });
+    document.getElementById('add-status-btn').addEventListener('click', () => {
+        addItem('new-status', 'studentStatuses');
+    });
+    document.getElementById('add-role-btn').addEventListener('click', () => {
+        addItem('new-role', 'userRoles');
+    });
+    
+    // Venue buttons
+    document.getElementById('add-venue-btn').addEventListener('click', addVenue);
+    document.getElementById('clear-venue-fields-btn').addEventListener('click', clearVenueFields);
+    
+    // Logo preview and clear
+    document.getElementById('school-logo').addEventListener('input', updateLogoPreview);
+    document.getElementById('clear-logo-btn').addEventListener('click', clearLogo);
+    
+    // Allow Enter key to add items
+    const enterKeyHandlers = {
+        'new-level': 'academicLevels',
+        'new-department': 'departments',
+        'new-faculty': 'faculties',
+        'new-status': 'studentStatuses',
+        'new-role': 'userRoles'
+    };
+    
+    Object.keys(enterKeyHandlers).forEach(id => {
+        document.getElementById(id).addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addItem(id, enterKeyHandlers[id]);
+            }
+        });
+    });
+    
+    // Allow Enter in venue name field
+    document.getElementById('new-venue-name').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addVenue();
+        }
+    });
+    
+    // Action buttons
+    document.getElementById('load-config-btn').addEventListener('click', loadSchoolConfig);
+    document.getElementById('save-config-btn').addEventListener('click', saveSchoolConfig);
+    document.getElementById('reset-config-btn').addEventListener('click', resetToDefaults);
+    
+    // Edit modal buttons
+    document.getElementById('cancel-edit-btn').addEventListener('click', closeEditModal);
+    document.getElementById('save-edit-btn').addEventListener('click', saveEditedItem);
+    
+    // Delete modal buttons
+    document.getElementById('cancel-delete-btn').addEventListener('click', closeDeleteModal);
+    document.getElementById('confirm-delete-btn').addEventListener('click', confirmDeleteItem);
+    
+    // Close modals on overlay click
+    document.getElementById('edit-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeEditModal();
+        }
+    });
+    
+    document.getElementById('delete-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeDeleteModal();
+        }
+    });
+    
+    // School status toggle
+    setupSchoolStatusToggle();
+}
+
+// Setup school status toggle
+function setupSchoolStatusToggle() {
+    const toggle = document.getElementById('school-manual-status');
+    const badge = document.getElementById('school-status-badge');
+    const reasonContainer = document.getElementById('closed-reason-container');
+    const reasonField = document.getElementById('school-closed-reason');
+    
+    // Load saved status
+    if (schoolConfig.manualSchoolStatus !== undefined) {
+        toggle.checked = schoolConfig.manualSchoolStatus === 'open';
+        updateSchoolStatusDisplay();
+    }
+    
+    toggle.addEventListener('change', function() {
+        updateSchoolStatusDisplay();
+        
+        // Save status to Firebase
+        saveSchoolStatus();
+    });
+    
+    // Update status when reason changes
+    reasonField.addEventListener('input', function() {
+        saveSchoolStatus();
+    });
+    
+    function updateSchoolStatusDisplay() {
+        const isOpen = toggle.checked;
+        
+        if (isOpen) {
+            badge.innerHTML = '<i class="fas fa-check-circle"></i> Open';
+            badge.className = 'badge status-open';
+            reasonContainer.style.display = 'none';
+        } else {
+            badge.innerHTML = '<i class="fas fa-times-circle"></i> Closed';
+            badge.className = 'badge status-closed';
+            reasonContainer.style.display = 'block';
+        }
+    }
+    
+    async function saveSchoolStatus() {
+        try {
+            const statusData = {
+                manualSchoolStatus: toggle.checked ? 'open' : 'closed',
+                schoolClosedReason: toggle.checked ? '' : reasonField.value.trim(),
+                updatedAt: new Date().toISOString()
+            };
+            
+            await window.SchoolApp.db.collection('schoolConfig').doc('main').set(statusData, { merge: true });
+        } catch (error) {
+            console.error('Error saving school status:', error);
+        }
+    }
+}
+
+function setupRealtimeListener() {
+    if (configListener) {
+        configListener(); // Remove previous listener
+    }
+    
+    configListener = window.SchoolApp.db.collection('schoolConfig').doc('main')
+        .onSnapshot(snapshot => {
+            if (snapshot.exists) {
+                const configData = snapshot.data();
+                schoolConfig = { ...schoolConfig, ...configData };
+                updateFormFields(configData);
+            }
+        }, error => {
+            console.error('Realtime listener error:', error);
+            showToast('Error in real-time updates: ' + error.message, 'error');
+        });
+}
+
+function updateFormFields(config) {
+    // Basic info
+    document.getElementById('school-name').value = config.name || '';
+    document.getElementById('school-motto').value = config.motto || '';
+    document.getElementById('school-logo').value = config.logo || '';
+    document.getElementById('default-city').value = config.defaultCity || '';
+    document.getElementById('default-state').value = config.defaultState || '';
+    
+    // School hours
+    document.getElementById('school-open-time').value = config.schoolOpenTime || '08:00';
+    document.getElementById('school-close-time').value = config.schoolCloseTime || '16:00';
+    document.getElementById('academic-weeks').value = config.academicWeeks || 16;
+    
+    // School status toggle
+    document.getElementById('school-manual-status').checked = config.manualSchoolStatus === 'open' || config.manualSchoolStatus === undefined;
+    document.getElementById('school-closed-reason').value = config.schoolClosedReason || '';
+    
+    // Update status display
+    const toggle = document.getElementById('school-manual-status');
+    const badge = document.getElementById('school-status-badge');
+    const reasonContainer = document.getElementById('closed-reason-container');
+    
+    if (toggle.checked) {
+        badge.innerHTML = '<i class="fas fa-check-circle"></i> Open';
+        badge.className = 'badge status-open';
+        reasonContainer.style.display = 'none';
+    } else {
+        badge.innerHTML = '<i class="fas fa-times-circle"></i> Closed';
+        badge.className = 'badge status-closed';
+        reasonContainer.style.display = 'block';
+    }
+    
+    // Academic session
+    document.getElementById('academic-session').value = config.academicSession || '';
+    document.getElementById('current-semester').value = config.currentSemester || '';
+    document.getElementById('semester-start').value = config.semesterStartDate || '';
+    document.getElementById('semester-end').value = config.semesterEndDate || '';
+    
+    // Update logo preview
+    updateLogoPreview();
+    
+    // Update arrays
+    updateArrayDisplay('levels-list', config.academicLevels || [], 'academicLevels');
+    updateArrayDisplay('departments-list', config.departments || [], 'departments');
+    updateArrayDisplay('faculties-list', config.faculties || [], 'faculties');
+    updateVenueDisplay(config.venues || []);
+    updateArrayDisplay('statuses-list', config.studentStatuses || [], 'studentStatuses');
+    updateArrayDisplay('roles-list', config.userRoles || [], 'userRoles');
+}
+
+function updateLogoPreview() {
+    const logoUrl = document.getElementById('school-logo').value.trim();
+    const preview = document.getElementById('logo-preview');
+    
+    if (logoUrl) {
+        preview.innerHTML = `<img src="${logoUrl}" alt="School Logo" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'logo-placeholder\'><i class=\'fas fa-image\'></i><span>Invalid URL</span></div>';">`;
+    } else {
+        preview.innerHTML = '<div class="logo-placeholder"><i class="fas fa-image"></i><span>Logo Preview</span></div>';
+    }
+}
+
+function clearLogo() {
+    document.getElementById('school-logo').value = '';
+    updateLogoPreview();
+    window.SchoolApp.SchoolUtils.showToast('Logo cleared', 'info');
+}
+
+function clearVenueFields() {
+    document.getElementById('new-venue-name').value = '';
+    document.getElementById('new-venue-code').value = '';
+    document.getElementById('new-venue-type').value = 'Lecture Hall';
+    document.getElementById('new-venue-capacity').value = '';
+    document.getElementById('new-venue-building').value = '';
+    document.getElementById('new-venue-floor').value = '';
+    document.getElementById('new-venue-status').value = 'active';
+    document.getElementById('new-venue-equipment').value = '';
+    
+    window.SchoolApp.SchoolUtils.showToast('Venue fields cleared', 'info');
+}
+
+// Load school configuration from database
+async function loadSchoolConfig() {
+    try {
+        const loadBtn = document.getElementById('load-config-btn');
+        loadBtn.disabled = true;
+        loadBtn.innerHTML = '<div class="spinner" style="width: 16px; height: 16px; display: inline-block;"></div> Loading...';
+        
+        const doc = await window.SchoolApp.db.collection('schoolConfig').doc('main').get();
+        
+        if (doc.exists) {
+            const configData = doc.data();
+            schoolConfig = { ...schoolConfig, ...configData };
+            updateFormFields(configData);
+            window.SchoolApp.SchoolUtils.showToast('Configuration loaded successfully!', 'success');
+        } else {
+            window.SchoolApp.SchoolUtils.showToast('No configuration found. Using defaults.', 'warning');
+        }
+        
+        loadBtn.disabled = false;
+        loadBtn.innerHTML = '<i class="fas fa-sync"></i> Load Current Config';
+    } catch (error) {
+        window.SchoolApp.SchoolUtils.showToast('Error loading configuration: ' + error.message, 'error');
+        const loadBtn = document.getElementById('load-config-btn');
+        loadBtn.disabled = false;
+        loadBtn.innerHTML = '<i class="fas fa-sync"></i> Load Current Config';
+    }
+}
+
+// Add item to array - FIXED VERSION
+async function addItem(inputId, arrayKey) {
+    const input = document.getElementById(inputId);
+    const value = input.value.trim();
+    
+    if (!value) {
+        window.SchoolApp.SchoolUtils.showToast('Please enter a value', 'warning');
+        input.focus();
+        return;
+    }
+    
+    if (!schoolConfig[arrayKey]) {
+        schoolConfig[arrayKey] = [];
+    }
+    
+    // Check for duplicates (case-insensitive)
+    const valueLower = value.toLowerCase();
+    const exists = schoolConfig[arrayKey].some(item => item.toLowerCase() === valueLower);
+    
+    if (exists) {
+        window.SchoolApp.SchoolUtils.showToast(`${value} already exists in ${getArrayDisplayName(arrayKey)}`, 'warning');
+        input.focus();
+        input.select();
+        return;
+    }
+    
+    // Disable button and show loading
+    const addBtnId = inputId.replace('new-', '') + '-btn';
+    const button = document.getElementById(addBtnId);
+    if (button) {
+        button.disabled = true;
+        button.innerHTML = '<div class="spinner" style="width: 16px; height: 16px; display: inline-block;"></div> Adding...';
+    }
+    
+    try {
+        // Save to Firebase first
+        const updateData = {
+            [arrayKey]: [...(schoolConfig[arrayKey] || []), value],
+            updatedAt: new Date().toISOString()
+        };
+        
+        await window.SchoolApp.db.collection('schoolConfig').doc('main').set(updateData, { merge: true });
+        
+        // Clear input on success
+        input.value = '';
+        input.focus();
+        
+        // Show success message
+        window.SchoolApp.SchoolUtils.showToast(`${value} added to ${getArrayDisplayName(arrayKey)}`, 'success');
+        
+    } catch (error) {
+        window.SchoolApp.SchoolUtils.showToast('Error adding item: ' + error.message, 'error');
+    } finally {
+        // Re-enable button
+        if (button) {
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-plus"></i> Add';
+        }
+    }
+}
+
+// Add venue with detailed information
+async function addVenue() {
+    const venueName = document.getElementById('new-venue-name').value.trim();
+    const venueCode = document.getElementById('new-venue-code').value.trim();
+    const venueType = document.getElementById('new-venue-type').value;
+    const venueCapacity = parseInt(document.getElementById('new-venue-capacity').value) || 0;
+    const venueBuilding = document.getElementById('new-venue-building').value.trim();
+    const venueFloor = document.getElementById('new-venue-floor').value.trim();
+    const venueStatus = document.getElementById('new-venue-status').value;
+    const venueEquipment = document.getElementById('new-venue-equipment').value.trim();
+    
+    // Validate required fields
+    if (!venueName) {
+        window.SchoolApp.SchoolUtils.showToast('Venue name is required', 'warning');
+        document.getElementById('new-venue-name').focus();
+        return;
+    }
+    
+    // Check for duplicates (case-insensitive by name)
+    const venueNameLower = venueName.toLowerCase();
+    const venueCodeLower = venueCode.toLowerCase();
+    const existsByName = schoolConfig.venues && schoolConfig.venues.some(venue => 
+        venue.name.toLowerCase() === venueNameLower
+    );
+    const existsByCode = venueCode && schoolConfig.venues && schoolConfig.venues.some(venue => 
+        venue.code && venue.code.toLowerCase() === venueCodeLower
+    );
+    
+    if (existsByName) {
+        window.SchoolApp.SchoolUtils.showToast(`Venue "${venueName}" already exists`, 'warning');
+        document.getElementById('new-venue-name').focus();
+        document.getElementById('new-venue-name').select();
+        return;
+    }
+    
+    if (existsByCode) {
+        window.SchoolApp.SchoolUtils.showToast(`Venue code "${venueCode}" already exists`, 'warning');
+        document.getElementById('new-venue-code').focus();
+        document.getElementById('new-venue-code').select();
+        return;
+    }
+    
+    // Disable button and show loading
+    const addBtn = document.getElementById('add-venue-btn');
+    addBtn.disabled = true;
+    addBtn.innerHTML = '<div class="spinner" style="width: 16px; height: 16px; display: inline-block;"></div> Adding...';
+    
+    try {
+        // Create venue object
+        const newVenue = {
+            name: venueName,
+            code: venueCode || '',
+            type: venueType,
+            capacity: venueCapacity,
+            building: venueBuilding,
+            floor: venueFloor,
+            status: venueStatus,
+            equipment: venueEquipment,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+        
+        // Save to Firebase
+        const updateData = {
+            venues: [...(schoolConfig.venues || []), newVenue],
+            updatedAt: new Date().toISOString()
+        };
+        
+        await window.SchoolApp.db.collection('schoolConfig').doc('main').set(updateData, { merge: true });
+        
+        // Clear fields on success
+        clearVenueFields();
+        document.getElementById('new-venue-name').focus();
+        
+        // Show success message
+        window.SchoolApp.SchoolUtils.showToast(`Venue "${venueName}" added successfully`, 'success');
+        
+    } catch (error) {
+        window.SchoolApp.SchoolUtils.showToast('Error adding venue: ' + error.message, 'error');
+    } finally {
+        // Re-enable button
+        addBtn.disabled = false;
+        addBtn.innerHTML = '<i class="fas fa-plus"></i> Add Venue';
+    }
+}
+
+// Show delete confirmation modal
+function showDeleteConfirmation(arrayKey, index, isVenue = false) {
+    if (isVenue) {
+        if (schoolConfig.venues && schoolConfig.venues[index]) {
+            const venue = schoolConfig.venues[index];
+            deleteData = { arrayKey: 'venues', index, value: venue.name, isVenue: true };
+            
+            document.getElementById('delete-item-type').textContent = 'Lecture Venue';
+            document.getElementById('delete-item-name').textContent = `${venue.name} (${venue.code || 'No Code'})`;
+            document.getElementById('delete-modal').classList.add('active');
+        }
+    } else {
+        if (schoolConfig[arrayKey] && schoolConfig[arrayKey][index]) {
+            const itemValue = schoolConfig[arrayKey][index];
+            deleteData = { arrayKey, index, value: itemValue, isVenue: false };
+            
+            document.getElementById('delete-item-type').textContent = getArrayDisplayName(arrayKey).slice(0, -1);
+            document.getElementById('delete-item-name').textContent = itemValue;
+            document.getElementById('delete-modal').classList.add('active');
+        }
+    }
+}
+
+// Confirm and delete item
+async function confirmDeleteItem() {
+    const deleteBtn = document.getElementById('confirm-delete-btn');
+    const spinner = deleteBtn.querySelector('.spinner');
+    const icon = deleteBtn.querySelector('i');
+    
+    // Show loading state
+    deleteBtn.disabled = true;
+    if (spinner) spinner.style.display = 'block';
+    if (icon) icon.style.display = 'none';
+    
+    try {
+        if (deleteData.isVenue) {
+            // Remove venue from array
+            const updatedVenues = [...schoolConfig.venues];
+            updatedVenues.splice(deleteData.index, 1);
+            
+            // Update in Firebase
+            await window.SchoolApp.db.collection('schoolConfig').doc('main').update({
+                venues: updatedVenues,
+                updatedAt: new Date().toISOString()
+            });
+            
+            window.SchoolApp.SchoolUtils.showToast(`Venue "${deleteData.value}" deleted successfully`, 'success');
+        } else {
+            // Remove from regular array
+            const updatedArray = [...schoolConfig[deleteData.arrayKey]];
+            updatedArray.splice(deleteData.index, 1);
+            
+            // Update in Firebase
+            await window.SchoolApp.db.collection('schoolConfig').doc('main').update({
+                [deleteData.arrayKey]: updatedArray,
+                updatedAt: new Date().toISOString()
+            });
+            
+            window.SchoolApp.SchoolUtils.showToast(`"${deleteData.value}" deleted from ${getArrayDisplayName(deleteData.arrayKey)}`, 'success');
+        }
+        
+        closeDeleteModal();
+        
+    } catch (error) {
+        window.SchoolApp.SchoolUtils.showToast('Error deleting item: ' + error.message, 'error');
+    } finally {
+        // Reset button state
+        deleteBtn.disabled = false;
+        if (spinner) spinner.style.display = 'none';
+        if (icon) icon.style.display = 'inline-block';
+    }
+}
+
+// Close delete modal
+function closeDeleteModal() {
+    document.getElementById('delete-modal').classList.remove('active');
+    deleteData = { arrayKey: null, index: null, value: null, isVenue: false };
+}
+
+// Edit item in array
+function editItem(arrayKey, index, isVenue = false) {
+    if (isVenue) {
+        if (schoolConfig.venues && schoolConfig.venues[index]) {
+            const venue = schoolConfig.venues[index];
+            editData = { arrayKey: 'venues', index, value: venue, isVenue: true };
+            
+            document.getElementById('edit-modal-title').textContent = 'Edit Lecture Venue';
+            document.getElementById('edit-simple-form').style.display = 'none';
+            document.getElementById('edit-venue-form').style.display = 'block';
+            
+            // Populate venue fields
+            document.getElementById('edit-venue-name').value = venue.name || '';
+            document.getElementById('edit-venue-code').value = venue.code || '';
+            document.getElementById('edit-venue-type').value = venue.type || 'Lecture Hall';
+            document.getElementById('edit-venue-capacity').value = venue.capacity || '';
+            document.getElementById('edit-venue-building').value = venue.building || '';
+            document.getElementById('edit-venue-floor').value = venue.floor || '';
+            document.getElementById('edit-venue-status').value = venue.status || 'active';
+            document.getElementById('edit-venue-equipment').value = venue.equipment || '';
+            
+            document.getElementById('edit-modal').classList.add('active');
+            document.getElementById('edit-venue-name').focus();
+            document.getElementById('edit-venue-name').select();
+        }
+    } else {
+        if (schoolConfig[arrayKey] && schoolConfig[arrayKey][index]) {
+            const currentValue = schoolConfig[arrayKey][index];
+            editData = { arrayKey, index, value: currentValue, isVenue: false };
+            
+            document.getElementById('edit-modal-title').textContent = `Edit ${getArrayDisplayName(arrayKey).slice(0, -1)}`;
+            document.getElementById('edit-simple-form').style.display = 'block';
+            document.getElementById('edit-venue-form').style.display = 'none';
+            document.getElementById('edit-item-value').value = currentValue;
+            document.getElementById('edit-modal').classList.add('active');
+            document.getElementById('edit-item-value').focus();
+            document.getElementById('edit-item-value').select();
+        }
+    }
+}
+
+// Save edited item with loading state
+async function saveEditedItem() {
+    const saveBtn = document.getElementById('save-edit-btn');
+    const originalText = saveBtn.innerHTML;
+    
+    if (editData.isVenue) {
+        // Validate venue edit
+        const venueName = document.getElementById('edit-venue-name').value.trim();
+        const venueCode = document.getElementById('edit-venue-code').value.trim();
+        
+        if (!venueName) {
+            window.SchoolApp.SchoolUtils.showToast('Venue name is required', 'warning');
+            document.getElementById('edit-venue-name').focus();
+            return;
+        }
+        
+        // Check for duplicates (excluding current venue)
+        const venueNameLower = venueName.toLowerCase();
+        const venueCodeLower = venueCode.toLowerCase();
+        const existsByName = schoolConfig.venues.some((venue, idx) => 
+            idx !== editData.index && venue.name.toLowerCase() === venueNameLower
+        );
+        const existsByCode = venueCode && schoolConfig.venues.some((venue, idx) => 
+            idx !== editData.index && venue.code && venue.code.toLowerCase() === venueCodeLower
+        );
+        
+        if (existsByName) {
+            window.SchoolApp.SchoolUtils.showToast(`Venue "${venueName}" already exists`, 'warning');
+            document.getElementById('edit-venue-name').focus();
+            document.getElementById('edit-venue-name').select();
+            return;
+        }
+        
+        if (existsByCode) {
+            window.SchoolApp.SchoolUtils.showToast(`Venue code "${venueCode}" already exists`, 'warning');
+            document.getElementById('edit-venue-code').focus();
+            document.getElementById('edit-venue-code').select();
+            return;
+        }
+        
+        // Show loading state
+        saveBtn.innerHTML = '<div class="spinner" style="width: 16px; height: 16px; display: inline-block;"></div> Saving...';
+        saveBtn.disabled = true;
+        
+        try {
+            // Create updated venue object
+            const updatedVenue = {
+                name: venueName,
+                code: venueCode,
+                type: document.getElementById('edit-venue-type').value,
+                capacity: parseInt(document.getElementById('edit-venue-capacity').value) || 0,
+                building: document.getElementById('edit-venue-building').value.trim(),
+                floor: document.getElementById('edit-venue-floor').value.trim(),
+                status: document.getElementById('edit-venue-status').value,
+                equipment: document.getElementById('edit-venue-equipment').value.trim(),
+                createdAt: editData.value.createdAt || new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            
+            // Update the array
+            const updatedVenues = [...schoolConfig.venues];
+            updatedVenues[editData.index] = updatedVenue;
+            
+            // Update in Firebase
+            await window.SchoolApp.db.collection('schoolConfig').doc('main').update({
+                venues: updatedVenues,
+                updatedAt: new Date().toISOString()
+            });
+            
+            window.SchoolApp.SchoolUtils.showToast('Venue updated successfully!', 'success');
+            closeEditModal();
+            
+        } catch (error) {
+            window.SchoolApp.SchoolUtils.showToast('Error updating venue: ' + error.message, 'error');
+        } finally {
+            saveBtn.innerHTML = originalText;
+            saveBtn.disabled = false;
+        }
+    } else {
+        // Regular item edit
+        const newValue = document.getElementById('edit-item-value').value.trim();
+        
+        if (!newValue) {
+            window.SchoolApp.SchoolUtils.showToast('Please enter a value', 'warning');
+            document.getElementById('edit-item-value').focus();
+            return;
+        }
+        
+        if (!editData.arrayKey || editData.index === null) {
+            closeEditModal();
+            return;
+        }
+        
+        // Check for duplicates (excluding the current item)
+        const valueLower = newValue.toLowerCase();
+        const exists = schoolConfig[editData.arrayKey].some((item, idx) => 
+            idx !== editData.index && item.toLowerCase() === valueLower
+        );
+        
+        if (exists) {
+            window.SchoolApp.SchoolUtils.showToast(`${newValue} already exists in ${getArrayDisplayName(editData.arrayKey)}`, 'warning');
+            document.getElementById('edit-item-value').focus();
+            document.getElementById('edit-item-value').select();
+            return;
+        }
+        
+        // Show loading state
+        saveBtn.innerHTML = '<div class="spinner" style="width: 16px; height: 16px; display: inline-block;"></div> Saving...';
+        saveBtn.disabled = true;
+        
+        try {
+            // Update the array locally first for instant feedback
+            const updatedArray = [...schoolConfig[editData.arrayKey]];
+            updatedArray[editData.index] = newValue;
+            
+            // Update in Firebase
+            await window.SchoolApp.db.collection('schoolConfig').doc('main').update({
+                [editData.arrayKey]: updatedArray,
+                updatedAt: new Date().toISOString()
+            });
+            
+            window.SchoolApp.SchoolUtils.showToast('Item updated successfully!', 'success');
+            closeEditModal();
+            
+        } catch (error) {
+            window.SchoolApp.SchoolUtils.showToast('Error updating item: ' + error.message, 'error');
+        } finally {
+            saveBtn.innerHTML = originalText;
+            saveBtn.disabled = false;
+        }
+    }
+}
+
+function closeEditModal() {
+    document.getElementById('edit-modal').classList.remove('active');
+    editData = { arrayKey: null, index: null, value: null, isVenue: false };
+    document.getElementById('edit-item-value').value = '';
+    document.getElementById('edit-simple-form').style.display = 'block';
+    document.getElementById('edit-venue-form').style.display = 'none';
+}
+
+// Update array display
+function updateArrayDisplay(containerId, array, arrayKey) {
+    const container = document.getElementById(containerId);
+    
+    if (!array || array.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <p>No ${getArrayDisplayName(arrayKey).toLowerCase()} added yet</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    array.forEach((item, index) => {
+        html += `
+            <div class="array-item">
+                <div class="array-item-content">
+                    <span class="array-item-index">${index + 1}</span>
+                    <span>${item}</span>
+                </div>
+                <div class="array-item-actions">
+                    <button type="button" class="btn btn-info btn-icon" onclick="editItem('${arrayKey}', ${index})" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button type="button" class="btn btn-danger btn-icon" onclick="showDeleteConfirmation('${arrayKey}', ${index})" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+// Update venue display
+function updateVenueDisplay(venues) {
+    const container = document.getElementById('venues-list');
+    
+    if (!venues || venues.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-chalkboard-teacher"></i>
+                <p>No lecture venues added yet</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    venues.forEach((venue, index) => {
+        const statusClass = venue.status === 'active' ? 'status-active' : 
+                          venue.status === 'maintenance' ? 'status-maintenance' : 'status-inactive';
+        const statusText = venue.status === 'active' ? 'Active' : 
+                         venue.status === 'maintenance' ? 'Maintenance' : 'Inactive';
+        
+        html += `
+            <div class="array-item">
+                <div class="array-item-content">
+                    <span class="array-item-index">${index + 1}</span>
+                    <div style="flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+                            <strong>${venue.name}</strong>
+                            ${venue.code ? `<span class="venue-type"><i class="fas fa-hashtag"></i> ${venue.code}</span>` : ''}
+                            <span class="status-badge ${statusClass}">
+                                <i class="fas fa-circle"></i> ${statusText}
+                            </span>
+                        </div>
+                        <div class="venue-details">
+                            <span><i class="fas fa-chalkboard"></i> ${venue.type}</span>
+                            ${venue.capacity ? `<span class="venue-capacity"><i class="fas fa-users"></i> ${venue.capacity} seats</span>` : ''}
+                            ${venue.building ? `<span><i class="fas fa-building"></i> ${venue.building}</span>` : ''}
+                            ${venue.floor ? `<span><i class="fas fa-layer-group"></i> ${venue.floor}</span>` : ''}
+                            ${venue.equipment ? `<span><i class="fas fa-tools"></i> ${venue.equipment}</span>` : ''}
+                        </div>
+                    </div>
+                </div>
+                <div class="array-item-actions">
+                    <button type="button" class="btn btn-info btn-icon" onclick="editItem('venues', ${index}, true)" title="Edit Venue">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button type="button" class="btn btn-danger btn-icon" onclick="showDeleteConfirmation('venues', ${index}, true)" title="Delete Venue">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+// Get display name for array
+function getArrayDisplayName(arrayKey) {
+    const names = {
+        academicLevels: 'Academic Levels',
+        departments: 'Departments',
+        faculties: 'Faculties',
+        venues: 'Lecture Venues',
+        studentStatuses: 'Student Statuses',
+        userRoles: 'User Roles'
+    };
+    return names[arrayKey] || arrayKey;
+}
+
+// Save school configuration to database with loading state
+async function saveSchoolConfig() {
+    const saveBtn = document.getElementById('save-config-btn');
+    
+    if (saveBtn.disabled) return;
+    
+    // Validate required fields
+    const schoolName = document.getElementById('school-name').value.trim();
+    if (!schoolName) {
+        window.SchoolApp.SchoolUtils.showToast('School name is required', 'error');
+        document.getElementById('school-name').focus();
+        return;
+    }
+    
+    // Show loading state
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<div class="spinner" style="width: 16px; height: 16px; display: inline-block;"></div> Saving...';
+    
+    try {
+        // Get basic info
+        schoolConfig.name = schoolName;
+        schoolConfig.motto = document.getElementById('school-motto').value.trim();
+        schoolConfig.logo = document.getElementById('school-logo').value.trim();
+        schoolConfig.defaultCity = document.getElementById('default-city').value.trim();
+        schoolConfig.defaultState = document.getElementById('default-state').value.trim();
+        
+        // School hours
+        schoolConfig.schoolOpenTime = document.getElementById('school-open-time').value;
+        schoolConfig.schoolCloseTime = document.getElementById('school-close-time').value;
+        schoolConfig.academicWeeks = parseInt(document.getElementById('academic-weeks').value) || 16;
+        
+        // School status
+        const toggle = document.getElementById('school-manual-status');
+        schoolConfig.manualSchoolStatus = toggle.checked ? 'open' : 'closed';
+        schoolConfig.schoolClosedReason = toggle.checked ? '' : document.getElementById('school-closed-reason').value.trim();
+        
+        // Academic session
+        schoolConfig.academicSession = document.getElementById('academic-session').value.trim();
+        schoolConfig.currentSemester = document.getElementById('current-semester').value;
+        schoolConfig.semesterStartDate = document.getElementById('semester-start').value;
+        schoolConfig.semesterEndDate = document.getElementById('semester-end').value;
+        
+        // Add timestamps
+        if (!schoolConfig.createdAt) {
+            schoolConfig.createdAt = new Date().toISOString();
+        }
+        schoolConfig.updatedAt = new Date().toISOString();
+        
+        // Save to Firestore
+        await window.SchoolApp.db.collection('schoolConfig').doc('main').set(schoolConfig, { merge: true });
+        
+        window.SchoolApp.SchoolUtils.showToast('Configuration saved successfully!', 'success');
+        
+    } catch (error) {
+        window.SchoolApp.SchoolUtils.showToast('Error saving configuration: ' + error.message, 'error');
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Configuration';
+    }
+}
+
+async function resetToDefaults() {
+    const confirmation = await window.SchoolApp.SchoolUtils.showAlert(
+        'Are you sure you want to reset to default values? This will clear all current settings.',
+        'Reset Configuration'
+    );
+    
+    if (confirmation) return;
+    
+}
+
+function showLoading(show) {
+    const overlay = document.getElementById('loading-overlay');
+    overlay.style.display = show ? 'flex' : 'none';
+}
+
+// Show toast message - using SchoolUtils instead of custom function
+function showToast(message, type = 'success') {
+    window.SchoolApp.SchoolUtils.showToast(message, type);
+}
+</script>
+</body>
+</html>

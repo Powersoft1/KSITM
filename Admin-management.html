@@ -1,0 +1,1860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Management - KSITM CTE</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --primary: #920f09f3;
+            --primary-light: #920f0919;
+            --secondary: #705e03;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --info: #3498db;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --accent: #4361ee;
+            --accent-light: #4361ee15;
+            --text-color: #333;
+            --text-muted: #6c757d;
+            --border-color: #dee2e6;
+            --card-bg: #fff;
+            --body-bg: #f5f7fb;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 6px 12px rgba(0, 0, 0, 0.15);
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--body-bg);
+            color: var(--text-color);
+            min-height: 100vh;
+        }
+
+        .admin-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .admin-header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 25px 30px;
+            border-radius: var(--radius-lg);
+            margin-bottom: 30px;
+            box-shadow: var(--shadow-md);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .admin-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 30px 30px;
+            opacity: 0.1;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .admin-title h1 {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .admin-title p {
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+
+        .admin-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        /* Management Grid */
+        .management-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        /* Cards */
+        .management-card {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: 25px;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            animation: fadeInUp 0.8s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .management-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.5s ease;
+        }
+
+        .management-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .management-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-header {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            color: var(--primary);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 16px;
+            transition: var(--transition);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(146, 15, 9, 0.2);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        /* Data Tables */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .data-table th {
+            background-color: var(--primary-light);
+            color: var(--primary);
+            font-weight: 600;
+            text-align: left;
+            padding: 12px 15px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .data-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+
+        .data-table tr:hover {
+            background-color: var(--primary-light);
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .status-active {
+            background-color: rgba(46, 204, 113, 0.2);
+            color: var(--success);
+        }
+
+        .status-inactive {
+            background-color: rgba(231, 76, 60, 0.2);
+            color: var(--danger);
+        }
+
+        /* Action Buttons */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #27ae60;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        .btn-warning {
+            background-color: var(--warning);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background-color: #e67e22;
+        }
+
+        .btn-icon {
+            padding: 8px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.9rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        /* Tabs */
+        .admin-tabs {
+            display: flex;
+            margin-bottom: 25px;
+            border-bottom: 2px solid var(--border-color);
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 15px 25px;
+            background: none;
+            border: none;
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--primary);
+        }
+
+        .tab-btn:hover:not(.active) {
+            color: var(--dark);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+        }
+
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: var(--radius-lg);
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+
+        .modal.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .modal-header h3 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.3rem;
+        }
+
+        .modal-body {
+            padding: 25px;
+            color: var(--dark);
+        }
+
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.3s ease;
+        }
+
+        .close-modal:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 20px;
+            border-radius: var(--radius-md);
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        .toast.success {
+            background-color: var(--success);
+        }
+
+        .toast.error {
+            background-color: var(--danger);
+        }
+
+        .toast.warning {
+            background-color: var(--warning);
+        }
+
+        /* Loading Spinner */
+        .loading-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid var(--border-color);
+            border-left: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Search Bar */
+        .search-container {
+            margin-bottom: 20px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 16px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.3;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 10px;
+            color: var(--text-muted);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .management-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .admin-tabs {
+                flex-direction: column;
+            }
+            
+            .tab-btn {
+                padding: 12px;
+                width: 100%;
+                text-align: left;
+            }
+            
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+            
+            .data-table {
+                display: block;
+                overflow-x: auto;
+            }
+            
+            .admin-container {
+                padding: 15px;
+            }
+            
+            .management-card {
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .admin-container {
+                padding: 10px;
+            }
+            
+            .modal-content {
+                width: 95%;
+            }
+            
+            .modal-body {
+                padding: 15px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Header -->
+        <div class="admin-header">
+            <div class="header-content">
+                <div class="admin-title">
+                    <h1><i class="fas fa-user-shield"></i> Admin Management Portal</h1>
+                    <p>Manage students, courses, notices, and system settings</p>
+                </div>
+                <div class="admin-actions">
+                    <button class="btn btn-warning" id="refresh-btn">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                    <button class="btn btn-danger" id="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Access Control (Will be hidden for non-admins) -->
+        <div id="access-denied" style="display: none;">
+            <div class="empty-state">
+                <i class="fas fa-ban"></i>
+                <h3>Access Denied</h3>
+                <p>You don't have permission to access this page.</p>
+                <button class="btn btn-primary" onclick="window.location.href='dashboard.html'">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </button>
+            </div>
+        </div>
+
+        <!-- Admin Content -->
+        <div id="admin-content" style="display: none;">
+            <!-- Tabs -->
+            <div class="admin-tabs">
+                <button class="tab-btn active" data-tab="students">Students</button>
+                <button class="tab-btn" data-tab="lecturers">Lecturers</button>
+                <button class="tab-btn" data-tab="courses">Courses</button>
+                <button class="tab-btn" data-tab="notices">Notices</button>
+                <button class="tab-btn" data-tab="timetable">Timetable</button>
+                <button class="tab-btn" data-tab="events">Events</button>
+                <button class="tab-btn" data-tab="settings">Settings</button>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loading-state" class="loading-container">
+                <div class="loading-spinner"></div>
+            </div>
+
+            <!-- Tab Contents -->
+            <div id="tab-contents">
+                <!-- Students Management -->
+                <div class="tab-content active" id="students-tab">
+                    <div class="management-card">
+                        <div class="card-header">
+                            <h2 class="card-title"><i class="fas fa-users"></i> Student Management</h2>
+                            <button class="btn btn-primary" id="add-student-btn">
+                                <i class="fas fa-user-plus"></i> Add Student
+                            </button>
+                        </div>
+                        <div class="search-container">
+                            <div class="search-box">
+                                <input type="text" class="search-input" id="student-search" placeholder="Search students by name, reg number, or email...">
+                                <button class="btn btn-primary" id="student-search-btn">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table" id="students-table">
+                                <thead>
+                                    <tr>
+                                        <th>Reg Number</th>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Department</th>
+                                        <th>Level</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="students-table-body">
+                                    <!-- Students will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lecturers Management -->
+                <div class="tab-content" id="lecturers-tab">
+                    <div class="management-card">
+                        <div class="card-header">
+                            <h2 class="card-title"><i class="fas fa-chalkboard-teacher"></i> Lecturer Management</h2>
+                            <button class="btn btn-primary" id="add-lecturer-btn">
+                                <i class="fas fa-user-plus"></i> Add Lecturer
+                            </button>
+                        </div>
+                        <div class="search-container">
+                            <div class="search-box">
+                                <input type="text" class="search-input" id="lecturer-search" placeholder="Search lecturers...">
+                                <button class="btn btn-primary" id="lecturer-search-btn">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table" id="lecturers-table">
+                                <thead>
+                                    <tr>
+                                        <th>Staff ID</th>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Department</th>
+                                        <th>Courses</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="lecturers-table-body">
+                                    <!-- Lecturers will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Courses Management -->
+                <div class="tab-content" id="courses-tab">
+                    <div class="management-card">
+                        <div class="card-header">
+                            <h2 class="card-title"><i class="fas fa-book"></i> Course Management</h2>
+                            <button class="btn btn-primary" id="add-course-btn">
+                                <i class="fas fa-plus"></i> Add Course
+                            </button>
+                        </div>
+                        <div class="search-container">
+                            <div class="search-box">
+                                <input type="text" class="search-input" id="course-search" placeholder="Search courses...">
+                                <button class="btn btn-primary" id="course-search-btn">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table" id="courses-table">
+                                <thead>
+                                    <tr>
+                                        <th>Course Code</th>
+                                        <th>Course Title</th>
+                                        <th>Department</th>
+                                        <th>Level</th>
+                                        <th>Lecturer</th>
+                                        <th>Credits</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="courses-table-body">
+                                    <!-- Courses will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notices Management -->
+                <div class="tab-content" id="notices-tab">
+                    <div class="management-card">
+                        <div class="card-header">
+                            <h2 class="card-title"><i class="fas fa-bullhorn"></i> Notice Management</h2>
+                            <button class="btn btn-primary" id="add-notice-btn">
+                                <i class="fas fa-plus"></i> Add Notice
+                            </button>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table" id="notices-table">
+                                <thead>
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Priority</th>
+                                        <th>Status</th>
+                                        <th>Created Date</th>
+                                        <th>Expiry Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="notices-table-body">
+                                    <!-- Notices will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timetable Management -->
+                <div class="tab-content" id="timetable-tab">
+                    <div class="management-card">
+                        <div class="card-header">
+                            <h2 class="card-title"><i class="fas fa-calendar-alt"></i> Timetable Management</h2>
+                            <button class="btn btn-primary" id="add-timetable-btn">
+                                <i class="fas fa-plus"></i> Add Schedule
+                            </button>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table" id="timetable-table">
+                                <thead>
+                                    <tr>
+                                        <th>Course</th>
+                                        <th>Day</th>
+                                        <th>Time</th>
+                                        <th>Venue</th>
+                                        <th>Department</th>
+                                        <th>Level</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="timetable-table-body">
+                                    <!-- Timetable entries will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Events Management -->
+                <div class="tab-content" id="events-tab">
+                    <div class="management-card">
+                        <div class="card-header">
+                            <h2 class="card-title"><i class="fas fa-calendar-check"></i> Event Management</h2>
+                            <button class="btn btn-primary" id="add-event-btn">
+                                <i class="fas fa-plus"></i> Add Event
+                            </button>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table" id="events-table">
+                                <thead>
+                                    <tr>
+                                        <th>Event Title</th>
+                                        <th>Date</th>
+                                        <th>Time</th>
+                                        <th>Type</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="events-table-body">
+                                    <!-- Events will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings -->
+                <div class="tab-content" id="settings-tab">
+                    <div class="management-grid">
+                        <!-- System Settings -->
+                        <div class="management-card">
+                            <div class="card-header">
+                                <h2 class="card-title"><i class="fas fa-cogs"></i> System Settings</h2>
+                            </div>
+                            <div class="form-group">
+                                <label>Academic Year</label>
+                                <input type="text" class="form-control" id="academic-year" placeholder="e.g., 2024/2025">
+                            </div>
+                            <div class="form-group">
+                                <label>Current Semester</label>
+                                <select class="form-control" id="current-semester">
+                                    <option value="first">First Semester</option>
+                                    <option value="second">Second Semester</option>
+                                    <option value="summer">Summer Semester</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>School Opening Hours</label>
+                                <div class="form-row">
+                                    <input type="time" class="form-control" id="opening-time" value="08:00">
+                                    <input type="time" class="form-control" id="closing-time" value="18:00">
+                                </div>
+                            </div>
+                            <button class="btn btn-success" id="save-settings-btn">
+                                <i class="fas fa-save"></i> Save Settings
+                            </button>
+                        </div>
+
+                        <!-- User Management -->
+                        <div class="management-card">
+                            <div class="card-header">
+                                <h2 class="card-title"><i class="fas fa-user-cog"></i> User Roles</h2>
+                            </div>
+                            <div class="table-container">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Role</th>
+                                            <th>Permissions</th>
+                                            <th>Users</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>Admin</strong></td>
+                                            <td>Full system access</td>
+                                            <td id="admin-count">0</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Lecturer</strong></td>
+                                            <td>Course management, grading</td>
+                                            <td id="lecturer-count">0</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>HOD</strong></td>
+                                            <td>Department management</td>
+                                            <td id="hod-count">0</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Student</strong></td>
+                                            <td>Basic access, view results</td>
+                                            <td id="student-count">0</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Add Student Modal -->
+    <div class="modal" id="add-student-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-user-plus"></i> Add New Student</h3>
+                <button class="close-modal" data-modal="add-student-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="add-student-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Registration Number *</label>
+                            <input type="text" class="form-control" id="student-reg-number" required>
+                        </div>
+                        <div class="form-group">
+                            <label>JAMB Number</label>
+                            <input type="text" class="form-control" id="student-jamb-number">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Full Name *</label>
+                            <input type="text" class="form-control" id="student-fullname" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Email Address *</label>
+                            <input type="email" class="form-control" id="student-email" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Phone Number *</label>
+                            <input type="tel" class="form-control" id="student-phone" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Entry Year *</label>
+                            <input type="number" class="form-control" id="student-entry-year" min="2000" max="2030" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Department *</label>
+                            <select class="form-control" id="student-department" required>
+                                <option value="">Select Department</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Level *</label>
+                            <select class="form-control" id="student-level" required>
+                                <option value="">Select Level</option>
+                                <option value="100">100 Level</option>
+                                <option value="200">200 Level</option>
+                                <option value="300">300 Level</option>
+                                <option value="400">400 Level</option>
+                                <option value="500">500 Level</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Faculty</label>
+                            <input type="text" class="form-control" id="student-faculty">
+                        </div>
+                        <div class="form-group">
+                            <label>State of Origin</label>
+                            <input type="text" class="form-control" id="student-state">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Address</label>
+                        <textarea class="form-control" id="student-address" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-modal="add-student-modal">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button class="btn btn-primary" id="save-student-btn">
+                    <i class="fas fa-save"></i> Save Student
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Notice Modal -->
+    <div class="modal" id="add-notice-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-bullhorn"></i> Add New Notice</h3>
+                <button class="close-modal" data-modal="add-notice-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="add-notice-form">
+                    <div class="form-group">
+                        <label>Title *</label>
+                        <input type="text" class="form-control" id="notice-title" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Message *</label>
+                        <textarea class="form-control" id="notice-message" rows="4" required></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Priority *</label>
+                            <select class="form-control" id="notice-priority" required>
+                                <option value="high">High</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="low">Low</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Expiry Date</label>
+                            <input type="date" class="form-control" id="notice-expiry">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="notice-active" checked> Active
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-modal="add-notice-modal">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button class="btn btn-primary" id="save-notice-btn">
+                    <i class="fas fa-save"></i> Save Notice
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Include school app JS -->
+    <script src="js/school-app.js"></script>
+    
+    <!-- Admin Management Script -->
+    <script>
+        // Initialize admin management
+        document.addEventListener('DOMContentLoaded', async function() {
+            await initializeAdminManagement();
+        });
+
+        async function initializeAdminManagement() {
+            try {
+                // Check admin access
+                const hasAccess = await checkAdminAccess();
+                
+                if (!hasAccess) {
+                    document.getElementById('access-denied').style.display = 'block';
+                    return;
+                }
+                
+                // Initialize event listeners
+                setupEventListeners();
+                
+                // Load initial data
+                await loadInitialData();
+                
+                // Show admin content
+                document.getElementById('loading-state').style.display = 'none';
+                document.getElementById('admin-content').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Admin initialization error:', error);
+                showToast('Error initializing admin panel', 'error');
+            }
+        }
+
+        async function checkAdminAccess() {
+            try {
+                await window.SchoolApp.AuthManager.initialize();
+                
+                const userData = window.SchoolApp.AuthManager.getUserData();
+                const allowedRoles = ['Admin', 'Lecturer', 'HOD', 'Dean'];
+                
+                if (!userData || !allowedRoles.includes(userData.role)) {
+                    return false;
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('Access check error:', error);
+                return false;
+            }
+        }
+
+        function setupEventListeners() {
+            // Tab switching
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    
+                    this.classList.add('active');
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                });
+            });
+            
+            // Modal close buttons
+            document.querySelectorAll('.close-modal, .btn-secondary[data-modal]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const modalId = this.getAttribute('data-modal') || 
+                                  this.closest('.modal').id;
+                    closeModal(modalId);
+                });
+            });
+            
+            // Refresh button
+            document.getElementById('refresh-btn').addEventListener('click', refreshData);
+            
+            // Logout button
+            document.getElementById('logout-btn').addEventListener('click', handleLogout);
+            
+            // Add buttons
+            document.getElementById('add-student-btn').addEventListener('click', () => openModal('add-student-modal'));
+            document.getElementById('add-notice-btn').addEventListener('click', () => openModal('add-notice-modal'));
+            document.getElementById('add-lecturer-btn').addEventListener('click', () => showToast('Feature coming soon', 'warning'));
+            document.getElementById('add-course-btn').addEventListener('click', () => showToast('Feature coming soon', 'warning'));
+            document.getElementById('add-timetable-btn').addEventListener('click', () => showToast('Feature coming soon', 'warning'));
+            document.getElementById('add-event-btn').addEventListener('click', () => showToast('Feature coming soon', 'warning'));
+            
+            // Save buttons
+            document.getElementById('save-student-btn').addEventListener('click', saveStudent);
+            document.getElementById('save-notice-btn').addEventListener('click', saveNotice);
+            document.getElementById('save-settings-btn').addEventListener('click', saveSettings);
+            
+            // Search functionality
+            setupSearchFunctionality();
+        }
+
+        async function loadInitialData() {
+            try {
+                await Promise.all([
+                    loadStudents(),
+                    loadLecturers(),
+                    loadCourses(),
+                    loadNotices(),
+                    loadTimetable(),
+                    loadEvents(),
+                    loadSettings(),
+                    loadUserCounts()
+                ]);
+            } catch (error) {
+                console.error('Error loading initial data:', error);
+                showToast('Error loading data', 'error');
+            }
+        }
+
+        async function loadStudents() {
+            try {
+                const studentsSnapshot = await window.SchoolApp.db.collection('students').get();
+                const tbody = document.getElementById('students-table-body');
+                
+                if (studentsSnapshot.empty) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="empty-state">
+                                <i class="fas fa-users"></i>
+                                <p>No students found</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                let html = '';
+                studentsSnapshot.forEach(doc => {
+                    const student = doc.data();
+                    html += `
+                        <tr>
+                            <td><strong>${student.regNumber || 'N/A'}</strong></td>
+                            <td>${student.fullName || 'N/A'}</td>
+                            <td>${student.email || 'N/A'}</td>
+                            <td>${student.department || 'N/A'}</td>
+                            <td>${student.level || 'N/A'}</td>
+                            <td>
+                                <span class="status-badge ${student.status === 'Active' ? 'status-active' : 'status-inactive'}">
+                                    ${student.status || 'Inactive'}
+                                </span>
+                            </td>
+                            <td class="action-buttons">
+                                <button class="btn btn-sm btn-primary btn-icon" onclick="editStudent('${doc.id}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger btn-icon" onclick="deleteStudent('${doc.id}', '${student.fullName || 'this student'}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                tbody.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Error loading students:', error);
+                showToast('Error loading students', 'error');
+            }
+        }
+
+        async function loadLecturers() {
+            try {
+                const lecturersSnapshot = await window.SchoolApp.db.collection('lecturers').get();
+                const tbody = document.getElementById('lecturers-table-body');
+                
+                if (lecturersSnapshot.empty) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="empty-state">
+                                <i class="fas fa-chalkboard-teacher"></i>
+                                <p>No lecturers found</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                let html = '';
+                lecturersSnapshot.forEach(doc => {
+                    const lecturer = doc.data();
+                    html += `
+                        <tr>
+                            <td><strong>${lecturer.staffId || 'N/A'}</strong></td>
+                            <td>${lecturer.fullName || 'N/A'}</td>
+                            <td>${lecturer.email || 'N/A'}</td>
+                            <td>${lecturer.department || 'N/A'}</td>
+                            <td>${lecturer.courses?.length || 0} courses</td>
+                            <td>
+                                <span class="status-badge ${lecturer.status === 'Active' ? 'status-active' : 'status-inactive'}">
+                                    ${lecturer.status || 'Inactive'}
+                                </span>
+                            </td>
+                            <td class="action-buttons">
+                                <button class="btn btn-sm btn-primary btn-icon">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger btn-icon">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                tbody.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Error loading lecturers:', error);
+            }
+        }
+
+        async function loadCourses() {
+            try {
+                const coursesSnapshot = await window.SchoolApp.db.collection('courses').get();
+                const tbody = document.getElementById('courses-table-body');
+                
+                if (coursesSnapshot.empty) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="empty-state">
+                                <i class="fas fa-book"></i>
+                                <p>No courses found</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                let html = '';
+                coursesSnapshot.forEach(doc => {
+                    const course = doc.data();
+                    html += `
+                        <tr>
+                            <td><strong>${course.code || 'N/A'}</strong></td>
+                            <td>${course.title || 'N/A'}</td>
+                            <td>${course.department || 'N/A'}</td>
+                            <td>${course.level || 'N/A'}</td>
+                            <td>${course.lecturer || 'N/A'}</td>
+                            <td>${course.credits || '0'}</td>
+                            <td class="action-buttons">
+                                <button class="btn btn-sm btn-primary btn-icon">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger btn-icon">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                tbody.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Error loading courses:', error);
+            }
+        }
+
+        async function loadNotices() {
+            try {
+                const noticesSnapshot = await window.SchoolApp.db.collection('notices')
+                    .orderBy('createdAt', 'desc')
+                    .get();
+                
+                const tbody = document.getElementById('notices-table-body');
+                
+                if (noticesSnapshot.empty) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="empty-state">
+                                <i class="fas fa-bullhorn"></i>
+                                <p>No notices found</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                let html = '';
+                noticesSnapshot.forEach(doc => {
+                    const notice = doc.data();
+                    const created = notice.createdAt?.toDate ? 
+                        notice.createdAt.toDate() : new Date(notice.createdAt);
+                    const expiry = notice.expiryDate?.toDate ? 
+                        notice.expiryDate.toDate() : null;
+                    
+                    html += `
+                        <tr>
+                            <td><strong>${notice.title || 'N/A'}</strong></td>
+                            <td>
+                                <span class="status-badge priority-${notice.priority || 'medium'}">
+                                    ${(notice.priority || 'medium').toUpperCase()}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="status-badge ${notice.active ? 'status-active' : 'status-inactive'}">
+                                    ${notice.active ? 'Active' : 'Inactive'}
+                                </span>
+                            </td>
+                            <td>${created.toLocaleDateString()}</td>
+                            <td>${expiry ? expiry.toLocaleDateString() : 'No expiry'}</td>
+                            <td class="action-buttons">
+                                <button class="btn btn-sm btn-primary btn-icon" onclick="editNotice('${doc.id}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger btn-icon" onclick="deleteNotice('${doc.id}', '${notice.title}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                tbody.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Error loading notices:', error);
+                showToast('Error loading notices', 'error');
+            }
+        }
+
+        async function loadTimetable() {
+            try {
+                const timetableSnapshot = await window.SchoolApp.db.collection('timetable')
+                    .orderBy('day')
+                    .orderBy('startTime')
+                    .get();
+                
+                const tbody = document.getElementById('timetable-table-body');
+                
+                if (timetableSnapshot.empty) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="empty-state">
+                                <i class="fas fa-calendar-alt"></i>
+                                <p>No timetable entries found</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                let html = '';
+                timetableSnapshot.forEach(doc => {
+                    const entry = doc.data();
+                    html += `
+                        <tr>
+                            <td><strong>${entry.course || 'N/A'}</strong></td>
+                            <td>${entry.day || 'N/A'}</td>
+                            <td>${entry.startTime || ''} - ${entry.endTime || ''}</td>
+                            <td>${entry.venue || 'TBA'}</td>
+                            <td>${entry.department || 'N/A'}</td>
+                            <td>${entry.level || 'N/A'}</td>
+                            <td class="action-buttons">
+                                <button class="btn btn-sm btn-primary btn-icon">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger btn-icon">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                tbody.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Error loading timetable:', error);
+            }
+        }
+
+        async function loadEvents() {
+            try {
+                const eventsSnapshot = await window.SchoolApp.db.collection('events')
+                    .orderBy('date')
+                    .get();
+                
+                const tbody = document.getElementById('events-table-body');
+                
+                if (eventsSnapshot.empty) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="empty-state">
+                                <i class="fas fa-calendar-check"></i>
+                                <p>No events found</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                let html = '';
+                eventsSnapshot.forEach(doc => {
+                    const event = doc.data();
+                    const date = event.date?.toDate ? event.date.toDate() : new Date(event.date);
+                    
+                    html += `
+                        <tr>
+                            <td><strong>${event.title || 'N/A'}</strong></td>
+                            <td>${date.toLocaleDateString()}</td>
+                            <td>${event.time || 'All day'}</td>
+                            <td>${event.type || 'General'}</td>
+                            <td>
+                                <span class="status-badge ${event.active ? 'status-active' : 'status-inactive'}">
+                                    ${event.active ? 'Active' : 'Inactive'}
+                                </span>
+                            </td>
+                            <td class="action-buttons">
+                                <button class="btn btn-sm btn-primary btn-icon">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger btn-icon">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                tbody.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Error loading events:', error);
+            }
+        }
+
+        async function loadSettings() {
+            try {
+                const settingsSnapshot = await window.SchoolApp.db.collection('settings').doc('system').get();
+                
+                if (settingsSnapshot.exists) {
+                    const settings = settingsSnapshot.data();
+                    document.getElementById('academic-year').value = settings.academicYear || '';
+                    document.getElementById('current-semester').value = settings.currentSemester || 'first';
+                    document.getElementById('opening-time').value = settings.openingTime || '08:00';
+                    document.getElementById('closing-time').value = settings.closingTime || '18:00';
+                }
+            } catch (error) {
+                console.error('Error loading settings:', error);
+            }
+        }
+
+        async function loadUserCounts() {
+            try {
+                // Count admins
+                const adminsSnapshot = await window.SchoolApp.db.collection('students')
+                    .where('role', '==', 'Admin')
+                    .get();
+                document.getElementById('admin-count').textContent = adminsSnapshot.size;
+                
+                // Count lecturers
+                const lecturersSnapshot = await window.SchoolApp.db.collection('lecturers').get();
+                document.getElementById('lecturer-count').textContent = lecturersSnapshot.size;
+                
+                // Count HODs
+                const hodsSnapshot = await window.SchoolApp.db.collection('students')
+                    .where('role', '==', 'HOD')
+                    .get();
+                document.getElementById('hod-count').textContent = hodsSnapshot.size;
+                
+                // Count all students
+                const studentsSnapshot = await window.SchoolApp.db.collection('students').get();
+                document.getElementById('student-count').textContent = studentsSnapshot.size;
+                
+            } catch (error) {
+                console.error('Error loading user counts:', error);
+            }
+        }
+
+        async function saveStudent() {
+            try {
+                const studentData = {
+                    regNumber: document.getElementById('student-reg-number').value.trim(),
+                    jambNumber: document.getElementById('student-jamb-number').value.trim() || '',
+                    fullName: document.getElementById('student-fullname').value.trim(),
+                    email: document.getElementById('student-email').value.trim(),
+                    phone: document.getElementById('student-phone').value.trim(),
+                    entryYear: document.getElementById('student-entry-year').value.trim(),
+                    department: document.getElementById('student-department').value,
+                    level: document.getElementById('student-level').value,
+                    faculty: document.getElementById('student-faculty').value.trim() || '',
+                    state: document.getElementById('student-state').value.trim() || '',
+                    address: document.getElementById('student-address').value.trim() || '',
+                    role: 'Student',
+                    status: 'Active',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                
+                // Validate required fields
+                if (!studentData.regNumber || !studentData.fullName || !studentData.email || !studentData.phone) {
+                    showToast('Please fill in all required fields', 'error');
+                    return;
+                }
+                
+                // Validate email
+                if (!window.SchoolApp.SchoolUtils.validateEmail(studentData.email)) {
+                    showToast('Please enter a valid email address', 'error');
+                    return;
+                }
+                
+                // Validate phone
+                if (!window.SchoolApp.SchoolUtils.validatePhone(studentData.phone)) {
+                    showToast('Please enter a valid phone number', 'error');
+                    return;
+                }
+                
+                // Check if student already exists
+                const existingStudent = await window.SchoolApp.db.collection('students')
+                    .where('regNumber', '==', studentData.regNumber)
+                    .limit(1)
+                    .get();
+                
+                if (!existingStudent.empty) {
+                    showToast('Student with this registration number already exists', 'error');
+                    return;
+                }
+                
+                // Save student to database
+                await window.SchoolApp.db.collection('students').add(studentData);
+                
+                showToast('Student added successfully', 'success');
+                closeModal('add-student-modal');
+                await loadStudents();
+                await loadUserCounts();
+                
+            } catch (error) {
+                console.error('Error saving student:', error);
+                showToast('Error saving student: ' + error.message, 'error');
+            }
+        }
+
+        async function saveNotice() {
+            try {
+                const noticeData = {
+                    title: document.getElementById('notice-title').value.trim(),
+                    message: document.getElementById('notice-message').value.trim(),
+                    priority: document.getElementById('notice-priority').value,
+                    active: document.getElementById('notice-active').checked,
+                    expiryDate: document.getElementById('notice-expiry').value || null,
+                    createdAt: new Date().toISOString(),
+                    createdBy: window.SchoolApp.AuthManager.currentUser.uid
+                };
+                
+                // Validate required fields
+                if (!noticeData.title || !noticeData.message) {
+                    showToast('Please fill in all required fields', 'error');
+                    return;
+                }
+                
+                // Save notice to database
+                await window.SchoolApp.db.collection('notices').add(noticeData);
+                
+                showToast('Notice added successfully', 'success');
+                closeModal('add-notice-modal');
+                await loadNotices();
+                
+            } catch (error) {
+                console.error('Error saving notice:', error);
+                showToast('Error saving notice: ' + error.message, 'error');
+            }
+        }
+
+        async function saveSettings() {
+            try {
+                const settingsData = {
+                    academicYear: document.getElementById('academic-year').value.trim(),
+                    currentSemester: document.getElementById('current-semester').value,
+                    openingTime: document.getElementById('opening-time').value,
+                    closingTime: document.getElementById('closing-time').value,
+                    updatedAt: new Date().toISOString(),
+                    updatedBy: window.SchoolApp.AuthManager.currentUser.uid
+                };
+                
+                await window.SchoolApp.db.collection('settings').doc('system').set(settingsData, { merge: true });
+                
+                showToast('Settings saved successfully', 'success');
+                
+            } catch (error) {
+                console.error('Error saving settings:', error);
+                showToast('Error saving settings', 'error');
+            }
+        }
+
+        async function deleteStudent(studentId, studentName) {
+            if (!confirm(`Are you sure you want to delete ${studentName}? This action cannot be undone.`)) {
+                return;
+            }
+            
+            try {
+                await window.SchoolApp.db.collection('students').doc(studentId).delete();
+                showToast('Student deleted successfully', 'success');
+                await loadStudents();
+                await loadUserCounts();
+            } catch (error) {
+                console.error('Error deleting student:', error);
+                showToast('Error deleting student', 'error');
+            }
+        }
+
+        async function deleteNotice(noticeId, noticeTitle) {
+            if (!confirm(`Are you sure you want to delete "${noticeTitle}"?`)) {
+                return;
+            }
+            
+            try {
+                await window.SchoolApp.db.collection('notices').doc(noticeId).delete();
+                showToast('Notice deleted successfully', 'success');
+                await loadNotices();
+            } catch (error) {
+                console.error('Error deleting notice:', error);
+                showToast('Error deleting notice', 'error');
+            }
+        }
+
+        function setupSearchFunctionality() {
+            // Student search
+            document.getElementById('student-search-btn').addEventListener('click', searchStudents);
+            document.getElementById('student-search').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') searchStudents();
+            });
+        }
+
+        async function searchStudents() {
+            const searchTerm = document.getElementById('student-search').value.trim().toLowerCase();
+            
+            if (!searchTerm) {
+                await loadStudents();
+                return;
+            }
+            
+            try {
+                const studentsSnapshot = await window.SchoolApp.db.collection('students').get();
+                const tbody = document.getElementById('students-table-body');
+                
+                if (studentsSnapshot.empty) {
+                    tbody.innerHTML = '<tr><td colspan="7">No students found</td></tr>';
+                    return;
+                }
+                
+                let html = '';
+                let found = false;
+                
+                studentsSnapshot.forEach(doc => {
+                    const student = doc.data();
+                    const searchableText = `
+                        ${student.regNumber || ''}
+                        ${student.fullName || ''}
+                        ${student.email || ''}
+                        ${student.department || ''}
+                    `.toLowerCase();
+                    
+                    if (searchableText.includes(searchTerm)) {
+                        found = true;
+                        html += `
+                            <tr>
+                                <td><strong>${student.regNumber || 'N/A'}</strong></td>
+                                <td>${student.fullName || 'N/A'}</td>
+                                <td>${student.email || 'N/A'}</td>
+                                <td>${student.department || 'N/A'}</td>
+                                <td>${student.level || 'N/A'}</td>
+                                <td>
+                                    <span class="status-badge ${student.status === 'Active' ? 'status-active' : 'status-inactive'}">
+                                        ${student.status || 'Inactive'}
+                                    </span>
+                                </td>
+                                <td class="action-buttons">
+                                    <button class="btn btn-sm btn-primary btn-icon">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger btn-icon">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    }
+                });
+                
+                if (!found) {
+                    html = '<tr><td colspan="7">No students match your search</td></tr>';
+                }
+                
+                tbody.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Error searching students:', error);
+                showToast('Error searching students', 'error');
+            }
+        }
+
+        async function refreshData() {
+            document.getElementById('loading-state').style.display = 'flex';
+            document.getElementById('admin-content').style.display = 'none';
+            
+            try {
+                await loadInitialData();
+                showToast('Data refreshed successfully', 'success');
+            } catch (error) {
+                showToast('Error refreshing data', 'error');
+            } finally {
+                document.getElementById('loading-state').style.display = 'none';
+                document.getElementById('admin-content').style.display = 'block';
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                await window.SchoolApp.AuthManager.logout();
+                window.location.href = 'login.html';
+            } catch (error) {
+                showToast('Error logging out', 'error');
+            }
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+            
+            // Reset form if exists
+            const form = document.getElementById(modalId.replace('modal', 'form'));
+            if (form) {
+                form.reset();
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Make functions available globally for onclick events
+        window.editStudent = function(studentId) {
+            showToast('Edit feature coming soon', 'warning');
+        };
+        
+        window.deleteStudent = deleteStudent;
+        window.editNotice = function(noticeId) {
+            showToast('Edit feature coming soon', 'warning');
+        };
+        
+        window.deleteNotice = deleteNotice;
+    </script>
+</body>
+</html>

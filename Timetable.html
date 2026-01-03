@@ -1,0 +1,2121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1200, initial-scale=1.0">
+    <title>Timetable - KSITM CTE</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Shared CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    
+    <!-- Timetable Specific Styles -->
+    <style>
+        /* Timetable Specific Styles */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 25px 30px;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+
+        .header-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .current-lecture-banner {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+            padding: 20px;
+            border-radius: var(--radius-md);
+            margin: 20px 0;
+            box-shadow: var(--shadow);
+            animation: pulse 2s infinite;
+        }
+
+        .current-lecture-banner h3 {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .current-lecture-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-item i {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .info-label {
+            font-weight: 500;
+            opacity: 0.9;
+        }
+
+        .info-value {
+            font-weight: 600;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid var(--light-gray);
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        .loading-text {
+            font-size: 1.2rem;
+            color: var(--dark);
+            font-weight: 500;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: var(--radius-md);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            transition: var(--transition);
+            border-left: 4px solid var(--primary);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-right: 15px;
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .stat-details h3 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+            color: var(--dark);
+        }
+
+        .stat-details p {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        /* Filters Section */
+        .filters-section {
+            background: var(--primary-light);
+            padding: 20px;
+            border-radius: var(--radius-md);
+            margin-bottom: 25px;
+            box-shadow: var(--shadow);
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        /* Day Navigation */
+        .day-navigation {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .day-btn {
+            padding: 10px 20px;
+            border: 2px solid var(--primary);
+            background: none;
+            color: var(--primary);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .day-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .day-btn:hover:not(.active) {
+            background: var(--primary-light);
+        }
+
+        /* Updated Timetable Styles - More Beautiful */
+        .timetable-container {
+            overflow-x: auto;
+            margin-top: 20px;
+            border-radius: var(--radius-lg);
+            border: 2px solid var(--primary);
+            background: white;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .timetable {
+            width: 100%;
+            min-width: 800px;
+            border-collapse: collapse;
+            border-spacing: 0;
+        }
+
+        .timetable th {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+            text-align: center;
+            padding: 18px 12px;
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+            border-bottom: 2px solid var(--primary);
+            min-width: 100px;
+            position: relative;
+        }
+
+        .timetable th:first-child {
+            border-top-left-radius: 8px;
+            width: 120px;
+        }
+
+        .timetable th:last-child {
+            border-top-right-radius: 8px;
+            border-right: none;
+        }
+
+        .timetable th.time-header {
+            background: linear-gradient(135deg, var(--secondary), var(--dark));
+            font-size: 0.9rem;
+            padding: 12px 5px;
+            border-bottom: 2px solid var(--secondary);
+        }
+
+        .timetable th.time-header:first-child {
+            border-left: 2px solid var(--primary);
+        }
+
+        .timetable td {
+            padding: 0;
+            border-right: 1px solid #e0e0e0;
+            border-bottom: 1px solid #e0e0e0;
+            vertical-align: middle;
+            height: 70px;
+            position: relative;
+            text-align: center;
+        }
+
+        .timetable td:first-child {
+            border-left: 2px solid var(--primary);
+        }
+
+        .timetable tr:last-child td {
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .timetable tr td:last-child {
+            border-right: 2px solid var(--primary);
+        }
+
+        .day-cell {
+            background: linear-gradient(135deg, var(--primary-light), #e8eeff);
+            color: var(--primary);
+            font-weight: 700;
+            text-align: center;
+            padding: 15px 10px;
+            width: 120px;
+            position: sticky;
+            left: 0;
+            z-index: 2;
+            border-right: 2px solid var(--primary) !important;
+            border-left: 2px solid var(--primary) !important;
+            font-size: 1.1rem;
+        }
+
+        /* Lecture Slot - Beautiful Design with Merged Cells */
+        .lecture-slot {
+            background: linear-gradient(135deg, #ffffff, #f8f9ff);
+            border-radius: 8px;
+            padding: 12px 8px;
+            border-left: 5px solid;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .lecture-slot:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            z-index: 10;
+        }
+
+        .lecture-slot.current {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            color: #155724;
+            border-left-color: #28a745;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.2);
+            animation: pulse 2s infinite;
+        }
+
+        .lecture-slot.ended {
+            opacity: 0.7;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            color: #6c757d;
+            border-left-color: #6c757d;
+        }
+
+        .lecture-code {
+            font-weight: 800;
+            font-size: 1.1rem;
+            margin-bottom: 4px;
+            color: var(--dark);
+            letter-spacing: 0.5px;
+        }
+
+        .lecture-details {
+            font-size: 0.75rem;
+            color: var(--gray);
+            line-height: 1.3;
+        }
+
+        .lecture-venue {
+            background: rgba(67, 97, 238, 0.1);
+            color: var(--primary);
+            padding: 2px 8px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-top: 4px;
+            font-weight: 500;
+            font-size: 0.7rem;
+        }
+
+        .lecture-time {
+            font-size: 0.7rem;
+            margin-top: 3px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        /* Scrollable Modal */
+        .lecture-details-modal .modal-content {
+            max-width: 600px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .lecture-details-modal .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 25px;
+            max-height: 60vh;
+        }
+
+        .lecture-details-modal .modal-header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 20px;
+            border-bottom: 2px solid var(--secondary);
+        }
+
+        .lecture-details-modal .modal-header h2 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0;
+        }
+
+        .lecture-details-modal .modal-footer {
+            padding: 15px 20px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .lecture-details-modal .close-modal {
+            background: var(--danger);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        .lecture-details-modal .close-modal:hover {
+            background: #c0392b;
+            transform: rotate(90deg);
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .detail-item {
+            background: var(--primary-light);
+            padding: 15px;
+            border-radius: var(--radius-sm);
+            border-left: 4px solid var(--primary);
+        }
+
+        .detail-item h4 {
+            color: var(--primary);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1rem;
+        }
+
+        /* Legend */
+        .legend {
+            margin-top: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9ff, #ffffff);
+            border-radius: var(--radius-md);
+            border: 1px solid #e0e0e0;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        /* Custom scrollbar for modal */
+        .lecture-details-modal .modal-body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .lecture-details-modal .modal-body::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .lecture-details-modal .modal-body::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 4px;
+        }
+
+        .lecture-details-modal .modal-body::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary);
+        }
+
+        /* Empty State */
+        .empty-timetable {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--gray);
+        }
+
+        .empty-timetable i {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-timetable h3 {
+            margin-bottom: 10px;
+            color: var(--dark);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .current-lecture-info {
+                grid-template-columns: 1fr;
+            }
+            
+            .filters-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .timetable {
+                min-width: 100%;
+                font-size: 0.9rem;
+            }
+            
+            .day-cell {
+                width: 80px;
+                padding: 10px 5px;
+                font-size: 0.9rem;
+            }
+            
+            .timetable th {
+                padding: 12px 5px;
+                font-size: 0.9rem;
+            }
+            
+            .lecture-slot {
+                padding: 8px 5px;
+            }
+            
+            .lecture-code {
+                font-size: 0.9rem;
+            }
+            
+            .legend {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(46, 204, 113, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* No Courses Message */
+        .no-courses {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--gray);
+            font-style: italic;
+        }
+
+        .no-courses i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay" style="display: flex;">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Initializing Timetable System...</div>
+    </div>
+
+    <div class="main-container">
+        <div class="header">
+            <h1><i class="fas fa-calendar-alt"></i> Academic Timetable</h1>
+            <p>View and manage lecture schedules for KSITM CTE</p>
+            
+            <div class="header-controls">
+                <div class="d-flex align-items-center gap-15">
+                    <button class="btn btn-primary" id="refresh-btn">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                    <button class="btn btn-outline" id="print-btn">
+                        <i class="fas fa-print"></i> Print Timetable
+                    </button>
+                </div>
+                
+                <div class="text-white">
+                    <h3 id="current-date">Loading...</h3>
+                </div>
+            </div>
+        </div>
+        
+        <div class="content">
+            <!-- Current Lecture Banner -->
+            <div id="current-lecture-banner" class="current-lecture-banner" style="display: none;">
+                <h3><i class="fas fa-bell"></i> Current Lecture</h3>
+                <div class="current-lecture-info" id="current-lecture-info">
+                    <!-- Current lecture info will be populated here -->
+                </div>
+            </div>
+            
+            <!-- Stats Overview -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3 id="total-lectures">0</h3>
+                        <p>Total Filtered Lectures</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3 id="active-lecturers">0</h3>
+                        <p>Lecturers in Filter</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3 id="ongoing-lectures">0</h3>
+                        <p>Ongoing Now</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3 id="occupied-venues">0</h3>
+                        <p>Occupied Venues</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Filters -->
+            <div class="filters-section">
+                <h3><i class="fas fa-filter"></i> Filter Timetable</h3>
+                <div class="filters-grid">
+                    <div class="form-group">
+                        <label for="filter-department">Department</label>
+                        <select id="filter-department" class="form-control" disabled>
+                            <option value="">Loading...</option>
+                        </select>
+                        <small class="text-muted">Showing courses from your department</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="filter-level">Academic Level</label>
+                        <select id="filter-level" class="form-control">
+                            <option value="">All Levels</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="filter-lecturer">Lecturer</label>
+                        <select id="filter-lecturer" class="form-control">
+                            <option value="">All Lecturers</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="filter-day">Day</label>
+                        <select id="filter-day" class="form-control">
+                            <option value="">All Days</option>
+                            <option value="Monday">Monday</option>
+                            <option value="Tuesday">Tuesday</option>
+                            <option value="Wednesday">Wednesday</option>
+                            <option value="Thursday">Thursday</option>
+                            <option value="Friday">Friday</option>
+                            <option value="Saturday">Saturday</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Day Navigation -->
+            <div class="day-navigation" id="day-navigation">
+                <!-- Days will be populated here -->
+            </div>
+            
+            <!-- Timetable -->
+            <div class="timetable-container">
+                <table class="timetable" id="timetable">
+                    <thead>
+                        <tr>
+                            <th class="day-cell">Time/Day</th>
+                            <!-- Time headers will be populated here -->
+                        </tr>
+                    </thead>
+                    <tbody id="timetable-body">
+                        <!-- Timetable will be populated here (days on left) -->
+                    </tbody>
+                </table>
+                <div id="no-courses-message" class="no-courses" style="display: none;">
+                    <i class="fas fa-calendar-times"></i>
+                    <h3>No Courses Found</h3>
+                    <p>No courses match your current filters. Try changing filter settings.</p>
+                </div>
+            </div>
+            
+            <!-- Legend -->
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(135deg, #d4edda, #c3e6cb); border-left: 5px solid #28a745;"></div>
+                    <span>Current Lecture</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(135deg, #ffffff, #f8f9ff); border-left: 5px solid var(--primary);"></div>
+                    <span>Scheduled Lecture</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-left: 5px solid #6c757d;"></div>
+                    <span>Ended Lecture</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(135deg, var(--primary-light), #e8eeff);"></div>
+                    <span>Day Header</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lecture Details Modal -->
+    <div class="modal lecture-details-modal" id="lecture-details-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-info-circle"></i> Lecture Details</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="lecture-details" id="lecture-details-content">
+                    <!-- Lecture details will be populated here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger close-modal">
+                    <i class="fas fa-times"></i> Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include the consolidated school app JS -->
+    <script src="js/school-app.js"></script>
+    
+    <!-- Timetable Script - IMPROVED VERSION -->
+    <script>
+    // Timetable specific variables
+    let courses = [];
+    let filteredCourses = [];
+    let schoolConfig = {};
+    let venues = [];
+    let currentDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+    let userDepartment = '';
+    let lecturers = [];
+    let allUsers = [];
+    let academicLevels = [];
+    let currentUser = null;
+    let userData = null;
+    let coursesListener = null;
+    
+    // Time slots for the timetable (8 AM to 6 PM)
+    const timeSlots = [];
+    for (let hour = 8; hour <= 18; hour++) {
+        timeSlots.push(`${hour.toString().padStart(2, '0')}:00`);
+    }
+
+    // Initialize when DOM is loaded
+    document.addEventListener('DOMContentLoaded', async function() {
+        await initializeTimetable();
+    });
+
+    async function initializeTimetable() {
+        showLoading(true, 'Initializing Timetable System...');
+        
+        try {
+            // Initialize Firebase
+            if (!firebase.apps.length) {
+                firebase.initializeApp({
+                    apiKey: "AIzaSyDgcBNv4aDDCBxUxhBdqbuwMnm4KR36y44",
+                    authDomain: "ksitm-001.firebaseapp.com",
+                    databaseURL: "https://ksitm-001-default-rtdb.firebaseio.com",
+                    projectId: "ksitm-001",
+                    storageBucket: "ksitm-001.firebasestorage.app",
+                    messagingSenderId: "1021009230168",
+                    appId: "1:1021009230168:web:ee3315cd4ec23068048d2d",
+                    measurementId: "G-9BST66PF4K"
+                });
+            }
+            
+            // Check if user is logged in
+            firebase.auth().onAuthStateChanged(async (user) => {
+                if (!user) {
+                    window.SchoolApp.SchoolUtils.showToast('Please login first', 'error');
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 2000);
+                    return;
+                }
+                
+                currentUser = user;
+                
+                // Load user data
+                const db = firebase.firestore();
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                
+                if (userDoc.exists) {
+                    userData = userDoc.data();
+                    userDepartment = userData.department || '';
+                    
+                    console.log('User department:', userDepartment);
+                    console.log('User full name:', userData.fullName);
+                    
+                    // Check access permissions
+                    const allowedRoles = ['Admin', 'Lecturer', 'HOD', 'Dean', 'Student'];
+                    if (!userData || !allowedRoles.includes(userData.role)) {
+                        window.SchoolApp.SchoolUtils.showToast('Access denied. You need proper permissions.', 'error');
+                        setTimeout(() => {
+                            window.location.href = 'dashboard.html';
+                        }, 2000);
+                        return;
+                    }
+                    
+                    // Now load everything else
+                    await loadSchoolConfig();
+                    await loadAllUsers();
+                    await loadLecturers();
+                    setupEventListeners();
+                    setupDayNavigation();
+                    loadCourses(); // Load courses from user's department
+                    updateCurrentDate();
+                    setupAutoRefresh();
+                    
+                    // Update department filter to show user's department
+                    const deptFilter = document.getElementById('filter-department');
+                    deptFilter.innerHTML = `<option value="${userDepartment}" selected>${userDepartment}</option>`;
+                    deptFilter.disabled = false;
+                    
+                    // Set current day in day filter
+                    document.getElementById('filter-day').value = '';
+                    
+                    showLoading(false);
+                } else {
+                    window.SchoolApp.SchoolUtils.showToast('User data not found', 'error');
+                    showLoading(false);
+                }
+            });
+            
+        } catch (error) {
+            window.SchoolApp.SchoolUtils.showToast('Error initializing timetable: ' + error.message, 'error');
+            console.error("Initialization error:", error);
+            showLoading(false);
+        }
+    }
+
+    // Load school config for venues and academic levels
+    async function loadSchoolConfig() {
+        try {
+            const db = firebase.firestore();
+            const configDoc = await db.collection('schoolConfig').doc('main').get();
+            
+            if (configDoc.exists) {
+                schoolConfig = configDoc.data();
+                venues = schoolConfig.venues || [];
+                academicLevels = schoolConfig.academicLevels || [];
+                
+                console.log('Loaded school config with venues:', venues.length);
+                console.log('Academic levels:', academicLevels);
+            }
+        } catch (error) {
+            console.error('Error loading school config:', error);
+        }
+    }
+
+    // Load all users for lecturer list
+    async function loadAllUsers() {
+        try {
+            const db = firebase.firestore();
+            const snapshot = await db.collection('users').get();
+            
+            allUsers = [];
+            snapshot.forEach(doc => {
+                allUsers.push({
+                    id: doc.id,
+                    ...doc.data()
+                });
+            });
+            
+            console.log(`Loaded ${allUsers.length} users from database`);
+            
+        } catch (error) {
+            console.error('Error loading users:', error);
+        }
+    }
+
+    // Load lecturers by filtering allUsers client-side
+    async function loadLecturers() {
+        try {
+            lecturers = [];
+            
+            // Filter users client-side to find lecturers
+            allUsers.forEach(user => {
+                const userRole = user.role || '';
+                const roleLower = userRole.toLowerCase();
+                
+                // Check if user is a lecturer/academic staff
+                const isLecturer = 
+                    roleLower.includes('lecturer') || 
+                    roleLower.includes('professor') ||
+                    roleLower.includes('instructor') ||
+                    userRole === 'HOD' ||
+                    userRole === 'Dean' ||
+                    userRole === 'Head of Department';
+                
+                // Also filter by status
+                const isActive = user.status === 'Active';
+                
+                // Also check if department matches (if userDepartment is specified)
+                const deptMatches = !userDepartment || user.department === userDepartment;
+                
+                if (isLecturer && isActive && deptMatches) {
+                    lecturers.push({
+                        id: user.id,
+                        fullName: user.fullName || 'Unknown Lecturer',
+                        staffId: user.staffId || 'No ID',
+                        department: user.department || '',
+                        role: userRole,
+                        email: user.email || '',
+                        phone: user.phone || ''
+                    });
+                }
+            });
+            
+            // Sort lecturers by name
+            lecturers.sort((a, b) => {
+                const nameA = a.fullName.toLowerCase();
+                const nameB = b.fullName.toLowerCase();
+                return nameA.localeCompare(nameB);
+            });
+            
+            console.log(`Found ${lecturers.length} lecturers for department: ${userDepartment}`);
+            
+            // Populate lecturer filter
+            const lecturerFilter = document.getElementById('filter-lecturer');
+            lecturerFilter.innerHTML = '<option value="">All Lecturers</option>';
+            
+            lecturers.forEach(lecturer => {
+                const option = document.createElement('option');
+                option.value = lecturer.fullName;
+                option.textContent = `${lecturer.fullName}`;
+                lecturerFilter.appendChild(option);
+            });
+            
+        } catch (error) {
+            console.error('Error loading lecturers:', error);
+        }
+    }
+
+    // LOAD COURSES - EXACTLY LIKE COURSE-MANAGEMENT.HTML
+    function loadCourses() {
+        showLoading(true, `Loading courses for ${userDepartment}...`);
+        
+        if (!userDepartment) {
+            window.SchoolApp.SchoolUtils.showToast('No department found for user', 'error');
+            showLoading(false);
+            return;
+        }
+        
+        // Set up real-time listener for courses in the user's department
+        if (coursesListener) {
+            coursesListener(); // Remove previous listener
+        }
+        
+        const departmentPath = `Departments/${userDepartment}/Courses`;
+        const db = firebase.firestore();
+        
+        console.log('Loading courses from path:', departmentPath);
+        
+        coursesListener = db.collection(departmentPath)
+            .where('status', '==', 'active') // Only active courses
+            .orderBy('lectureDay') // Order by day
+            .orderBy('startTime') // Then by start time
+            .onSnapshot(snapshot => {
+                courses = [];
+                if (!snapshot.empty) {
+                    snapshot.forEach(doc => {
+                        const courseData = doc.data();
+                        courses.push({
+                            id: doc.id,
+                            ...courseData
+                        });
+                    });
+                    
+                    console.log(`Loaded ${courses.length} active courses from ${userDepartment}`);
+                    
+                    // Process course data to add lecturer names
+                    processCoursesData();
+                    
+                    // Apply current filters
+                    applyFilters();
+                    
+                    // Populate level filter based on actual course levels
+                    populateLevelFilter();
+                    
+                    window.SchoolApp.SchoolUtils.showToast(`Loaded ${courses.length} courses`, 'success');
+                } else {
+                    console.log('No courses found in department');
+                    window.SchoolApp.SchoolUtils.showToast('No courses found in your department', 'info');
+                    courses = [];
+                    applyFilters();
+                }
+                
+                showLoading(false);
+            }, error => {
+                console.error('Error loading courses:', error);
+                window.SchoolApp.SchoolUtils.showToast('Error loading courses: ' + error.message, 'error');
+                showLoading(false);
+            });
+    }
+
+    // Process course data to add lecturer names and venue details
+    function processCoursesData() {
+        courses.forEach(course => {
+            // Add lecturer name if not already present
+            if (course.lecturerId && !course.lecturerName) {
+                const lecturer = lecturers.find(l => l.id === course.lecturerId);
+                if (lecturer) {
+                    course.lecturerName = lecturer.fullName;
+                } else {
+                    // Try to find lecturer by name if ID doesn't match
+                    const lecturerByName = lecturers.find(l => l.fullName === course.lecturer);
+                    if (lecturerByName) {
+                        course.lecturerName = lecturerByName.fullName;
+                    } else {
+                        course.lecturerName = course.lecturer || 'Unknown Lecturer';
+                    }
+                }
+            } else if (!course.lecturerName) {
+                course.lecturerName = course.lecturer || 'Unknown Lecturer';
+            }
+            
+            // Add venue details if available
+            if (course.lectureVenue) {
+                const venue = venues.find(v => v.name === course.lectureVenue);
+                if (venue) {
+                    course.venueDetails = venue;
+                }
+            }
+            
+            // Ensure required fields exist
+            if (!course.courseCode) course.courseCode = 'N/A';
+            if (!course.courseName) course.courseName = 'Unnamed Course';
+            if (!course.department) course.department = userDepartment;
+            if (!course.level) course.level = 'Not Specified';
+            
+            // Calculate duration in hours
+            if (course.startTime && course.endTime) {
+                const startHour = parseInt(course.startTime.split(':')[0]);
+                const endHour = parseInt(course.endTime.split(':')[0]);
+                course.duration = Math.max(1, endHour - startHour);
+            }
+        });
+        
+        console.log('Processed courses:', courses);
+    }
+
+    // Populate level filter based on actual course levels
+    function populateLevelFilter() {
+        const levelFilter = document.getElementById('filter-level');
+        levelFilter.innerHTML = '<option value="">All Levels</option>';
+        
+        // Get unique levels from courses
+        const uniqueLevels = [...new Set(courses.map(course => course.level).filter(Boolean))];
+        
+        if (uniqueLevels.length > 0) {
+            uniqueLevels.forEach(level => {
+                const option = document.createElement('option');
+                option.value = level;
+                option.textContent = level;
+                levelFilter.appendChild(option);
+            });
+        } else if (academicLevels.length > 0) {
+            // Fallback to school config levels
+            academicLevels.forEach(level => {
+                const option = document.createElement('option');
+                option.value = level;
+                option.textContent = level;
+                levelFilter.appendChild(option);
+            });
+        } else {
+            // Default levels
+            const defaultLevels = ['100 Level', '200 Level', '300 Level', '400 Level', '500 Level', 'PGD', 'Masters', 'PhD'];
+            defaultLevels.forEach(level => {
+                const option = document.createElement('option');
+                option.value = level;
+                option.textContent = level;
+                levelFilter.appendChild(option);
+            });
+        }
+    }
+
+    function setupDayNavigation() {
+        const days = ['All days', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const container = document.getElementById('day-navigation');
+        container.innerHTML = '';
+        
+        days.forEach(day => {
+            const button = document.createElement('button');
+            button.className = `day-btn ${day === currentDay ? 'active' : ''}`;
+            button.textContent = day;
+            button.addEventListener('click', () => filterByDay(day));
+            container.appendChild(button);
+        });
+    }
+
+    function setupEventListeners() {
+        // Refresh button
+        document.getElementById('refresh-btn').addEventListener('click', refreshTimetable);
+        
+        // Print button
+        document.getElementById('print-btn').addEventListener('click', printTimetable);
+        
+        // Filter changes
+        document.getElementById('filter-level').addEventListener('change', applyFilters);
+        document.getElementById('filter-lecturer').addEventListener('change', applyFilters);
+        document.getElementById('filter-day').addEventListener('change', applyFilters);
+        
+        // Modal close buttons
+        document.querySelectorAll('.close-modal').forEach(btn => {
+            btn.addEventListener('click', closeAllModals);
+        });
+    }
+
+    function setupAutoRefresh() {
+        // Update current time every minute
+        setInterval(() => {
+            updateCurrentDate();
+            updateCurrentLecture();
+            updateTimetable();
+        }, 60000); // Every minute
+    }
+
+    function showLoading(show, text = 'Loading...') {
+        const overlay = document.getElementById('loading-overlay');
+        const loadingText = overlay.querySelector('.loading-text');
+        
+        if (show) {
+            loadingText.textContent = text;
+            overlay.style.display = 'flex';
+        } else {
+            overlay.style.display = 'none';
+        }
+    }
+
+    function refreshTimetable() {
+        showLoading(true, 'Refreshing timetable...');
+        loadCourses();
+    }
+
+    function applyFilters() {
+        const level = document.getElementById('filter-level').value;
+        const lecturer = document.getElementById('filter-lecturer').value;
+        const day = document.getElementById('filter-day').value;
+        
+        console.log(`Applying filters - Level: ${level}, Lecturer: ${lecturer}, Day: ${day}`);
+        
+        filteredCourses = courses.filter(course => {
+            // Level filter
+            if (level && course.level !== level) {
+                return false;
+            }
+            
+            // Lecturer filter
+            if (lecturer) {
+                const courseLecturer = course.lecturerName || course.lecturer;
+                if (courseLecturer !== lecturer) {
+                    return false;
+                }
+            }
+            
+            // Day filter
+            if (day && course.lectureDay !== day) {
+                return false;
+            }
+            
+            // Must have schedule information
+            if (!course.lectureDay || !course.startTime || !course.endTime) {
+                return false;
+            }
+            
+            return true;
+        });
+        
+        console.log(`Found ${filteredCourses.length} courses after filtering`);
+        
+        updateTimetable();
+        updateStats();
+        updateCurrentLecture();
+        
+        // Show/hide no courses message
+        const noCoursesMsg = document.getElementById('no-courses-message');
+        if (filteredCourses.length === 0) {
+            noCoursesMsg.style.display = 'block';
+        } else {
+            noCoursesMsg.style.display = 'none';
+        }
+    }
+
+    function filterByDay(day) {
+        currentDay = day;
+        document.getElementById('filter-day').value = day;
+        
+        // Update day navigation buttons
+        document.querySelectorAll('.day-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.textContent === day);
+        });
+        
+        applyFilters();
+    }
+
+    function updateTimetable() {
+        const timetable = document.getElementById('timetable');
+        const thead = timetable.querySelector('thead');
+        const tbody = document.getElementById('timetable-body');
+        
+        // Clear existing content
+        tbody.innerHTML = '';
+        
+        // Create time headers (top row)
+        let timeHeaderRow = thead.querySelector('tr');
+        if (!timeHeaderRow) {
+            timeHeaderRow = document.createElement('tr');
+            thead.appendChild(timeHeaderRow);
+            
+            // Add day cell header
+            const dayHeader = document.createElement('th');
+            dayHeader.className = 'day-cell';
+            dayHeader.textContent = 'Time/Day';
+            timeHeaderRow.appendChild(dayHeader);
+        }
+        
+        // Clear existing time headers (keep day cell)
+        while (timeHeaderRow.children.length > 1) {
+            timeHeaderRow.removeChild(timeHeaderRow.lastChild);
+        }
+        
+        // Add time headers
+        timeSlots.forEach(time => {
+            const th = document.createElement('th');
+            th.className = 'time-header';
+            th.textContent = formatTimeForDisplay(time);
+            th.setAttribute('data-time', time);
+            timeHeaderRow.appendChild(th);
+        });
+        
+        // Days for rows (left side)
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        
+        // Create rows for each day
+        days.forEach(day => {
+            const row = document.createElement('tr');
+            
+            // Day cell (left side)
+            const dayCell = document.createElement('td');
+            dayCell.className = 'day-cell';
+            dayCell.textContent = day;
+            row.appendChild(dayCell);
+            
+            // Create time slot cells for this day
+            timeSlots.forEach(timeSlot => {
+                const cell = document.createElement('td');
+                cell.setAttribute('data-day', day);
+                cell.setAttribute('data-time', timeSlot);
+                cell.style.height = '70px';
+                cell.style.verticalAlign = 'middle';
+                row.appendChild(cell);
+            });
+            
+            tbody.appendChild(row);
+        });
+        
+        // Now populate with lectures using colspan for multi-hour courses
+        populateLectureSlots();
+    }
+
+    function populateLectureSlots() {
+        const now = new Date();
+        const currentTime = now.toTimeString().slice(0, 5);
+        
+        // Clear all cells first
+        document.querySelectorAll('#timetable tbody td[data-day]').forEach(cell => {
+            cell.innerHTML = '';
+            cell.colSpan = 1; // Reset colspan
+        });
+        
+        // Group courses by day
+        const coursesByDay = {};
+        filteredCourses.forEach(course => {
+            if (!course.lectureDay) return;
+            if (!coursesByDay[course.lectureDay]) {
+                coursesByDay[course.lectureDay] = [];
+            }
+            coursesByDay[course.lectureDay].push(course);
+        });
+        
+        // For each day, place courses in timetable
+        Object.entries(coursesByDay).forEach(([day, dayCourses]) => {
+            // Sort courses by start time
+            dayCourses.sort((a, b) => a.startTime.localeCompare(b.startTime));
+            
+            // Track occupied time slots for this day
+            const occupiedSlots = new Set();
+            
+            dayCourses.forEach(course => {
+                if (!course.startTime || !course.endTime) return;
+                
+                const startHour = parseInt(course.startTime.split(':')[0]);
+                const endHour = parseInt(course.endTime.split(':')[0]);
+                const duration = Math.max(1, endHour - startHour);
+                
+                // Find the starting column index
+                const startTimeKey = `${startHour.toString().padStart(2, '0')}:00`;
+                const startIndex = timeSlots.indexOf(startTimeKey);
+                
+                if (startIndex === -1) return;
+                
+                // Check if all required slots are available
+                let slotsAvailable = true;
+                for (let i = 0; i < duration; i++) {
+                    if (occupiedSlots.has(startIndex + i)) {
+                        slotsAvailable = false;
+                        break;
+                    }
+                }
+                
+                if (!slotsAvailable) return;
+                
+                // Mark slots as occupied
+                for (let i = 0; i < duration; i++) {
+                    occupiedSlots.add(startIndex + i);
+                }
+                
+                // Get the starting cell (row for this day, column for start time)
+                const rowIndex = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].indexOf(day);
+                if (rowIndex === -1) return;
+                
+                const row = document.querySelectorAll('#timetable tbody tr')[rowIndex];
+                if (!row) return;
+                
+                // Get the cell at the starting time column (skip day cell at index 0)
+                const startCell = row.children[startIndex + 1];
+                if (!startCell) return;
+                
+                // Determine if this is current lecture
+                const isCurrentDay = day === currentDay;
+                const isCurrentTime = isCurrentDay && 
+                                     course.startTime <= currentTime && 
+                                     course.endTime >= currentTime;
+                const isEnded = isCurrentDay && course.endTime < currentTime;
+                
+                // Create lecture slot
+                const lectureSlot = document.createElement('div');
+                lectureSlot.className = `lecture-slot ${isCurrentTime ? 'current' : ''} ${isEnded ? 'ended' : ''}`;
+                lectureSlot.setAttribute('data-course-id', course.id);
+                
+                // Set color based on level
+                const levelColors = {
+                    '100 Level': '#4361ee',
+                    '200 Level': '#3a0ca3',
+                    '300 Level': '#7209b7',
+                    '400 Level': '#f72585',
+                    '500 Level': '#4cc9f0',
+                    'PGD': '#4895ef',
+                    'Masters': '#560bad',
+                    'PhD': '#b5179e',
+                    'default': '#4361ee'
+                };
+                
+                const levelColor = levelColors[course.level] || levelColors['default'];
+                lectureSlot.style.borderLeftColor = levelColor;
+                
+                // Create simple content - Only course code
+                const lecturerDisplay = course.lecturerName || course.lecturer || 'Unknown';
+                lectureSlot.innerHTML = `
+                    <div class="lecture-code">${course.courseCode}</div>
+                    <div class="lecture-details">
+                        <div class="lecture-venue">${course.lectureVenue || ''}</div>
+                        <div class="lecture-time">${formatTime(course.startTime)}-${formatTime(course.endTime)}</div>
+                    </div>
+                `;
+                
+                lectureSlot.addEventListener('click', () => showLectureDetails(course.id));
+                
+                // If duration > 1, set colspan and clear other cells
+                if (duration > 1) {
+                    startCell.colSpan = duration;
+                    
+                    // Clear the cells that will be spanned
+                    for (let i = 1; i < duration; i++) {
+                        const nextCell = row.children[startIndex + 1 + i];
+                        if (nextCell) {
+                            nextCell.style.display = 'none';
+                        }
+                    }
+                }
+                
+                startCell.appendChild(lectureSlot);
+            });
+        });
+    }
+
+    function updateStats() {
+        const now = new Date();
+        const currentTime = now.toTimeString().slice(0, 5);
+        
+        // Update total filtered lectures
+        document.getElementById('total-lectures').textContent = filteredCourses.length;
+        
+        // Active lecturers in filter
+        const lecturerSet = new Set();
+        filteredCourses.forEach(course => {
+            const lecturer = course.lecturerName || course.lecturer;
+            if (lecturer) lecturerSet.add(lecturer);
+        });
+        document.getElementById('active-lecturers').textContent = lecturerSet.size;
+        
+        // Ongoing lectures now
+        const ongoingLectures = filteredCourses.filter(course => 
+            course.lectureDay === currentDay &&
+            course.startTime <= currentTime &&
+            course.endTime >= currentTime
+        ).length;
+        document.getElementById('ongoing-lectures').textContent = ongoingLectures;
+        
+        // Occupied venues now
+        const occupiedVenueSet = new Set();
+        filteredCourses
+            .filter(course => course.lectureDay === currentDay &&
+                    course.startTime <= currentTime &&
+                    course.endTime >= currentTime)
+            .forEach(course => {
+                if (course.lectureVenue) occupiedVenueSet.add(course.lectureVenue);
+            });
+        document.getElementById('occupied-venues').textContent = occupiedVenueSet.size;
+    }
+
+    function updateCurrentLecture() {
+        const now = new Date();
+        const currentTime = now.toTimeString().slice(0, 5);
+        
+        const currentLecture = filteredCourses.find(course => 
+            course.lectureDay === currentDay &&
+            course.startTime <= currentTime &&
+            course.endTime >= currentTime
+        );
+        
+        const banner = document.getElementById('current-lecture-banner');
+        const infoDiv = document.getElementById('current-lecture-info');
+        
+        if (currentLecture) {
+            banner.style.display = 'block';
+            const lecturerDisplay = currentLecture.lecturerName || currentLecture.lecturer || 'Unknown Lecturer';
+            const venueDisplay = currentLecture.venueDetails ? 
+                `${currentLecture.lectureVenue} (${currentLecture.venueDetails.capacity || '?'} seats)` : 
+                currentLecture.lectureVenue || 'N/A';
+            
+            infoDiv.innerHTML = `
+                <div class="info-item">
+                    <i class="fas fa-book"></i>
+                    <div>
+                        <div class="info-label">Course</div>
+                        <div class="info-value">${currentLecture.courseCode} - ${currentLecture.courseName}</div>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                    <div>
+                        <div class="info-label">Lecturer</div>
+                        <div class="info-value">${lecturerDisplay}</div>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <div>
+                        <div class="info-label">Venue</div>
+                        <div class="info-value">${venueDisplay}</div>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-clock"></i>
+                    <div>
+                        <div class="info-label">Time</div>
+                        <div class="info-value">${formatTime(currentLecture.startTime)} - ${formatTime(currentLecture.endTime)}</div>
+                    </div>
+                </div>
+            `;
+        } else {
+            banner.style.display = 'none';
+        }
+    }
+
+    function updateCurrentDate() {
+        const now = new Date();
+        const dateElement = document.getElementById('current-date');
+        
+        const options = { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        };
+        
+        dateElement.textContent = now.toLocaleDateString('en-US', options);
+    }
+
+    function showLectureDetails(courseId) {
+        const course = courses.find(c => c.id === courseId);
+        if (!course) return;
+        
+        const detailsContent = document.getElementById('lecture-details-content');
+        const lecturerDisplay = course.lecturerName || course.lecturer || 'Unknown Lecturer';
+        
+        // Get venue details
+        let venueInfo = '';
+        if (course.venueDetails) {
+            venueInfo = `
+                <div class="detail-item">
+                    <h4><i class="fas fa-building"></i> Venue Details</h4>
+                    <p><strong>Type:</strong> ${course.venueDetails.type || 'N/A'}</p>
+                    <p><strong>Capacity:</strong> ${course.venueDetails.capacity || '?'} seats</p>
+                    ${course.venueDetails.building ? `<p><strong>Building:</strong> ${course.venueDetails.building}</p>` : ''}
+                    ${course.venueDetails.floor ? `<p><strong>Floor:</strong> ${course.venueDetails.floor}</p>` : ''}
+                    ${course.venueDetails.equipment ? `<p><strong>Equipment:</strong> ${course.venueDetails.equipment}</p>` : ''}
+                </div>
+            `;
+        }
+        
+        detailsContent.innerHTML = `
+            <div class="details-grid">
+                <div class="detail-item">
+                    <h4><i class="fas fa-info-circle"></i> Course Information</h4>
+                    <p><strong>Course Code:</strong> ${course.courseCode}</p>
+                    <p><strong>Course Name:</strong> ${course.courseName}</p>
+                    <p><strong>Department:</strong> ${course.department || 'N/A'}</p>
+                    <p><strong>Academic Level:</strong> ${course.level || 'N/A'}</p>
+                    <p><strong>Credit Units:</strong> ${course.creditUnits || 'N/A'}</p>
+                </div>
+                
+                <div class="detail-item">
+                    <h4><i class="fas fa-chalkboard-teacher"></i> Lecturer</h4>
+                    <p><strong>Name:</strong> ${lecturerDisplay}</p>
+                    ${course.lecturerId ? `<p><strong>Lecturer ID:</strong> ${course.lecturerId}</p>` : ''}
+                </div>
+                
+                <div class="detail-item">
+                    <h4><i class="fas fa-calendar-alt"></i> Schedule</h4>
+                    <p><strong>Day:</strong> ${course.lectureDay || 'N/A'}</p>
+                    <p><strong>Time:</strong> ${formatTime(course.startTime)} - ${formatTime(course.endTime)}</p>
+                    <p><strong>Venue:</strong> ${course.lectureVenue || 'N/A'}</p>
+                    <p><strong>Duration:</strong> ${course.duration || '?'} hour(s)</p>
+                </div>
+            </div>
+            
+            ${(course.testWeight || course.assignmentWeight || course.examWeight) ? `
+            <div class="detail-item mt-20">
+                <h4><i class="fas fa-tasks"></i> Assessment Weights</h4>
+                ${course.testWeight ? `<p><strong>Tests:</strong> ${course.testWeight}%</p>` : ''}
+                ${course.assignmentWeight ? `<p><strong>Assignments:</strong> ${course.assignmentWeight}%</p>` : ''}
+                ${course.examWeight ? `<p><strong>Exam:</strong> ${course.examWeight}%</p>` : ''}
+                <p><strong>Total:</strong> ${(course.testWeight || 0) + (course.assignmentWeight || 0) + (course.examWeight || 0)}%</p>
+            </div>
+            ` : ''}
+            
+            ${venueInfo}
+            
+            ${course.description ? `
+            <div class="detail-item mt-20">
+                <h4><i class="fas fa-align-left"></i> Course Description</h4>
+                <p>${course.description}</p>
+            </div>
+            ` : ''}
+            
+            ${course.maxStudents ? `
+            <div class="detail-item mt-20">
+                <h4><i class="fas fa-users"></i> Class Capacity</h4>
+                <p><strong>Maximum Students:</strong> ${course.maxStudents}</p>
+            </div>
+            ` : ''}
+        `;
+        
+        document.getElementById('lecture-details-modal').classList.add('active');
+    }
+
+    function printTimetable() {
+        const printWindow = window.open('', '_blank');
+        const now = new Date();
+        const printDate = now.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        const printTime = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        // Prepare filtered courses data for print
+        const printCourses = filteredCourses;
+        const generatedBy = userData?.fullName ? `${userData.fullName} via KSITM CTE Portal` : 'KSITM CTE Portal System';
+        
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>KSITM CTE Timetable - ${printDate}</title>
+                <style>
+                    * {
+                        margin: 0;
+                        padding: 0;
+                        box-sizing: border-box;
+                    }
+                    
+                    body {
+                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                        color: #2c3e50;
+                        background: #ffffff;
+                        line-height: 1.4;
+                        font-size: 12px;
+                    }
+                    
+                    .print-container {
+                        width: 100%;
+                        padding: 15px;
+                    }
+                    
+                    .print-header {
+                        text-align: center;
+                        margin-bottom: 15px;
+                        padding-bottom: 10px;
+                        border-bottom: 2px solid #3498db;
+                    }
+                    
+                    .print-header h1 {
+                        font-size: 22px;
+                        margin-bottom: 5px;
+                        color: #2c3e50;
+                        font-weight: 700;
+                    }
+                    
+                    .print-header .subtitle {
+                        font-size: 14px;
+                        color: #7f8c8d;
+                        margin-bottom: 5px;
+                    }
+                    
+                    .print-header h2 {
+                        font-size: 18px;
+                        color: #3498db;
+                        font-weight: 600;
+                    }
+                    
+                    .print-info {
+                        display: grid;
+                        grid-template-columns: repeat(4, 1fr);
+                        gap: 10px;
+                        margin-bottom: 15px;
+                        padding: 10px;
+                        background: #f8f9fa;
+                        border-radius: 6px;
+                        font-size: 10px;
+                    }
+                    
+                    .info-item {
+                        display: flex;
+                        flex-direction: column;
+                    }
+                    
+                    .info-label {
+                        font-size: 9px;
+                        color: #7f8c8d;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                        margin-bottom: 2px;
+                    }
+                    
+                    .info-value {
+                        font-size: 11px;
+                        color: #2c3e50;
+                        font-weight: 600;
+                    }
+                    
+                    .timetable-container {
+                        width: 100%;
+                        overflow: hidden;
+                        margin: 15px 0;
+                        border: 1px solid #ddd;
+                        border-radius: 4px;
+                    }
+                    
+                    .timetable {
+                        width: 100%;
+                        border-collapse: collapse;
+                        font-size: 10px;
+                        table-layout: fixed;
+                    }
+                    
+                    .timetable th {
+                        background: #3498db;
+                        color: white;
+                        font-weight: 600;
+                        text-align: center;
+                        padding: 8px 4px;
+                        border-right: 1px solid white;
+                        border-bottom: 2px solid #2980b9;
+                        font-size: 10px;
+                        height: 35px;
+                        overflow: hidden;
+                    }
+                    
+                    .timetable th.time-header {
+                        background: #2980b9;
+                        font-size: 9px;
+                        padding: 6px 2px;
+                    }
+                    
+                    .timetable td {
+                        padding: 0;
+                        border-right: 1px solid #e0e0e0;
+                        border-bottom: 1px solid #e0e0e0;
+                        vertical-align: middle;
+                        height: 50px;
+                        text-align: center;
+                        position: relative;
+                    }
+                    
+                    .day-cell {
+                        background: #e3f2fd;
+                        color: #1565c0;
+                        font-weight: 700;
+                        text-align: center;
+                        padding: 8px 4px;
+                        border-right: 2px solid #3498db !important;
+                        border-left: 2px solid #3498db !important;
+                        font-size: 11px;
+                        width: 70px;
+                    }
+                    
+                    .lecture-slot-print {
+                        background: #f8f9ff;
+                        border-radius: 4px;
+                        padding: 5px 3px;
+                        border-left: 3px solid #9b59b6;
+                        height: 100%;
+                        width: 100%;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                        align-items: center;
+                        text-align: center;
+                        font-size: 9px;
+                    }
+                    
+                    .lecture-code-print {
+                        font-weight: 700;
+                        font-size: 11px;
+                        margin-bottom: 2px;
+                        color: #2c3e50;
+                    }
+                    
+                    .lecture-details-print {
+                        font-size: 8px;
+                        color: #7f8c8d;
+                        line-height: 1.2;
+                    }
+                    
+                    .lecture-venue-print {
+                        background: rgba(155, 89, 182, 0.1);
+                        color: #8e44ad;
+                        padding: 1px 4px;
+                        border-radius: 6px;
+                        display: inline-block;
+                        margin-top: 1px;
+                        font-weight: 500;
+                        font-size: 7px;
+                    }
+                    
+                    .lecture-time-print {
+                        font-size: 7px;
+                        margin-top: 1px;
+                        color: #666;
+                        font-weight: 500;
+                    }
+                    
+                    .print-footer {
+                        margin-top: 20px;
+                        padding-top: 10px;
+                        border-top: 1px solid #e0e6ed;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        color: #7f8c8d;
+                        font-size: 9px;
+                    }
+                    
+                    .print-signature {
+                        text-align: center;
+                        margin-top: 20px;
+                        padding-top: 10px;
+                        border-top: 1px dashed #bdc3c7;
+                        font-size: 9px;
+                    }
+                    
+                    .signature-line {
+                        width: 150px;
+                        height: 1px;
+                        background: #7f8c8d;
+                        margin: 10px auto 5px;
+                    }
+                    
+                    .no-data {
+                        text-align: center;
+                        padding: 20px;
+                        color: #95a5a6;
+                        font-style: italic;
+                        font-size: 11px;
+                    }
+                    
+                    .no-data i {
+                        font-size: 24px;
+                        margin-bottom: 10px;
+                        opacity: 0.3;
+                    }
+                    
+                    @media print {
+                        body {
+                            margin: 0;
+                            padding: 0;
+                            font-size: 10px;
+                        }
+                        
+                        .print-container {
+                            padding: 5px;
+                            width: 100%;
+                            height: 100%;
+                        }
+                        
+                        .timetable {
+                            font-size: 9px;
+                        }
+                        
+                        .timetable th {
+                            padding: 6px 3px;
+                            font-size: 9px;
+                        }
+                        
+                        .timetable td {
+                            height: 45px;
+                        }
+                        
+                        .lecture-slot-print {
+                            padding: 4px 2px;
+                            font-size: 8px;
+                        }
+                        
+                        .lecture-code-print {
+                            font-size: 10px;
+                        }
+                        
+                        .no-print {
+                            display: none !important;
+                        }
+                        
+                        @page {
+                            size: landscape;
+                            margin: 0.3cm;
+                        }
+                    }
+                    
+                    /* Ensure timetable fits on one page */
+                    .timetable th,
+                    .timetable td {
+                        min-width: 0;
+                        max-width: 80px;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                    }
+                    
+                    .timetable th:first-child,
+                    .timetable td:first-child {
+                        min-width: 70px;
+                        max-width: 70px;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="print-container">
+                    <div class="print-header">
+                        <h1>KSITM COLLEGE OF TECHNOLOGY</h1>
+                        <div class="subtitle">Department of ${userDepartment}</div>
+                        <h2>ACADEMIC TIMETABLE</h2>
+                    </div>
+                    
+                    <div class="print-info">
+                        <div class="info-item">
+                            <span class="info-label">Generated On</span>
+                            <span class="info-value">${printDate}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Generated At</span>
+                            <span class="info-value">${printTime}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Generated By</span>
+                            <span class="info-value">${generatedBy}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Total Courses</span>
+                            <span class="info-value">${printCourses.length}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="timetable-container">
+                        <table class="timetable">
+                            <thead>
+                                <tr>
+                                    <th class="day-cell">TIME/DAY</th>
+                                    ${timeSlots.map(time => `<th class="time-header">${formatTimeForDisplay(time)}</th>`).join('')}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => {
+                                    const dayCourses = printCourses.filter(course => course.lectureDay === day);
+                                    const timeSlotCourses = {};
+                                    
+                                    // Initialize all time slots as empty
+                                    timeSlots.forEach(slot => {
+                                        timeSlotCourses[slot] = [];
+                                    });
+                                    
+                                    // Place courses in their time slots
+                                    dayCourses.forEach(course => {
+                                        const startHour = parseInt(course.startTime.split(':')[0]);
+                                        const startTimeKey = `${startHour.toString().padStart(2, '0')}:00`;
+                                        const startIndex = timeSlots.indexOf(startTimeKey);
+                                        
+                                        if (startIndex !== -1) {
+                                            const duration = course.duration || 1;
+                                            // Only add to first time slot, will use colspan
+                                            if (!timeSlotCourses[startTimeKey].some(c => c.id === course.id)) {
+                                                timeSlotCourses[startTimeKey].push(course);
+                                            }
+                                        }
+                                    });
+                                    
+                                    return `
+                                        <tr>
+                                            <td class="day-cell">${day}</td>
+                                            ${timeSlots.map((timeSlot, index) => {
+                                                const slotCourses = timeSlotCourses[timeSlot];
+                                                
+                                                if (slotCourses.length === 0) {
+                                                    return `<td></td>`;
+                                                }
+                                                
+                                                // Return only the first course for this time slot
+                                                const course = slotCourses[0];
+                                                const startHour = parseInt(course.startTime.split(':')[0]);
+                                                const startTimeKey = `${startHour.toString().padStart(2, '0')}:00`;
+                                                const duration = course.duration || 1;
+                                                const lecturerDisplay = course.lecturerName || course.lecturer || 'Unknown';
+                                                
+                                                // Only create cell if this is the starting time slot
+                                                if (timeSlot === startTimeKey) {
+                                                    return `
+                                                        <td colspan="${duration}">
+                                                            <div class="lecture-slot-print">
+                                                                <div class="lecture-code-print">${course.courseCode}</div>
+                                                                <div class="lecture-details-print">
+                                                                    <div class="lecture-venue-print">${course.lectureVenue || ''}</div>
+                                                                    <div class="lecture-time-print">${formatTime(course.startTime)}-${formatTime(course.endTime)}</div>
+                                                                    <div class="lecture-time-print">${lecturerDisplay}</div>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                    `;
+                                                } else {
+                                                    // Return empty TD - will be covered by colspan
+                                                    return '';
+                                                }
+                                            }).join('')}
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                        
+                        ${printCourses.length === 0 ? `
+                            <div class="no-data">
+                                <i class="fas fa-calendar-times"></i>
+                                <h3>No Courses to Display</h3>
+                                <p>There are no scheduled courses matching the current filters.</p>
+                            </div>
+                        ` : ''}
+                    </div>
+                    
+                    <div class="print-footer">
+                        <div>
+                            <strong>Generated by:</strong> ${generatedBy}
+                        </div>
+                        <div>
+                            <strong>Page:</strong> 1 of 1
+                        </div>
+                    </div>
+                    
+                    <div class="print-signature">
+                        <div>___________________________________</div>
+                        <div style="margin-top: 3px;">Head of Department / Coordinator</div>
+                    </div>
+                    
+                    <div class="no-print" style="text-align: center; margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px;">
+                        <button onclick="window.print()" style="padding: 8px 20px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; margin-right: 10px;">
+                            <i class="fas fa-print"></i> Print Timetable
+                        </button>
+                        <button onclick="window.close()" style="padding: 8px 20px; background: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                            <i class="fas fa-times"></i> Close Window
+                        </button>
+                        <p style="margin-top: 10px; color: #7f8c8d; font-size: 10px;">
+                            For best results, use Chrome or Firefox browser and select "Fit to page" in print settings.
+                        </p>
+                    </div>
+                </div>
+                
+                <script>
+                    // Auto-fit for printing
+                    window.onload = function() {
+                        // Adjust table cell sizes to fit one page
+                        const cells = document.querySelectorAll('.timetable th, .timetable td');
+                        cells.forEach(cell => {
+                            cell.style.minWidth = 'auto';
+                            cell.style.maxWidth = 'auto';
+                        });
+                        
+                        // Trigger print after a short delay
+                        setTimeout(function() {
+                            window.print();
+                        }, 500);
+                    };
+                <\/script>
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+    }
+
+    function closeAllModals() {
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.classList.remove('active');
+        });
+    }
+
+    // Utility functions
+    function formatTime(timeString) {
+        if (!timeString) return '';
+        const [hours, minutes] = timeString.split(':');
+        const hour = parseInt(hours);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const hour12 = hour % 12 || 12;
+        const mins = minutes || '00';
+        return `${hour12}:${mins} ${ampm}`;
+    }
+
+    function formatTimeForDisplay(timeString) {
+        const [hours] = timeString.split(':');
+        const hour = parseInt(hours);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const hour12 = hour % 12 || 12;
+        return `${hour12} ${ampm}`;
+    }
+</script>
+</body>
+</html>

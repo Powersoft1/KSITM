@@ -1,0 +1,2348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Management - KSITM CTE</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Academic Management Specific Styles */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 25px 30px;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid var(--light-gray);
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        .loading-text {
+            font-size: 1.2rem;
+            color: var(--dark);
+            font-weight: 500;
+        }
+
+        /* Content Layout */
+        .content {
+            padding: 30px;
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 992px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Course Sidebar */
+        .course-sidebar {
+            background: var(--primary-light);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .course-sidebar h3 {
+            color: var(--primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.3rem;
+        }
+
+        .course-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .course-item {
+            padding: 12px 15px;
+            background: white;
+            border-radius: var(--radius-md);
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .course-item:hover {
+            transform: translateX(5px);
+            box-shadow: var(--shadow);
+            border-color: var(--primary);
+        }
+
+        .course-item.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .course-code {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .course-name {
+            font-size: 0.85rem;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        /* Management Area */
+        .management-area {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 0;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .management-tabs {
+            display: flex;
+            background: var(--light-gray);
+            border-bottom: 1px solid var(--gray);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 15px 20px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn:hover {
+            background: rgba(146, 15, 9, 0.1);
+        }
+
+        .tab-btn.active {
+            background: white;
+            border-bottom-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .tab-content {
+            padding: 30px;
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* Form Styles */
+        .create-form {
+            background: var(--primary-light);
+            padding: 25px;
+            border-radius: var(--radius-lg);
+            margin-bottom: 30px;
+        }
+
+        .create-form h3 {
+            color: var(--primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Items List */
+        .items-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .item-card {
+            background: white;
+            border-radius: var(--radius-md);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--primary);
+            transition: all 0.3s ease;
+            border: 1px solid var(--light-gray);
+        }
+
+        .item-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .item-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 5px;
+        }
+
+        .item-meta {
+            display: flex;
+            gap: 15px;
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        .item-content {
+            margin: 15px 0;
+            line-height: 1.6;
+            color: var(--text-color);
+        }
+
+        .item-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid var(--light-gray);
+        }
+
+        .item-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .status-upcoming {
+            background: rgba(52, 152, 219, 0.1);
+            color: var(--info);
+        }
+
+        .status-active {
+            background: rgba(46, 204, 113, 0.1);
+            color: var(--success);
+        }
+
+        .status-overdue {
+            background: rgba(231, 76, 60, 0.1);
+            color: var(--danger);
+        }
+
+        .status-completed {
+            background: rgba(149, 165, 166, 0.1);
+            color: #7f8c8d;
+        }
+
+        /* Progress Bar */
+        .progress-section {
+            background: white;
+            padding: 25px;
+            border-radius: var(--radius-lg);
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .progress-bar-container {
+            height: 10px;
+            background: var(--light-gray);
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+
+        /* Lecture Stats */
+        .lecture-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary);
+            line-height: 1;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+
+        /* Date Input Group */
+        .date-input-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        /* Optional field label */
+        .optional-label {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+
+        .optional-label::after {
+            content: " (Optional)";
+            font-style: italic;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--gray);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        .empty-state p {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10001;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+            padding: 20px;
+        }
+
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            transform: translateY(30px);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow: hidden;
+        }
+
+        .modal.active .modal-content {
+            transform: translateY(0);
+        }
+
+        /* Edit Modal Specific Styles */
+        .edit-modal .modal-content {
+            max-width: 800px;
+            max-height: 90vh;
+        }
+
+        .modal-header {
+            padding: 24px 30px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+
+        .modal-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 5%;
+            width: 90%;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+        }
+
+        .close-modal {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 22px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .close-modal:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .close-modal:active {
+            transform: scale(0.95) rotate(90deg);
+        }
+
+        .modal-body {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            max-height: calc(90vh - 180px);
+        }
+
+        /* Custom scrollbar for modal body */
+        .modal-body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .modal-body::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .modal-body::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
+
+        .modal-body::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary);
+        }
+
+        .edit-modal-fields {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .edit-section {
+            background: var(--primary-light);
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .edit-section h4 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1rem;
+        }
+
+        .edit-fields-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .modal-footer {
+            padding: 20px 30px;
+            border-top: 1px solid var(--light-gray);
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            background: #f8f9fa;
+        }
+
+        .modal-footer .btn {
+            min-width: 120px;
+            justify-content: center;
+            padding: 10px 24px;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .modal-footer .btn-danger {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+            border: none;
+        }
+
+        .modal-footer .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+        }
+
+        .modal-footer .btn-success {
+            background: linear-gradient(135deg, var(--success), #218838);
+            color: white;
+            border: none;
+        }
+
+        .modal-footer .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        /* Delete Confirmation Modal */
+        .delete-modal .modal-content {
+            max-width: 500px;
+        }
+
+        .delete-modal .modal-body {
+            text-align: center;
+            padding: 40px 30px;
+        }
+
+        .warning-icon {
+            font-size: 4rem;
+            color: var(--warning);
+            margin-bottom: 20px;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+
+        .item-details {
+            background: var(--light-gray);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .item-details p {
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .item-details strong {
+            color: var(--dark);
+            min-width: 80px;
+        }
+
+        .warning-message {
+            background: #fff3cd;
+            border: 1px solid #ffecb5;
+            color: #856404;
+            padding: 15px;
+            border-radius: var(--radius-md);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Target Lecture Modal */
+        .target-modal .modal-content {
+            max-width: 500px;
+        }
+
+        .target-modal .modal-body {
+            padding: 30px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                padding: 20px;
+                gap: 20px;
+            }
+            
+            .header-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .management-tabs {
+                flex-direction: column;
+            }
+            
+            .tab-btn {
+                padding: 12px;
+                justify-content: flex-start;
+            }
+            
+            .item-header {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .item-footer {
+                flex-direction: column;
+                gap: 15px;
+                align-items: stretch;
+            }
+            
+            .item-actions {
+                justify-content: flex-end;
+            }
+            
+            .modal-content {
+                width: 95%;
+                max-height: 90vh;
+            }
+            
+            .modal-header {
+                padding: 20px;
+            }
+            
+            .modal-body {
+                padding: 20px;
+                max-height: calc(90vh - 140px);
+            }
+            
+            .modal-footer {
+                padding: 15px 20px;
+                flex-direction: column;
+            }
+            
+            .modal-footer .btn {
+                width: 100%;
+            }
+            
+            .edit-fields-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                padding: 20px;
+            }
+            
+            .create-form {
+                padding: 20px;
+            }
+            
+            .tab-content {
+                padding: 20px;
+            }
+            
+            .date-input-group {
+                grid-template-columns: 1fr;
+            }
+            
+            .modal-content {
+                margin: 10px;
+                width: calc(100% - 20px);
+            }
+            
+            .modal-header h2 {
+                font-size: 1.3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="loading-overlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading Academic Management...</div>
+    </div>
+
+    <div id="app-container" class="app-container">
+        
+    <div class="main-container">
+        <div class="header">
+            <h1><i class="fas fa-tasks"></i> Academic Management</h1>
+            <p>Manage assignments, tests, and lecture records for your courses</p>
+            
+            <div class="header-actions">
+                <div class="d-flex gap-15 align-items-center">
+                    <span id="current-course-info">No course selected</span>
+                </div>
+                
+                <div id="admin-controls" style="display: none;">
+                    <button class="btn btn-primary" id="set-target-btn">
+                        <i class="fas fa-bullseye"></i> Set Target Lectures
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="content">
+            <!-- Course Sidebar -->
+            <div class="course-sidebar">
+                <h3><i class="fas fa-book"></i> My Courses</h3>
+                <div class="course-list" id="course-list">
+                    <!-- Courses will be populated here -->
+                </div>
+            </div>
+            
+            <!-- Management Area -->
+            <div class="management-area">
+                <div class="management-tabs">
+                    <button class="tab-btn active" data-tab="assignments">
+                        <i class="fas fa-file-alt"></i> Assignments
+                    </button>
+                    <button class="tab-btn" data-tab="tests">
+                        <i class="fas fa-clipboard-check"></i> Tests
+                    </button>
+                    <button class="tab-btn" data-tab="lectures">
+                        <i class="fas fa-chalkboard-teacher"></i> Lectures
+                    </button>
+                </div>
+                
+                <!-- Assignments Tab -->
+                <div class="tab-content active" id="assignments-tab">
+                    <div class="create-form">
+                        <h3><i class="fas fa-plus-circle"></i> Create New Assignment</h3>
+                        <form id="assignment-form">
+                            <div class="form-group">
+                                <label for="assignment-title">Assignment Title *</label>
+                                <input type="text" id="assignment-title" class="form-control" required 
+                                       placeholder="Enter assignment title">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="assignment-questions">Questions/Instructions *</label>
+                                <textarea id="assignment-questions" class="form-control" rows="6" required 
+                                          placeholder="Enter assignment questions or instructions..."></textarea>
+                            </div>
+                            
+                            <div class="date-input-group">
+                                <div class="form-group">
+                                    <label for="assignment-due-date">Submission Due Date *</label>
+                                    <input type="date" id="assignment-due-date" class="form-control" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="assignment-max-marks">Maximum Marks</label>
+                                    <input type="number" id="assignment-max-marks" class="form-control" 
+                                           min="0" max="100" placeholder="e.g., 100">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="assignment-attachments" class="optional-label">Attachments</label>
+                                <textarea id="assignment-attachments" class="form-control" rows="2" 
+                                          placeholder="List file names or links (separate by comma)"></textarea>
+                            </div>
+                            
+                            <div class="d-flex justify-content-end gap-15 mt-20">
+                                <button type="reset" class="btn btn-secondary">Clear</button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Create Assignment
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <h3><i class="fas fa-list"></i> Existing Assignments</h3>
+                    <div class="items-list" id="assignments-list">
+                        <!-- Assignments will be loaded here -->
+                    </div>
+                </div>
+                
+                <!-- Tests Tab -->
+                <div class="tab-content" id="tests-tab">
+                    <div class="create-form">
+                        <h3><i class="fas fa-plus-circle"></i> Create Test Record</h3>
+                        <form id="test-form">
+                            <div class="form-group">
+                                <label for="test-title">Test Title *</label>
+                                <input type="text" id="test-title" class="form-control" required 
+                                       placeholder="Enter test title">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="test-questions">Test Questions *</label>
+                                <textarea id="test-questions" class="form-control" rows="6" required 
+                                          placeholder="Enter test questions..."></textarea>
+                            </div>
+                            
+                            <div class="date-input-group">
+                                <div class="form-group">
+                                    <label for="test-date">Test Date *</label>
+                                    <input type="date" id="test-date" class="form-control" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="test-max-marks">Maximum Marks</label>
+                                    <input type="number" id="test-max-marks" class="form-control" 
+                                           min="0" max="100" placeholder="e.g., 100">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="test-duration" class="optional-label">Duration</label>
+                                <input type="text" id="test-duration" class="form-control" 
+                                       placeholder="e.g., 2 hours, 45 minutes">
+                            </div>
+                            
+                            <div class="d-flex justify-content-end gap-15 mt-20">
+                                <button type="reset" class="btn btn-secondary">Clear</button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Create Test Record
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <h3><i class="fas fa-list"></i> Test Records</h3>
+                    <div class="items-list" id="tests-list">
+                        <!-- Tests will be loaded here -->
+                    </div>
+                </div>
+                
+                <!-- Lectures Tab -->
+                <div class="tab-content" id="lectures-tab">
+                    <div class="progress-section">
+                        <div class="progress-header">
+                            <h3><i class="fas fa-chart-line"></i> Lecture Progress</h3>
+                            <span id="progress-percentage">0%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
+                        </div>
+                        <div class="progress-text">
+                            <span id="current-lectures">0 lectures</span>
+                            <span id="lecture-target">Target: 0</span>
+                        </div>
+                        
+                        <div class="lecture-stats">
+                            <div class="stat-item">
+                                <div class="stat-value" id="total-lectures">0</div>
+                                <div class="stat-label">Total Lectures</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="lectures-this-week">0</div>
+                                <div class="stat-label">This Week</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="attendance-rate">0%</div>
+                                <div class="stat-label">Avg. Attendance</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="last-lecture">-</div>
+                                <div class="stat-label">Last Lecture</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="create-form">
+                        <h3><i class="fas fa-plus-circle"></i> Record Lecture</h3>
+                        <form id="lecture-form">
+                            <div class="form-group">
+                                <label for="lecture-topic">Lecture Topic *</label>
+                                <input type="text" id="lecture-topic" class="form-control" required 
+                                       placeholder="Enter lecture topic">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="lecture-details" class="optional-label">Lecture Details</label>
+                                <textarea id="lecture-details" class="form-control" rows="4" 
+                                          placeholder="Describe what was covered in this lecture..."></textarea>
+                            </div>
+                            
+                            <div class="date-input-group">
+                                <div class="form-group">
+                                    <label for="lecture-date">Lecture Date *</label>
+                                    <?php
+                                    // Auto-set to current date
+                                    $currentDate = date('Y-m-d');
+                                    ?>
+                                    <input type="date" id="lecture-date" class="form-control" required 
+                                           value="<?php echo $currentDate; ?>">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="lecture-duration" class="optional-label">Duration</label>
+                                    <input type="text" id="lecture-duration" class="form-control" 
+                                           placeholder="e.g., 1 hour 30 minutes">
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="attendance-count" class="optional-label">Attendance Count</label>
+                                    <input type="number" id="attendance-count" class="form-control" 
+                                           min="0" placeholder="Number of students attended">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="lecture-materials" class="optional-label">Materials Used</label>
+                                    <textarea id="lecture-materials" class="form-control" rows="2" 
+                                              placeholder="List materials, slides, textbooks used..."></textarea>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-end gap-15 mt-20">
+                                <button type="reset" class="btn btn-secondary">Clear</button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Record Lecture
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <h3><i class="fas fa-list"></i> Lecture History</h3>
+                    <div class="items-list" id="lectures-list">
+                        <!-- Lectures will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div class="modal edit-modal" id="edit-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-edit"></i> Edit Item</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-form" class="edit-modal-fields">
+                    <input type="hidden" id="edit-item-id">
+                    <input type="hidden" id="edit-item-type">
+                    
+                    <!-- Basic Information Section -->
+                    <div class="edit-section">
+                        <h4><i class="fas fa-info-circle"></i> Basic Information</h4>
+                        <div class="edit-fields-grid">
+                            <div class="form-group">
+                                <label for="edit-title">Title *</label>
+                                <input type="text" id="edit-title" class="form-control" required>
+                            </div>
+                            <div class="form-group" id="edit-date-field">
+                                <label for="edit-date">Date *</label>
+                                <input type="date" id="edit-date" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Content Section -->
+                    <div class="edit-section" id="edit-content-section">
+                        <h4><i class="fas fa-file-alt"></i> Content</h4>
+                        <div class="form-group">
+                            <div id="edit-questions-field">
+                                <label for="edit-questions">Questions/Instructions *</label>
+                                <textarea id="edit-questions" class="form-control" rows="6" required></textarea>
+                            </div>
+                            <div id="edit-details-field">
+                                <label for="edit-details">Details</label>
+                                <textarea id="edit-details" class="form-control" rows="4"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Additional Information Section -->
+                    <div class="edit-section" id="edit-additional-section">
+                        <h4><i class="fas fa-cogs"></i> Additional Information</h4>
+                        <div class="edit-fields-grid">
+                            <div class="form-group" id="edit-marks-field">
+                                <label for="edit-max-marks">Maximum Marks</label>
+                                <input type="number" id="edit-max-marks" class="form-control" min="0" max="100">
+                            </div>
+                            <div class="form-group" id="edit-duration-field">
+                                <label for="edit-duration">Duration</label>
+                                <input type="text" id="edit-duration" class="form-control">
+                            </div>
+                            <div class="form-group" id="edit-attendance-field">
+                                <label for="edit-attendance">Attendance Count</label>
+                                <input type="number" id="edit-attendance" class="form-control" min="0">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Attachments & Materials Section -->
+                    <div class="edit-section" id="edit-files-section">
+                        <h4><i class="fas fa-paperclip"></i> Files & Materials</h4>
+                        <div class="edit-fields-grid">
+                            <div class="form-group" id="edit-attachments-field">
+                                <label for="edit-attachments">Attachments</label>
+                                <textarea id="edit-attachments" class="form-control" rows="2"></textarea>
+                            </div>
+                            <div class="form-group" id="edit-materials-field">
+                                <label for="edit-materials">Materials Used</label>
+                                <textarea id="edit-materials" class="form-control" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger close-modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="save-edit-btn">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal delete-modal" id="delete-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-exclamation-triangle"></i> Confirm Delete</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="warning-icon">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <p>Are you sure you want to delete this item? This action cannot be undone.</p>
+                
+                <div class="item-details">
+                    <p><strong>Type:</strong> <span id="delete-item-type"></span></p>
+                    <p><strong>Item:</strong> <span id="delete-item-title"></span></p>
+                    <p><strong>Date:</strong> <span id="delete-item-date"></span></p>
+                </div>
+                
+                <div class="warning-message">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <strong>Warning:</strong> All related data will be permanently removed.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger close-modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="confirm-delete-btn">
+                    <i class="fas fa-trash"></i> Delete Item
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Target Lecture Modal -->
+    <div class="modal target-modal" id="target-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-bullseye"></i> Set Target Lectures</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="course-target-lectures">Target Number of Lectures for <span id="target-course-name"></span></label>
+                    <input type="number" id="course-target-lectures" class="form-control" min="1" max="100" 
+                           placeholder="e.g., 30 lectures for the semester">
+                </div>
+                <p class="text-muted">This sets the target number of lectures for the entire course/semester.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger close-modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="save-target-btn">
+                    <i class="fas fa-save"></i> Save Target
+                </button>
+            </div>
+        </div>
+    </div>
+
+    </div>
+
+    <!-- Include the consolidated school app JS -->
+    <script src="js/school-app.js"></script>
+    
+    <!-- Academic Management Script -->
+    <script>
+    let currentUser = null;
+    let userData = null;
+    let userDepartment = '';
+    let userRole = '';
+    let currentCourseId = null;
+    let currentCourse = null;
+    let myCourses = [];
+    let assignments = [];
+    let tests = [];
+    let lectures = [];
+    let courseTargets = {};
+    let listeners = {};
+
+    // Initialize when DOM is loaded
+    document.addEventListener('DOMContentLoaded', async function() {
+        await initializePage();
+        setupEventListeners();
+    });
+
+    async function initializePage() {
+        showLoading(true, 'Loading academic management...');
+        
+        try {
+            // Wait for Firebase to initialize
+            if (!window.SchoolApp || !window.SchoolApp.auth) {
+                setTimeout(initializePage, 100);
+                return;
+            }
+            
+            const auth = window.SchoolApp.auth;
+            const db = window.SchoolApp.db;
+            
+            // Listen for auth state changes
+            auth.onAuthStateChanged(async (user) => {
+                if (!user) {
+                    window.SchoolApp.SchoolUtils.showToast('Please login first', 'error');
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 2000);
+                    showLoading(false);
+                    return;
+                }
+                
+                currentUser = user;
+                
+                // Get user data
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                if (userDoc.exists) {
+                    userData = userDoc.data();
+                    userRole = userData.role || '';
+                    userDepartment = userData.department || '';
+                    
+                    // Check permissions
+                    const allowedRoles = ['Admin', 'Lecturer', 'Student Admin'];
+                    if (!allowedRoles.includes(userRole)) {
+                        window.SchoolApp.SchoolUtils.showToast('Access denied. Required role: Admin, Lecturer, or Student Admin', 'error');
+                        setTimeout(() => {
+                            window.location.href = 'dashboard.html';
+                        }, 2000);
+                        showLoading(false);
+                        return;
+                    }
+                    
+                    // Load courses based on role
+                    await loadUserCourses();
+                    
+                    // Show admin controls if user is admin
+                    if (['Admin', 'Student Admin'].includes(userRole)) {
+                        document.getElementById('admin-controls').style.display = 'block';
+                    }
+                    
+                    showLoading(false);
+                } else {
+                    window.SchoolApp.SchoolUtils.showToast('User data not found', 'error');
+                    showLoading(false);
+                }
+            });
+            
+        } catch (error) {
+            console.error('Initialization error:', error);
+            window.SchoolApp.SchoolUtils.showToast('Error initializing: ' + error.message, 'error');
+            showLoading(false);
+        }
+    }
+
+    async function loadUserCourses() {
+        try {
+            const db = window.SchoolApp.db;
+            myCourses = [];
+            
+            console.log("Loading courses for department:", userDepartment);
+            console.log("User role:", userRole);
+            console.log("User ID:", currentUser.uid);
+            
+            // Query depends on user role
+            if (userRole === 'Lecturer') {
+                // Lecturer can only manage courses they are assigned to
+                const coursesSnapshot = await db.collection('Departments')
+                    .doc(userDepartment)
+                    .collection('Courses')
+                    .where('lecturerId', '==', currentUser.uid)
+                    .where('status', '==', 'active')
+                    .get();
+                
+                coursesSnapshot.forEach(doc => {
+                    console.log("Found course for lecturer:", doc.id, doc.data());
+                    myCourses.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+            } else if (['Admin', 'Student Admin'].includes(userRole)) {
+                // Admin can manage all courses in their department
+                console.log("Admin loading all courses for department:", userDepartment);
+                const coursesSnapshot = await db.collection('Departments')
+                    .doc(userDepartment)
+                    .collection('Courses')
+                    .where('status', '==', 'active')
+                    .get();
+                
+                coursesSnapshot.forEach(doc => {
+                    console.log("Found course for admin:", doc.id, doc.data());
+                    myCourses.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+            }
+            
+            console.log("Total courses loaded:", myCourses.length);
+            populateCourseList();
+            
+            // Load course targets
+            await loadCourseTargets();
+            
+        } catch (error) {
+            console.error('Error loading courses:', error);
+            window.SchoolApp.SchoolUtils.showToast('Error loading courses: ' + error.message, 'error');
+        }
+    }
+
+    function populateCourseList() {
+        const courseList = document.getElementById('course-list');
+        courseList.innerHTML = '';
+        
+        if (myCourses.length === 0) {
+            courseList.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-book"></i>
+                    <p>No courses found</p>
+                    <small>You don't have any assigned courses</small>
+                </div>
+            `;
+            return;
+        }
+        
+        myCourses.forEach(course => {
+            const courseItem = document.createElement('div');
+            courseItem.className = 'course-item';
+            courseItem.dataset.courseId = course.id;
+            courseItem.innerHTML = `
+                <div class="course-code">${course.courseCode}</div>
+                <div class="course-name">${course.courseName}</div>
+            `;
+            
+            courseItem.addEventListener('click', () => selectCourse(course.id));
+            courseList.appendChild(courseItem);
+        });
+        
+        // Select first course by default
+        if (myCourses.length > 0 && !currentCourseId) {
+            selectCourse(myCourses[0].id);
+        }
+    }
+
+    async function loadCourseTargets() {
+        try {
+            const db = window.SchoolApp.db;
+            const snapshot = await db.collection('courseTargets').get();
+            
+            courseTargets = {};
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.department === userDepartment) {
+                    courseTargets[data.courseId] = data.targetLectures || 0;
+                }
+            });
+        } catch (error) {
+            console.error('Error loading course targets:', error);
+        }
+    }
+
+    function selectCourse(courseId) {
+        // Update UI
+        document.querySelectorAll('.course-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        document.querySelector(`.course-item[data-course-id="${courseId}"]`).classList.add('active');
+        
+        // Set current course
+        currentCourseId = courseId;
+        currentCourse = myCourses.find(c => c.id === courseId);
+        
+        // Update header
+        document.getElementById('current-course-info').textContent = 
+            `${currentCourse.courseCode} - ${currentCourse.courseName}`;
+        
+        // Remove previous listeners
+        Object.values(listeners).forEach(unsubscribe => {
+            if (unsubscribe) unsubscribe();
+        });
+        listeners = {};
+        
+        // Load data for selected course
+        loadCourseData();
+    }
+
+    function loadCourseData() {
+        if (!currentCourseId) return;
+        
+        const db = window.SchoolApp.db;
+        
+        console.log("Loading data for course:", currentCourseId);
+        console.log("Department:", userDepartment);
+        
+        // Remove previous listeners
+        Object.values(listeners).forEach(unsubscribe => {
+            if (unsubscribe) unsubscribe();
+        });
+        listeners = {};
+        
+        try {
+            // Load assignments
+            listeners.assignments = db.collection('Departments')
+                .doc(userDepartment)
+                .collection('Courses')
+                .doc(currentCourseId)
+                .collection('Assignments')
+                .orderBy('dueDate', 'asc')
+                .onSnapshot(snapshot => {
+                    assignments = [];
+                    snapshot.forEach(doc => {
+                        assignments.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    });
+                    console.log("Assignments loaded:", assignments.length);
+                    displayAssignments();
+                }, error => {
+                    console.error('Error loading assignments:', error);
+                    window.SchoolApp.SchoolUtils.showToast('Error loading assignments', 'error');
+                });
+            
+            // Load tests
+            listeners.tests = db.collection('Departments')
+                .doc(userDepartment)
+                .collection('Courses')
+                .doc(currentCourseId)
+                .collection('Tests')
+                .orderBy('testDate', 'desc')
+                .onSnapshot(snapshot => {
+                    tests = [];
+                    snapshot.forEach(doc => {
+                        tests.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    });
+                    console.log("Tests loaded:", tests.length);
+                    displayTests();
+                }, error => {
+                    console.error('Error loading tests:', error);
+                    window.SchoolApp.SchoolUtils.showToast('Error loading tests', 'error');
+                });
+            
+            // Load lectures
+            listeners.lectures = db.collection('Departments')
+                .doc(userDepartment)
+                .collection('Courses')
+                .doc(currentCourseId)
+                .collection('Lectures')
+                .orderBy('lectureDate', 'desc')
+                .onSnapshot(snapshot => {
+                    lectures = [];
+                    snapshot.forEach(doc => {
+                        lectures.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    });
+                    console.log("Lectures loaded:", lectures.length);
+                    displayLectures();
+                    updateLectureProgress();
+                }, error => {
+                    console.error('Error loading lectures:', error);
+                    window.SchoolApp.SchoolUtils.showToast('Error loading lectures', 'error');
+                });
+        } catch (error) {
+            console.error('Error setting up listeners:', error);
+            window.SchoolApp.SchoolUtils.showToast('Error loading course data', 'error');
+        }
+    }
+
+    function setupEventListeners() {
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const tabId = this.dataset.tab;
+                switchTab(tabId);
+            });
+        });
+        
+        // Form submissions
+        document.getElementById('assignment-form').addEventListener('submit', createAssignment);
+        document.getElementById('test-form').addEventListener('submit', createTest);
+        document.getElementById('lecture-form').addEventListener('submit', createLecture);
+        
+        // Modal buttons
+        document.querySelectorAll('.close-modal').forEach(btn => {
+            btn.addEventListener('click', closeAllModals);
+        });
+        
+        // Delete confirmation
+        document.getElementById('confirm-delete-btn').addEventListener('click', confirmDelete);
+        
+        // Target lectures
+        document.getElementById('set-target-btn').addEventListener('click', openTargetModal);
+        document.getElementById('save-target-btn').addEventListener('click', saveTargetLectures);
+        
+        // Close modals on overlay click
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeAllModals();
+                }
+            });
+        });
+        
+        // Auto-set current date for forms
+        const now = new Date();
+        const currentDate = now.toISOString().slice(0, 10);
+        document.getElementById('lecture-date').value = currentDate;
+        document.getElementById('assignment-due-date').value = currentDate;
+        document.getElementById('test-date').value = currentDate;
+    }
+
+    function switchTab(tabId) {
+        // Update active tab button
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.querySelector(`.tab-btn[data-tab="${tabId}"]`).classList.add('active');
+        
+        // Show active tab content
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('active');
+        });
+        document.getElementById(`${tabId}-tab`).classList.add('active');
+    }
+
+    // Create Assignment
+    async function createAssignment(e) {
+        e.preventDefault();
+        
+        if (!currentCourseId) {
+            window.SchoolApp.SchoolUtils.showToast('Please select a course first', 'error');
+            return;
+        }
+        
+        const form = e.target;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        
+        // Show loading state
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<div class="spinner"></div> Creating...';
+        
+        try {
+            const assignmentData = {
+                title: document.getElementById('assignment-title').value.trim(),
+                questions: document.getElementById('assignment-questions').value.trim(),
+                dueDate: document.getElementById('assignment-due-date').value,
+                maxMarks: parseInt(document.getElementById('assignment-max-marks').value) || 0,
+                attachments: document.getElementById('assignment-attachments').value.trim(),
+                courseId: currentCourseId,
+                courseCode: currentCourse.courseCode,
+                courseName: currentCourse.courseName,
+                department: userDepartment,
+                createdBy: currentUser.uid,
+                createdByName: userData.fullName || 'Unknown',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                status: 'active'
+            };
+            
+            // Validate required fields
+            if (!assignmentData.title || !assignmentData.questions || !assignmentData.dueDate) {
+                throw new Error('Please fill in all required fields');
+            }
+            
+            const db = window.SchoolApp.db;
+            
+            await db.collection('Departments')
+                .doc(userDepartment)
+                .collection('Courses')
+                .doc(currentCourseId)
+                .collection('Assignments')
+                .add(assignmentData);
+            
+            window.SchoolApp.SchoolUtils.showToast('Assignment created successfully!', 'success');
+            form.reset();
+            
+            // Reset date to current date
+            const now = new Date();
+            const currentDate = now.toISOString().slice(0, 10);
+            document.getElementById('assignment-due-date').value = currentDate;
+            
+        } catch (error) {
+            window.SchoolApp.SchoolUtils.showToast('Error creating assignment: ' + error.message, 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    }
+
+    // Create Test
+    async function createTest(e) {
+        e.preventDefault();
+        
+        if (!currentCourseId) {
+            window.SchoolApp.SchoolUtils.showToast('Please select a course first', 'error');
+            return;
+        }
+        
+        const form = e.target;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        
+        // Show loading state
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<div class="spinner"></div> Creating...';
+        
+        try {
+            const testData = {
+                title: document.getElementById('test-title').value.trim(),
+                questions: document.getElementById('test-questions').value.trim(),
+                testDate: document.getElementById('test-date').value,
+                maxMarks: parseInt(document.getElementById('test-max-marks').value) || 0,
+                duration: document.getElementById('test-duration').value.trim(),
+                courseId: currentCourseId,
+                courseCode: currentCourse.courseCode,
+                courseName: currentCourse.courseName,
+                department: userDepartment,
+                createdBy: currentUser.uid,
+                createdByName: userData.fullName || 'Unknown',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                status: 'completed'
+            };
+            
+            // Validate required fields
+            if (!testData.title || !testData.questions || !testData.testDate) {
+                throw new Error('Please fill in all required fields');
+            }
+            
+            const db = window.SchoolApp.db;
+            
+            await db.collection('Departments')
+                .doc(userDepartment)
+                .collection('Courses')
+                .doc(currentCourseId)
+                .collection('Tests')
+                .add(testData);
+            
+            window.SchoolApp.SchoolUtils.showToast('Test record created successfully!', 'success');
+            form.reset();
+            
+            // Reset date to current date
+            const now = new Date();
+            const currentDate = now.toISOString().slice(0, 10);
+            document.getElementById('test-date').value = currentDate;
+            
+        } catch (error) {
+            window.SchoolApp.SchoolUtils.showToast('Error creating test: ' + error.message, 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    }
+
+    // Create Lecture
+    async function createLecture(e) {
+        e.preventDefault();
+        
+        if (!currentCourseId) {
+            window.SchoolApp.SchoolUtils.showToast('Please select a course first', 'error');
+            return;
+        }
+        
+        const form = e.target;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        
+        // Show loading state
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<div class="spinner"></div> Recording...';
+        
+        try {
+            const lectureData = {
+                topic: document.getElementById('lecture-topic').value.trim(),
+                details: document.getElementById('lecture-details').value.trim(),
+                lectureDate: document.getElementById('lecture-date').value,
+                duration: document.getElementById('lecture-duration').value.trim(),
+                attendanceCount: parseInt(document.getElementById('attendance-count').value) || 0,
+                materials: document.getElementById('lecture-materials').value.trim(),
+                courseId: currentCourseId,
+                courseCode: currentCourse.courseCode,
+                courseName: currentCourse.courseName,
+                department: userDepartment,
+                createdBy: currentUser.uid,
+                createdByName: userData.fullName || 'Unknown',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            
+            // Validate required fields
+            if (!lectureData.topic || !lectureData.lectureDate) {
+                throw new Error('Please fill in all required fields');
+            }
+            
+            const db = window.SchoolApp.db;
+            
+            await db.collection('Departments')
+                .doc(userDepartment)
+                .collection('Courses')
+                .doc(currentCourseId)
+                .collection('Lectures')
+                .add(lectureData);
+            
+            // Update course lecture count
+            await updateCourseLectureCount();
+            
+            window.SchoolApp.SchoolUtils.showToast('Lecture recorded successfully!', 'success');
+            form.reset();
+            
+            // Reset date to current date
+            const now = new Date();
+            const currentDate = now.toISOString().slice(0, 10);
+            document.getElementById('lecture-date').value = currentDate;
+            
+        } catch (error) {
+            window.SchoolApp.SchoolUtils.showToast('Error recording lecture: ' + error.message, 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    }
+
+    async function updateCourseLectureCount() {
+        try {
+            const db = window.SchoolApp.db;
+            
+            // Get current lecture count
+            const lecturesSnapshot = await db.collection('Departments')
+                .doc(userDepartment)
+                .collection('Courses')
+                .doc(currentCourseId)
+                .collection('Lectures')
+                .get();
+            const lectureCount = lecturesSnapshot.size;
+            
+            // Update course document
+            await db.collection('Departments')
+                .doc(userDepartment)
+                .collection('Courses')
+                .doc(currentCourseId)
+                .update({
+                    lectureCount: lectureCount,
+                    updatedAt: new Date().toISOString()
+                });
+            
+        } catch (error) {
+            console.error('Error updating lecture count:', error);
+        }
+    }
+
+    function displayAssignments() {
+        const container = document.getElementById('assignments-list');
+        
+        if (assignments.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-file-alt"></i>
+                    <p>No assignments yet</p>
+                    <small>Create your first assignment using the form above</small>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '';
+        assignments.forEach(assignment => {
+            const dueDate = new Date(assignment.dueDate);
+            const now = new Date();
+            const timeDiff = dueDate - now;
+            const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+            
+            let status = 'upcoming';
+            let statusText = 'Upcoming';
+            
+            if (daysDiff < 0) {
+                status = 'overdue';
+                statusText = 'Overdue';
+            } else if (daysDiff <= 7) {
+                status = 'active';
+                statusText = `Due in ${daysDiff} day${daysDiff !== 1 ? 's' : ''}`;
+            } else {
+                status = 'upcoming';
+                statusText = `Due in ${daysDiff} days`;
+            }
+            
+            html += `
+                <div class="item-card" data-id="${assignment.id}" data-type="assignment">
+                    <div class="item-header">
+                        <div>
+                            <div class="item-title">${assignment.title}</div>
+                            <div class="item-meta">
+                                <span><i class="fas fa-calendar-alt"></i> Due: ${formatDate(assignment.dueDate)}</span>
+                                <span><i class="fas fa-user"></i> By: ${assignment.createdByName}</span>
+                                ${assignment.maxMarks ? `<span><i class="fas fa-star"></i> Max: ${assignment.maxMarks} marks</span>` : ''}
+                            </div>
+                        </div>
+                        <span class="status-badge status-${status}">${statusText}</span>
+                    </div>
+                    
+                    <div class="item-content">${assignment.questions}</div>
+                    
+                    ${assignment.attachments ? `
+                    <div class="mt-10">
+                        <small><i class="fas fa-paperclip"></i> Attachments: ${assignment.attachments}</small>
+                    </div>
+                    ` : ''}
+                    
+                    <div class="item-footer">
+                        <div class="item-status">
+                            <small>Created: ${formatDate(assignment.createdAt)}</small>
+                        </div>
+                        <div class="item-actions">
+                            <button class="btn btn-info btn-icon" onclick="editItem('${assignment.id}', 'assignment')" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-danger btn-icon" onclick="deleteItem('${assignment.id}', 'assignment')" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    }
+
+    function displayTests() {
+        const container = document.getElementById('tests-list');
+        
+        if (tests.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-clipboard-check"></i>
+                    <p>No tests recorded yet</p>
+                    <small>Create your first test record using the form above</small>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '';
+        tests.forEach(test => {
+            const testDate = new Date(test.testDate);
+            const now = new Date();
+            const timeDiff = testDate - now;
+            const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+            
+            let status = 'completed';
+            let statusText = 'Completed';
+            
+            if (daysDiff > 0) {
+                status = 'upcoming';
+                statusText = `In ${daysDiff} day${daysDiff !== 1 ? 's' : ''}`;
+            } else if (daysDiff === 0) {
+                status = 'active';
+                statusText = 'Today';
+            }
+            
+            html += `
+                <div class="item-card" data-id="${test.id}" data-type="test">
+                    <div class="item-header">
+                        <div>
+                            <div class="item-title">${test.title}</div>
+                            <div class="item-meta">
+                                <span><i class="fas fa-calendar-alt"></i> Date: ${formatDate(test.testDate)}</span>
+                                <span><i class="fas fa-user"></i> By: ${test.createdByName}</span>
+                                ${test.maxMarks ? `<span><i class="fas fa-star"></i> Max: ${test.maxMarks} marks</span>` : ''}
+                                ${test.duration ? `<span><i class="fas fa-clock"></i> ${test.duration}</span>` : ''}
+                            </div>
+                        </div>
+                        <span class="status-badge status-${status}">${statusText}</span>
+                    </div>
+                    
+                    <div class="item-content">${test.questions}</div>
+                    
+                    <div class="item-footer">
+                        <div class="item-status">
+                            <small>Recorded: ${formatDate(test.createdAt)}</small>
+                        </div>
+                        <div class="item-actions">
+                            <button class="btn btn-info btn-icon" onclick="editItem('${test.id}', 'test')" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-danger btn-icon" onclick="deleteItem('${test.id}', 'test')" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    }
+
+    function displayLectures() {
+        const container = document.getElementById('lectures-list');
+        
+        if (lectures.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                    <p>No lectures recorded yet</p>
+                    <small>Record your first lecture using the form above</small>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '';
+        lectures.forEach(lecture => {
+            html += `
+                <div class="item-card" data-id="${lecture.id}" data-type="lecture">
+                    <div class="item-header">
+                        <div>
+                            <div class="item-title">${lecture.topic}</div>
+                            <div class="item-meta">
+                                <span><i class="fas fa-calendar-alt"></i> ${formatDate(lecture.lectureDate)}</span>
+                                <span><i class="fas fa-user"></i> By: ${lecture.createdByName}</span>
+                                ${lecture.duration ? `<span><i class="fas fa-clock"></i> ${lecture.duration}</span>` : ''}
+                                ${lecture.attendanceCount ? `<span><i class="fas fa-users"></i> ${lecture.attendanceCount} attended</span>` : ''}
+                            </div>
+                        </div>
+                        <span class="status-badge status-completed">Conducted</span>
+                    </div>
+                    
+                    ${lecture.details ? `<div class="item-content">${lecture.details}</div>` : ''}
+                    
+                    ${lecture.materials ? `
+                    <div class="mt-10">
+                        <small><i class="fas fa-book"></i> Materials: ${lecture.materials}</small>
+                    </div>
+                    ` : ''}
+                    
+                    <div class="item-footer">
+                        <div class="item-status">
+                            <small>Recorded: ${formatDate(lecture.createdAt)}</small>
+                        </div>
+                        <div class="item-actions">
+                            <button class="btn btn-info btn-icon" onclick="editItem('${lecture.id}', 'lecture')" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-danger btn-icon" onclick="deleteItem('${lecture.id}', 'lecture')" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    }
+
+    function updateLectureProgress() {
+        if (!currentCourseId) return;
+        
+        const target = courseTargets[currentCourseId] || 0;
+        const current = lectures.length;
+        
+        // Update progress bar
+        const percentage = target > 0 ? Math.min(Math.round((current / target) * 100), 100) : 0;
+        document.getElementById('progress-bar').style.width = `${percentage}%`;
+        document.getElementById('progress-percentage').textContent = `${percentage}%`;
+        
+        // Update text
+        document.getElementById('current-lectures').textContent = `${current} lectures`;
+        document.getElementById('lecture-target').textContent = `Target: ${target}`;
+        
+        // Update stats
+        document.getElementById('total-lectures').textContent = current;
+        
+        // Calculate lectures this week
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        const lecturesThisWeek = lectures.filter(lecture => {
+            const lectureDate = new Date(lecture.lectureDate);
+            return lectureDate >= oneWeekAgo;
+        }).length;
+        document.getElementById('lectures-this-week').textContent = lecturesThisWeek;
+        
+        // Calculate average attendance
+        const lecturesWithAttendance = lectures.filter(lecture => lecture.attendanceCount > 0);
+        const totalAttendance = lecturesWithAttendance.reduce((sum, lecture) => sum + lecture.attendanceCount, 0);
+        const avgAttendance = lecturesWithAttendance.length > 0 ? Math.round(totalAttendance / lecturesWithAttendance.length) : 0;
+        document.getElementById('attendance-rate').textContent = `${avgAttendance}`;
+        
+        // Last lecture date
+        if (lectures.length > 0) {
+            const lastLecture = new Date(lectures[0].lectureDate);
+            const daysAgo = Math.floor((new Date() - lastLecture) / (1000 * 60 * 60 * 24));
+            document.getElementById('last-lecture').textContent = `${daysAgo} days ago`;
+        } else {
+            document.getElementById('last-lecture').textContent = '-';
+        }
+    }
+
+    // Edit Item
+    function editItem(itemId, itemType) {
+        let item;
+        
+        if (itemType === 'assignment') {
+            item = assignments.find(a => a.id === itemId);
+        } else if (itemType === 'test') {
+            item = tests.find(t => t.id === itemId);
+        } else if (itemType === 'lecture') {
+            item = lectures.find(l => l.id === itemId);
+        }
+        
+        if (!item) return;
+        
+        // Populate edit form
+        document.getElementById('edit-item-id').value = itemId;
+        document.getElementById('edit-item-type').value = itemType;
+        document.getElementById('edit-title').value = item.title || item.topic || '';
+        
+        // Hide all sections first
+        document.getElementById('edit-content-section').style.display = 'none';
+        document.getElementById('edit-additional-section').style.display = 'none';
+        document.getElementById('edit-files-section').style.display = 'none';
+        
+        // Hide all fields within sections
+        document.getElementById('edit-date-field').style.display = 'none';
+        document.getElementById('edit-questions-field').style.display = 'none';
+        document.getElementById('edit-details-field').style.display = 'none';
+        document.getElementById('edit-marks-field').style.display = 'none';
+        document.getElementById('edit-duration-field').style.display = 'none';
+        document.getElementById('edit-attendance-field').style.display = 'none';
+        document.getElementById('edit-attachments-field').style.display = 'none';
+        document.getElementById('edit-materials-field').style.display = 'none';
+        
+        if (itemType === 'assignment') {
+            // Show assignment-specific fields
+            document.getElementById('edit-date-field').style.display = 'block';
+            document.getElementById('edit-date').value = formatDateInput(item.dueDate);
+            document.getElementById('edit-content-section').style.display = 'block';
+            document.getElementById('edit-questions-field').style.display = 'block';
+            document.getElementById('edit-questions').value = item.questions || '';
+            document.getElementById('edit-additional-section').style.display = 'block';
+            document.getElementById('edit-marks-field').style.display = 'block';
+            document.getElementById('edit-max-marks').value = item.maxMarks || '';
+            document.getElementById('edit-files-section').style.display = 'block';
+            document.getElementById('edit-attachments-field').style.display = 'block';
+            document.getElementById('edit-attachments').value = item.attachments || '';
+        } else if (itemType === 'test') {
+            // Show test-specific fields
+            document.getElementById('edit-date-field').style.display = 'block';
+            document.getElementById('edit-date').value = formatDateInput(item.testDate);
+            document.getElementById('edit-content-section').style.display = 'block';
+            document.getElementById('edit-questions-field').style.display = 'block';
+            document.getElementById('edit-questions').value = item.questions || '';
+            document.getElementById('edit-additional-section').style.display = 'block';
+            document.getElementById('edit-marks-field').style.display = 'block';
+            document.getElementById('edit-max-marks').value = item.maxMarks || '';
+            document.getElementById('edit-duration-field').style.display = 'block';
+            document.getElementById('edit-duration').value = item.duration || '';
+        } else if (itemType === 'lecture') {
+            // Show lecture-specific fields
+            document.getElementById('edit-date-field').style.display = 'block';
+            document.getElementById('edit-date').value = formatDateInput(item.lectureDate);
+            document.getElementById('edit-content-section').style.display = 'block';
+            document.getElementById('edit-details-field').style.display = 'block';
+            document.getElementById('edit-details').value = item.details || '';
+            document.getElementById('edit-additional-section').style.display = 'block';
+            document.getElementById('edit-duration-field').style.display = 'block';
+            document.getElementById('edit-duration').value = item.duration || '';
+            document.getElementById('edit-attendance-field').style.display = 'block';
+            document.getElementById('edit-attendance').value = item.attendanceCount || '';
+            document.getElementById('edit-files-section').style.display = 'block';
+            document.getElementById('edit-materials-field').style.display = 'block';
+            document.getElementById('edit-materials').value = item.materials || '';
+        }
+        
+        document.getElementById('edit-modal').classList.add('active');
+    }
+
+    // Save edited item
+    async function saveEditedItem(e) {
+        if (e) e.preventDefault();
+        
+        const itemId = document.getElementById('edit-item-id').value;
+        const itemType = document.getElementById('edit-item-type').value;
+        const saveBtn = document.getElementById('save-edit-btn');
+        const originalText = saveBtn.innerHTML;
+        
+        // Show loading state
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<div class="spinner"></div> Saving...';
+        
+        try {
+            const updateData = {
+                updatedAt: new Date().toISOString()
+            };
+            
+            if (itemType === 'assignment') {
+                updateData.title = document.getElementById('edit-title').value.trim();
+                updateData.questions = document.getElementById('edit-questions').value.trim();
+                updateData.dueDate = document.getElementById('edit-date').value;
+                updateData.maxMarks = parseInt(document.getElementById('edit-max-marks').value) || 0;
+                updateData.attachments = document.getElementById('edit-attachments').value.trim();
+                
+                // Validate required fields
+                if (!updateData.title || !updateData.questions || !updateData.dueDate) {
+                    throw new Error('Please fill in all required fields');
+                }
+            } else if (itemType === 'test') {
+                updateData.title = document.getElementById('edit-title').value.trim();
+                updateData.questions = document.getElementById('edit-questions').value.trim();
+                updateData.testDate = document.getElementById('edit-date').value;
+                updateData.maxMarks = parseInt(document.getElementById('edit-max-marks').value) || 0;
+                updateData.duration = document.getElementById('edit-duration').value.trim();
+                
+                // Validate required fields
+                if (!updateData.title || !updateData.questions || !updateData.testDate) {
+                    throw new Error('Please fill in all required fields');
+                }
+            } else if (itemType === 'lecture') {
+                updateData.topic = document.getElementById('edit-title').value.trim();
+                updateData.details = document.getElementById('edit-details').value.trim();
+                updateData.lectureDate = document.getElementById('edit-date').value;
+                updateData.duration = document.getElementById('edit-duration').value.trim();
+                updateData.materials = document.getElementById('edit-materials').value.trim();
+                updateData.attendanceCount = parseInt(document.getElementById('edit-attendance').value) || 0;
+                
+                // Validate required fields
+                if (!updateData.topic || !updateData.lectureDate) {
+                    throw new Error('Please fill in all required fields');
+                }
+            }
+            
+            const db = window.SchoolApp.db;
+            
+            await db.collection('Departments')
+                .doc(userDepartment)
+                .collection('Courses')
+                .doc(currentCourseId)
+                .collection(itemType.charAt(0).toUpperCase() + itemType.slice(1) + 's')
+                .doc(itemId)
+                .update(updateData);
+            
+            window.SchoolApp.SchoolUtils.showToast('Item updated successfully!', 'success');
+            closeAllModals();
+            
+        } catch (error) {
+            window.SchoolApp.SchoolUtils.showToast('Error updating item: ' + error.message, 'error');
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalText;
+        }
+    }
+
+    // Delete item
+    function deleteItem(itemId, itemType) {
+        let item;
+        let itemTitle = '';
+        let itemDate = '';
+        
+        if (itemType === 'assignment') {
+            item = assignments.find(a => a.id === itemId);
+            itemTitle = item?.title || '';
+            itemDate = item?.dueDate ? formatDate(item.dueDate) : '';
+        } else if (itemType === 'test') {
+            item = tests.find(t => t.id === itemId);
+            itemTitle = item?.title || '';
+            itemDate = item?.testDate ? formatDate(item.testDate) : '';
+        } else if (itemType === 'lecture') {
+            item = lectures.find(l => l.id === itemId);
+            itemTitle = item?.topic || '';
+            itemDate = item?.lectureDate ? formatDate(item.lectureDate) : '';
+        }
+        
+        if (!item) return;
+        
+        // Store data for deletion
+        window.deleteItemData = { id: itemId, type: itemType };
+        
+        // Populate delete modal
+        document.getElementById('delete-item-title').textContent = itemTitle;
+        document.getElementById('delete-item-type').textContent = itemType.charAt(0).toUpperCase() + itemType.slice(1);
+        document.getElementById('delete-item-date').textContent = itemDate;
+        
+        document.getElementById('delete-modal').classList.add('active');
+    }
+
+    // Confirm delete
+    async function confirmDelete() {
+        const { id, type } = window.deleteItemData;
+        const deleteBtn = document.getElementById('confirm-delete-btn');
+        const originalText = deleteBtn.innerHTML;
+        
+        // Show loading state
+        deleteBtn.disabled = true;
+        deleteBtn.innerHTML = '<div class="spinner"></div> Deleting...';
+        
+        try {
+            const db = window.SchoolApp.db;
+            
+            await db.collection('Departments')
+                .doc(userDepartment)
+                .collection('Courses')
+                .doc(currentCourseId)
+                .collection(type.charAt(0).toUpperCase() + type.slice(1) + 's')
+                .doc(id)
+                .delete();
+            
+            // Update lecture count if deleting a lecture
+            if (type === 'lecture') {
+                await updateCourseLectureCount();
+            }
+            
+            window.SchoolApp.SchoolUtils.showToast('Item deleted successfully!', 'success');
+            closeAllModals();
+            
+        } catch (error) {
+            window.SchoolApp.SchoolUtils.showToast('Error deleting item: ' + error.message, 'error');
+        } finally {
+            deleteBtn.disabled = false;
+            deleteBtn.innerHTML = originalText;
+            window.deleteItemData = null;
+        }
+    }
+
+    // Target lectures modal
+    function openTargetModal() {
+        if (!currentCourseId) {
+            window.SchoolApp.SchoolUtils.showToast('Please select a course first', 'error');
+            return;
+        }
+        
+        document.getElementById('target-course-name').textContent = currentCourse.courseName;
+        document.getElementById('course-target-lectures').value = courseTargets[currentCourseId] || '';
+        document.getElementById('target-modal').classList.add('active');
+    }
+
+    async function saveTargetLectures() {
+        const targetInput = document.getElementById('course-target-lectures');
+        const targetValue = parseInt(targetInput.value);
+        
+        if (!targetValue || targetValue < 1) {
+            window.SchoolApp.SchoolUtils.showToast('Please enter a valid target number', 'error');
+            return;
+        }
+        
+        const saveBtn = document.getElementById('save-target-btn');
+        const originalText = saveBtn.innerHTML;
+        
+        // Show loading state
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<div class="spinner"></div> Saving...';
+        
+        try {
+            const db = window.SchoolApp.db;
+            const targetData = {
+                courseId: currentCourseId,
+                courseCode: currentCourse.courseCode,
+                courseName: currentCourse.courseName,
+                department: userDepartment,
+                targetLectures: targetValue,
+                updatedBy: currentUser.uid,
+                updatedByName: userData.fullName || 'Unknown',
+                updatedAt: new Date().toISOString()
+            };
+            
+            // Use courseId as document ID for easy lookup
+            await db.collection('courseTargets').doc(currentCourseId).set(targetData, { merge: true });
+            
+            // Update local cache
+            courseTargets[currentCourseId] = targetValue;
+            
+            // Update UI
+            updateLectureProgress();
+            
+            window.SchoolApp.SchoolUtils.showToast(`Target set to ${targetValue} lectures`, 'success');
+            closeAllModals();
+            
+        } catch (error) {
+            window.SchoolApp.SchoolUtils.showToast('Error saving target: ' + error.message, 'error');
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalText;
+        }
+    }
+
+    function closeAllModals() {
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.classList.remove('active');
+        });
+        window.deleteItemData = null;
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    }
+
+    function formatDateInput(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toISOString().slice(0, 10);
+    }
+
+    function showLoading(show, text = 'Loading...') {
+        const overlay = document.getElementById('loading-overlay');
+        const loadingText = overlay.querySelector('.loading-text');
+        
+        if (show) {
+            loadingText.textContent = text;
+            overlay.style.display = 'flex';
+        } else {
+            overlay.style.display = 'none';
+        }
+    }
+    
+    // Add event listener for save edit button
+    document.getElementById('save-edit-btn').addEventListener('click', saveEditedItem);
+    
+    // Add event listener for edit form submission
+    document.getElementById('edit-form').addEventListener('submit', saveEditedItem);
+    </script>
+</body>
+</html>

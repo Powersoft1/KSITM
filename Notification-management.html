@@ -1,0 +1,2844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Notifications & Events - KSITM CTE</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .main {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header Styles */
+        .page-header {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow-md);
+            border-left: 5px solid var(--primary);
+        }
+
+        .page-title {
+            color: var(--primary);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 2rem;
+        }
+
+        .page-subtitle {
+            color: var(--gray);
+            margin-bottom: 20px;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: var(--transition);
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid var(--light-gray);
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        .loading-text {
+            font-size: 1.2rem;
+            color: var(--dark);
+            font-weight: 500;
+        }
+
+        /* Tabs Navigation */
+        .tabs-container {
+            background: white;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 30px;
+        }
+
+        .tabs-nav {
+            display: flex;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            padding: 15px 30px;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 1rem;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            white-space: nowrap;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab-btn:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .tab-btn.active {
+            color: white;
+            background: rgba(255, 255, 255, 0.2);
+            border-bottom: 3px solid white;
+        }
+
+        .tab-content {
+            padding: 30px;
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Form Styles */
+        .form-container {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 30px;
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+            border: 2px dashed var(--light-gray);
+            transition: var(--transition);
+        }
+
+        .form-container:hover {
+            border-color: var(--primary-light);
+        }
+
+        .form-header {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--light-gray);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .form-header h3 {
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.4rem;
+        }
+
+        .toggle-form {
+            background: var(--light-gray);
+            border: none;
+            padding: 8px 15px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--dark);
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .toggle-form:hover {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        /* Grid Layout */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        /* Priority/Level Styles */
+        .priority-levels {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .priority-option {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px 15px;
+            border: 2px solid var(--light-gray);
+            border-radius: var(--radius-md);
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .priority-option:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .priority-option.selected {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .priority-option.high.selected {
+            border-color: var(--danger);
+            background: rgba(231, 76, 60, 0.1);
+        }
+
+        .priority-option.medium.selected {
+            border-color: var(--warning);
+            background: rgba(243, 156, 18, 0.1);
+        }
+
+        .priority-option.low.selected {
+            border-color: var(--success);
+            background: rgba(46, 204, 113, 0.1);
+        }
+
+        .priority-label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .priority-desc {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+
+        /* Target Audience Selection */
+        .audience-selection {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .audience-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 15px;
+            background: var(--light);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition);
+            border: 2px solid transparent;
+        }
+
+        .audience-option:hover {
+            background: var(--primary-light);
+            transform: translateY(-2px);
+        }
+
+        .audience-option.selected {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .audience-option input[type="checkbox"] {
+            margin: 0;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .audience-label {
+            font-weight: 500;
+            flex: 1;
+        }
+
+        /* Status Badge */
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-active {
+            background: rgba(46, 204, 113, 0.2);
+            color: var(--success);
+        }
+
+        .status-expired {
+            background: rgba(231, 76, 60, 0.2);
+            color: var(--danger);
+        }
+
+        .status-upcoming {
+            background: rgba(52, 152, 219, 0.2);
+            color: var(--info);
+        }
+
+        /* Items List */
+        .items-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .item-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            border-left: 5px solid var(--primary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .item-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .item-card.expired {
+            opacity: 0.7;
+            border-left-color: var(--gray);
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            gap: 15px;
+        }
+
+        .item-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .item-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+
+        .item-content {
+            color: var(--text-color);
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .item-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 15px;
+            border-top: 1px solid var(--light-gray);
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .item-creator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        .creator-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        /* Notification Specific */
+        .notification-item {
+            border-left-color: #4361ee;
+        }
+
+        .notification-item.high-priority {
+            border-left-color: var(--danger);
+            background: rgba(231, 76, 60, 0.05);
+        }
+
+        .notification-item.medium-priority {
+            border-left-color: var(--warning);
+            background: rgba(243, 156, 18, 0.05);
+        }
+
+        .notification-item.low-priority {
+            border-left-color: var(--success);
+            background: rgba(46, 204, 113, 0.05);
+        }
+
+        /* Event Specific */
+        .event-item {
+            border-left-color: #3a0ca3;
+        }
+
+        .event-time {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--light);
+            padding: 5px 10px;
+            border-radius: var(--radius-sm);
+            font-weight: 500;
+        }
+
+        .event-venue {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--light);
+            padding: 5px 10px;
+            border-radius: var(--radius-sm);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--gray);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: var(--light-gray);
+        }
+
+        /* Filter Controls */
+        .filter-controls {
+            background: white;
+            padding: 20px;
+            border-radius: var(--radius-lg);
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .filter-label {
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        .filter-select {
+            padding: 8px 15px;
+            border: 1px solid var(--light-gray);
+            border-radius: var(--radius-md);
+            background: white;
+            min-width: 150px;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 15px 10px 40px;
+            border: 1px solid var(--light-gray);
+            border-radius: var(--radius-md);
+            font-size: 0.95rem;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+        }
+
+        /* Stats Cards */
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 25px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .stat-icon.notifications {
+            background: linear-gradient(135deg, #4361ee, #3a0ca3);
+        }
+
+        .stat-icon.events {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+        }
+
+        .stat-icon.active {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+        }
+
+        .stat-icon.expired {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 10px 0;
+            color: var(--dark);
+        }
+
+        .stat-label {
+            color: var(--gray);
+            font-size: 0.95rem;
+        }
+
+        /* Delete Confirmation Modal */
+        .delete-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10002;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+        }
+
+        .delete-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .delete-modal-content {
+            background: white;
+            border-radius: var(--radius-lg);
+            width: 90%;
+            max-width: 500px;
+            padding: 0;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+
+        .delete-modal.active .delete-modal-content {
+            transform: translateY(0);
+        }
+
+        .delete-modal-header {
+            background: linear-gradient(135deg, var(--danger), #c0392b);
+            color: white;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .delete-modal-header h3 {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .delete-modal-body {
+            padding: 25px;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        .delete-modal-body .warning-icon {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .delete-modal-body .warning-icon i {
+            font-size: 4rem;
+            color: var(--warning);
+        }
+
+        .delete-modal-body .item-details {
+            background-color: var(--light-gray);
+            padding: 15px;
+            border-radius: var(--radius-sm);
+            margin-top: 15px;
+        }
+
+        .delete-modal-footer {
+            padding: 20px;
+            border-top: 1px solid var(--light-gray);
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+        }
+
+        .delete-modal-footer .btn {
+            min-width: 100px;
+            justify-content: center;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .tabs-nav {
+                flex-wrap: wrap;
+            }
+            
+            .tab-btn {
+                flex: 1;
+                min-width: 140px;
+                justify-content: center;
+                padding: 12px 15px;
+            }
+            
+            .item-header {
+                flex-direction: column;
+            }
+            
+            .item-footer {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+            
+            .filter-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .search-box {
+                min-width: 100%;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .page-header {
+                padding: 20px;
+            }
+            
+            .tab-content {
+                padding: 20px;
+            }
+            
+            .form-container {
+                padding: 20px;
+            }
+            
+            .stats-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading Notifications & Events...</div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="delete-modal">
+        <div class="delete-modal-content">
+            <div class="delete-modal-header">
+                <h3><i class="fas fa-exclamation-triangle"></i> Confirm Deletion</h3>
+            </div>
+            <div class="delete-modal-body">
+                <div class="warning-icon">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <p>Are you sure you want to delete this item? This action cannot be undone.</p>
+                <div class="item-details">
+                    <p><strong>Type:</strong> <span id="delete-item-type"></span></p>
+                    <p><strong>Item:</strong> <span id="delete-item-name"></span></p>
+                </div>
+                <p class="text-muted mt-20"><small>This will be removed from the database immediately.</small></p>
+            </div>
+            <div class="delete-modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancel-delete-btn">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-danger" id="confirm-delete-btn">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="container">
+            <!-- Page Header -->
+            <div class="page-header">
+                <h1 class="page-title">
+                    <i class="fas fa-bullhorn"></i> Manage Notifications & Events
+                </h1>
+                <p class="page-subtitle">
+                    Create, manage, and publish notifications and events for your department.
+                    Items automatically expire based on their end date/time.
+                </p>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Note:</strong> As an administrator, you can choose to save items globally or within specific departments.
+                    Other roles save items under their current department.
+                </div>
+            </div>
+
+            <!-- Stats Overview -->
+            <div class="stats-cards">
+                <div class="stat-card">
+                    <div class="stat-icon notifications">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <div class="stat-value" id="total-notifications">0</div>
+                    <div class="stat-label">Total Notifications</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon events">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div class="stat-value" id="total-events">0</div>
+                    <div class="stat-label">Total Events</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon active">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-value" id="active-items">0</div>
+                    <div class="stat-label">Active Items</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon expired">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-value" id="expired-items">0</div>
+                    <div class="stat-label">Expired Items</div>
+                </div>
+            </div>
+
+            <!-- Tabs Navigation -->
+            <div class="tabs-container">
+                <div class="tabs-nav">
+                    <button class="tab-btn active" data-tab="notifications">
+                        <i class="fas fa-bell"></i> Notifications
+                    </button>
+                    <button class="tab-btn" data-tab="events">
+                        <i class="fas fa-calendar-alt"></i> Events
+                    </button>
+                    <button class="tab-btn" data-tab="manage">
+                        <i class="fas fa-tasks"></i> Manage Items
+                    </button>
+                </div>
+
+                <!-- Notifications Tab -->
+                <div class="tab-content active" id="notifications-tab">
+                    <div class="form-container" id="notification-form-container">
+                        <div class="form-header">
+                            <h3><i class="fas fa-plus-circle"></i> Create New Notification</h3>
+                            <button type="button" class="toggle-form" id="toggle-notification-form">
+                                <i class="fas fa-chevron-down"></i> Hide Form
+                            </button>
+                        </div>
+                        <form id="notification-form">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="notification-title">Title <span class="required">*</span></label>
+                                    <input type="text" id="notification-title" class="form-control" required 
+                                           placeholder="Enter notification title" maxlength="100">
+                                </div>
+                                <div class="form-group">
+                                    <label for="notification-type">Type <span class="required">*</span></label>
+                                    <select id="notification-type" class="form-control" required>
+                                        <option value="">Select Type</option>
+                                        <option value="Announcement">Announcement</option>
+                                        <option value="Reminder">Reminder</option>
+                                        <option value="Alert">Alert</option>
+                                        <option value="Update">Update</option>
+                                        <option value="Notice">Notice</option>
+                                        <option value="Deadline">Deadline</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="notification-content">Content <span class="required">*</span></label>
+                                <textarea id="notification-content" class="form-control" rows="4" required 
+                                          placeholder="Enter notification content..."></textarea>
+                            </div>
+
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="notification-start">Start Date/Time <span class="required">*</span></label>
+                                    <input type="datetime-local" id="notification-start" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="notification-end">End Date/Time <span class="required">*</span></label>
+                                    <input type="datetime-local" id="notification-end" class="form-control" required>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Priority Level <span class="required">*</span></label>
+                                <div class="priority-levels">
+                                    <div class="priority-option low" data-value="low" onclick="selectPriority(this, 'low')">
+                                        <div class="priority-label">
+                                            <i class="fas fa-arrow-down"></i> Low Priority
+                                        </div>
+                                        <div class="priority-desc">General information</div>
+                                    </div>
+                                    <div class="priority-option medium" data-value="medium" onclick="selectPriority(this, 'medium')">
+                                        <div class="priority-label">
+                                            <i class="fas fa-exclamation"></i> Medium Priority
+                                        </div>
+                                        <div class="priority-desc">Important updates</div>
+                                    </div>
+                                    <div class="priority-option high" data-value="high" onclick="selectPriority(this, 'high')">
+                                        <div class="priority-label">
+                                            <i class="fas fa-exclamation-triangle"></i> High Priority
+                                        </div>
+                                        <div class="priority-desc">Urgent/Immediate attention</div>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="notification-priority" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Target Audience <span class="required">*</span></label>
+                                <div class="audience-selection" id="audience-selection">
+                                    <!-- Will be populated from school config -->
+                                </div>
+                            </div>
+
+                            <!-- Admin Only: Save Location -->
+                            <div class="form-group" id="admin-save-location" style="display: none;">
+                                <label for="save-location">Save Location (Admin Only)</label>
+                                <select id="save-location" class="form-control">
+                                    <option value="department">Save in Department</option>
+                                    <option value="global">Save Globally (All Departments)</option>
+                                </select>
+                                <small class="text-muted">As an admin, choose where to save this notification</small>
+                            </div>
+
+                            <input type="hidden" id="notification-id">
+                            <div class="form-footer">
+                                <button type="button" class="btn btn-danger" id="reset-notification-form">
+                                    <i class="fas fa-redo"></i> Reset
+                                </button>
+                                <button type="submit" class="btn btn-primary" id="save-notification">
+                                    <i class="fas fa-paper-plane"></i> Publish Notification
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Notifications List -->
+                    <div class="filter-controls">
+                        <div class="filter-group">
+                            <span class="filter-label">Filter by:</span>
+                            <select class="filter-select" id="filter-notification-type">
+                                <option value="">All Types</option>
+                                <option value="Announcement">Announcement</option>
+                                <option value="Reminder">Reminder</option>
+                                <option value="Alert">Alert</option>
+                                <option value="Update">Update</option>
+                                <option value="Notice">Notice</option>
+                                <option value="Deadline">Deadline</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <select class="filter-select" id="filter-notification-priority">
+                                <option value="">All Priorities</option>
+                                <option value="high">High</option>
+                                <option value="medium">Medium</option>
+                                <option value="low">Low</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <select class="filter-select" id="filter-notification-status">
+                                <option value="">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="expired">Expired</option>
+                            </select>
+                        </div>
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="search-notifications" placeholder="Search notifications...">
+                        </div>
+                    </div>
+
+                    <div id="notifications-list" class="items-list">
+                        <!-- Notifications will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Events Tab -->
+                <div class="tab-content" id="events-tab">
+                    <div class="form-container" id="event-form-container">
+                        <div class="form-header">
+                            <h3><i class="fas fa-calendar-plus"></i> Create New Event</h3>
+                            <button type="button" class="toggle-form" id="toggle-event-form">
+                                <i class="fas fa-chevron-down"></i> Hide Form
+                            </button>
+                        </div>
+                        <form id="event-form">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="event-title">Event Title <span class="required">*</span></label>
+                                    <input type="text" id="event-title" class="form-control" required 
+                                           placeholder="Enter event title" maxlength="100">
+                                </div>
+                                <div class="form-group">
+                                    <label for="event-type">Event Type <span class="required">*</span></label>
+                                    <select id="event-type" class="form-control" required>
+                                        <option value="">Select Type</option>
+                                        <option value="Lecture">Lecture</option>
+                                        <option value="Seminar">Seminar</option>
+                                        <option value="Workshop">Workshop</option>
+                                        <option value="Meeting">Meeting</option>
+                                        <option value="Exam">Exam</option>
+                                        <option value="Deadline">Deadline</option>
+                                        <option value="Holiday">Holiday</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="event-description">Description <span class="required">*</span></label>
+                                <textarea id="event-description" class="form-control" rows="4" required 
+                                          placeholder="Enter event description..."></textarea>
+                            </div>
+
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="event-start">Start Date/Time <span class="required">*</span></label>
+                                    <input type="datetime-local" id="event-start" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="event-end">End Date/Time <span class="required">*</span></label>
+                                    <input type="datetime-local" id="event-end" class="form-control" required>
+                                </div>
+                            </div>
+
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="event-venue">Venue/Location</label>
+                                    <select id="event-venue" class="form-control">
+                                        <option value="">Select Venue</option>
+                                        <!-- Venues will be populated from school config -->
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="event-organizer">Organizer</label>
+                                    <input type="text" id="event-organizer" class="form-control" 
+                                           placeholder="Name of organizer">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Importance Level <span class="required">*</span></label>
+                                <div class="priority-levels">
+                                    <div class="priority-option low" data-value="low" onclick="selectPriority(this, 'low', 'event')">
+                                        <div class="priority-label">
+                                            <i class="fas fa-arrow-down"></i> Low Importance
+                                        </div>
+                                        <div class="priority-desc">Optional attendance</div>
+                                    </div>
+                                    <div class="priority-option medium" data-value="medium" onclick="selectPriority(this, 'medium', 'event')">
+                                        <div class="priority-label">
+                                            <i class="fas fa-exclamation"></i> Medium Importance
+                                        </div>
+                                        <div class="priority-desc">Recommended attendance</div>
+                                    </div>
+                                    <div class="priority-option high" data-value="high" onclick="selectPriority(this, 'high', 'event')">
+                                        <div class="priority-label">
+                                            <i class="fas fa-exclamation-triangle"></i> High Importance
+                                        </div>
+                                        <div class="priority-desc">Mandatory attendance</div>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="event-importance" required>
+                            </div>
+
+                            <!-- Admin Only: Save Location -->
+                            <div class="form-group" id="admin-event-location" style="display: none;">
+                                <label for="event-save-location">Save Location (Admin Only)</label>
+                                <select id="event-save-location" class="form-control">
+                                    <option value="department">Save in Department</option>
+                                    <option value="global">Save Globally (All Departments)</option>
+                                </select>
+                                <small class="text-muted">As an admin, choose where to save this event</small>
+                            </div>
+
+                            <input type="hidden" id="event-id">
+                            <div class="form-footer">
+                                <button type="button" class="btn btn-danger" id="reset-event-form">
+                                    <i class="fas fa-redo"></i> Reset
+                                </button>
+                                <button type="submit" class="btn btn-success" id="save-event">
+                                    <i class="fas fa-calendar-check"></i> Schedule Event
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Events List -->
+                    <div class="filter-controls">
+                        <div class="filter-group">
+                            <span class="filter-label">Filter by:</span>
+                            <select class="filter-select" id="filter-event-type">
+                                <option value="">All Types</option>
+                                <option value="Lecture">Lecture</option>
+                                <option value="Seminar">Seminar</option>
+                                <option value="Workshop">Workshop</option>
+                                <option value="Meeting">Meeting</option>
+                                <option value="Exam">Exam</option>
+                                <option value="Deadline">Deadline</option>
+                                <option value="Holiday">Holiday</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <select class="filter-select" id="filter-event-importance">
+                                <option value="">All Importance</option>
+                                <option value="high">High</option>
+                                <option value="medium">Medium</option>
+                                <option value="low">Low</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <select class="filter-select" id="filter-event-status">
+                                <option value="">All Status</option>
+                                <option value="upcoming">Upcoming</option>
+                                <option value="ongoing">Ongoing</option>
+                                <option value="expired">Expired</option>
+                            </select>
+                        </div>
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="search-events" placeholder="Search events...">
+                        </div>
+                    </div>
+
+                    <div id="events-list" class="items-list">
+                        <!-- Events will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Manage Items Tab -->
+                <div class="tab-content" id="manage-tab">
+                    <div class="filter-controls">
+                        <div class="filter-group">
+                            <span class="filter-label">Show:</span>
+                            <select class="filter-select" id="filter-manage-type">
+                                <option value="all">All Items</option>
+                                <option value="notifications">Notifications Only</option>
+                                <option value="events">Events Only</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <select class="filter-select" id="filter-manage-department">
+                                <option value="">All Departments</option>
+                                <!-- Departments will be loaded dynamically -->
+                            </select>
+                        </div>
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="search-manage" placeholder="Search all items...">
+                        </div>
+                    </div>
+
+                    <div id="manage-list" class="items-list">
+                        <!-- All items for management will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include school app JS -->
+    <script src="js/school-app.js"></script>
+    
+    <!-- Notifications & Events Script -->
+    <script>
+        // Global variables
+        let currentUser = null;
+        let userData = null;
+        let isAdmin = false;
+        let currentDepartment = null;
+        let notifications = [];
+        let events = [];
+        let departments = [];
+        let schoolConfig = null;
+
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            initializePage();
+        });
+
+        // Initialize page
+        async function initializePage() {
+            showLoading(true);
+            
+            try {
+                // Check authentication
+                currentUser = await checkAuth();
+                if (!currentUser) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                // Load user data
+                const userDoc = await firebase.firestore().collection('users').doc(currentUser.uid).get();
+                if (userDoc.exists) {
+                    userData = userDoc.data();
+                    
+                    // Check if user has permission
+                    const allowedRoles = ['Admin', 'Lecturer', 'HOD', 'Student Admin'];
+                    if (!allowedRoles.includes(userData.role)) {
+                        showError('Access denied. You do not have permission to access this page.');
+                        setTimeout(() => {
+                            window.location.href = 'dashboard.html';
+                        }, 3000);
+                        showLoading(false);
+                        return;
+                    }
+
+                    // Set user type flags
+                    isAdmin = userData.role === 'Admin';
+                    currentDepartment = userData.department;
+
+                    // Load school configuration
+                    await loadSchoolConfig();
+
+                    // Load departments for admin
+                    if (isAdmin) {
+                        await loadDepartments();
+                        document.getElementById('admin-save-location').style.display = 'block';
+                        document.getElementById('admin-event-location').style.display = 'block';
+                    }
+
+                    // Load data - SIMPLIFIED QUERIES
+                    await loadAllData();
+
+                    // Setup event listeners
+                    setupEventListeners();
+
+                    // Update stats
+                    updateStats();
+
+                    // Auto-delete items expired 10 days ago
+                    await autoDeleteOldExpiredItems();
+
+                } else {
+                    showError('User data not found.');
+                }
+
+            } catch (error) {
+                console.error('Initialization error:', error);
+                showError('Error initializing page: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Show/hide loading overlay
+        function showLoading(show) {
+            const overlay = document.getElementById('loading-overlay');
+            overlay.style.display = show ? 'flex' : 'none';
+        }
+
+        // Load school configuration
+        async function loadSchoolConfig() {
+            try {
+                const configDoc = await firebase.firestore().collection('schoolConfig').doc('main').get();
+                if (configDoc.exists) {
+                    schoolConfig = configDoc.data();
+                    
+                    // Populate target audience checkboxes
+                    populateAudienceSelection();
+                    
+                    // Populate venue dropdown
+                    populateVenueDropdown();
+                    
+                    // Populate departments dropdown for admin
+                    if (isAdmin) {
+                        populateDepartmentsDropdown();
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading school config:', error);
+                // If school config fails, use default values
+                populateDefaultAudience();
+                populateDefaultVenues();
+            }
+        }
+
+        // Populate target audience checkboxes from school config
+        function populateAudienceSelection() {
+            const audienceContainer = document.getElementById('audience-selection');
+            
+            if (!schoolConfig || !schoolConfig.userRoles) {
+                // Use default roles if school config not loaded
+                populateDefaultAudience();
+                return;
+            }
+            
+            // Use roles from school config
+            audienceContainer.innerHTML = schoolConfig.userRoles.map(role => {
+                // Map config roles to display names
+                const displayName = role === 'Student' ? 'Students' :
+                                  role === 'Lecturer' ? 'Lecturers' :
+                                  role === 'HOD' ? 'HODs' :
+                                  role === 'Admin' ? 'Admins' :
+                                  role === 'All' ? 'All Users' : role;
+                return `
+                    <label class="audience-option">
+                        <input type="checkbox" name="audience" value="${role}">
+                        <div class="audience-label">${displayName}</div>
+                    </label>
+                `;
+            }).join('');
+            
+            // Add "All Users" option if not already present
+            if (!schoolConfig.userRoles.includes('All')) {
+                audienceContainer.innerHTML += `
+                    <label class="audience-option">
+                        <input type="checkbox" name="audience" value="All">
+                        <div class="audience-label">All Users</div>
+                    </label>
+                `;
+            }
+        }
+
+        // Populate default audience options
+        function populateDefaultAudience() {
+            const audienceContainer = document.getElementById('audience-selection');
+            const defaultRoles = ['Students', 'Lecturers', 'HODs', 'Admins', 'All'];
+            
+            audienceContainer.innerHTML = defaultRoles.map(role => `
+                <label class="audience-option">
+                    <input type="checkbox" name="audience" value="${role}">
+                    <div class="audience-label">${role === 'All' ? 'All Users' : role}</div>
+                </label>
+            `).join('');
+        }
+
+        // Populate venue dropdown from school config
+        function populateVenueDropdown() {
+            const venueSelect = document.getElementById('event-venue');
+            
+            if (!schoolConfig || !schoolConfig.venues) {
+                // Use default venues if school config not loaded
+                populateDefaultVenues();
+                return;
+            }
+            
+            // Filter only active venues
+            const activeVenues = schoolConfig.venues.filter(venue => venue.status === 'active');
+            
+            if (activeVenues.length === 0) {
+                venueSelect.innerHTML = '<option value="">No active venues available</option>';
+                return;
+            }
+            
+            venueSelect.innerHTML = '<option value="">Select Venue</option>' + 
+                activeVenues.map(venue => `
+                    <option value="${venue.name}">${venue.name}${venue.code ? ` (${venue.code})` : ''} - ${venue.type}</option>
+                `).join('');
+        }
+
+        // Populate default venues
+        function populateDefaultVenues() {
+            const venueSelect = document.getElementById('event-venue');
+            const defaultVenues = [
+                { name: 'Lecture Hall 1', code: 'LH1', type: 'Lecture Hall' },
+                { name: 'Lecture Hall 2', code: 'LH2', type: 'Lecture Hall' },
+                { name: 'Main Auditorium', code: 'AUD', type: 'Auditorium' },
+                { name: 'Computer Lab 1', code: 'CL1', type: 'Laboratory' },
+                { name: 'Seminar Room', code: 'SR1', type: 'Seminar Room' }
+            ];
+            
+            venueSelect.innerHTML = '<option value="">Select Venue</option>' + 
+                defaultVenues.map(venue => `
+                    <option value="${venue.name}">${venue.name} (${venue.code}) - ${venue.type}</option>
+                `).join('');
+        }
+
+        // Populate departments dropdown for admin
+        function populateDepartmentsDropdown() {
+            const deptSelect = document.getElementById('filter-manage-department');
+            
+            if (!schoolConfig || !schoolConfig.departments) {
+                return;
+            }
+            
+            deptSelect.innerHTML = '<option value="">All Departments</option>' + 
+                schoolConfig.departments.map(dept => `
+                    <option value="${dept}">${dept}</option>
+                `).join('');
+        }
+
+        // Authentication check
+        async function checkAuth() {
+            return new Promise((resolve) => {
+                firebase.auth().onAuthStateChanged((user) => {
+                    resolve(user);
+                });
+            });
+        }
+
+        // Load all data
+        async function loadAllData() {
+            try {
+                await Promise.all([
+                    loadNotifications(),
+                    loadEvents(),
+                    loadDepartmentsList()
+                ]);
+            } catch (error) {
+                console.error('Error loading data:', error);
+                throw error;
+            }
+        }
+
+        // Load notifications - SIMPLIFIED: No collectionGroup queries
+        async function loadNotifications() {
+            const db = firebase.firestore();
+            
+            try {
+                let snapshot;
+                
+                if (isAdmin) {
+                    // For admin: Try to load from global collection first
+                    const globalQuery = db.collection('notifications').get();
+                    const deptQuery = db.collection('Departments')
+                        .doc(currentDepartment)
+                        .collection('notifications')
+                        .get();
+                    
+                    const [globalSnapshot, deptSnapshot] = await Promise.all([globalQuery, deptQuery]);
+                    
+                    notifications = [];
+                    
+                    // Add global notifications
+                    globalSnapshot.forEach(doc => {
+                        const data = doc.data();
+                        if (data.status !== 'deleted') {
+                            notifications.push({
+                                id: doc.id,
+                                ref: doc.ref,
+                                ...data,
+                                department: 'global',
+                                status: calculateStatus(data.startDate, data.endDate)
+                            });
+                        }
+                    });
+                    
+                    // Add department notifications
+                    deptSnapshot.forEach(doc => {
+                        const data = doc.data();
+                        if (data.status !== 'deleted') {
+                            notifications.push({
+                                id: doc.id,
+                                ref: doc.ref,
+                                ...data,
+                                department: currentDepartment,
+                                status: calculateStatus(data.startDate, data.endDate)
+                            });
+                        }
+                    });
+                } else {
+                    // For non-admin: Only load from their department
+                    const query = db.collection('Departments')
+                        .doc(currentDepartment)
+                        .collection('notifications');
+                    
+                    snapshot = await query.get();
+                    notifications = [];
+                    
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        if (data.status !== 'deleted') {
+                            notifications.push({
+                                id: doc.id,
+                                ref: doc.ref,
+                                ...data,
+                                department: currentDepartment,
+                                status: calculateStatus(data.startDate, data.endDate)
+                            });
+                        }
+                    });
+                }
+
+                // Filter based on user role
+                notifications = filterByUserRole(notifications, userData.role);
+                
+                // Sort by date (newest first)
+                notifications.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                
+                console.log('Loaded notifications:', notifications.length);
+                displayNotifications();
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+                showError('Error loading notifications: ' + error.message);
+            }
+        }
+
+        // Load events - SIMPLIFIED: No collectionGroup queries
+        async function loadEvents() {
+            const db = firebase.firestore();
+            
+            try {
+                let snapshot;
+                
+                if (isAdmin) {
+                    // For admin: Try to load from global collection first
+                    const globalQuery = db.collection('events').get();
+                    const deptQuery = db.collection('Departments')
+                        .doc(currentDepartment)
+                        .collection('events')
+                        .get();
+                    
+                    const [globalSnapshot, deptSnapshot] = await Promise.all([globalQuery, deptQuery]);
+                    
+                    events = [];
+                    
+                    // Add global events
+                    globalSnapshot.forEach(doc => {
+                        const data = doc.data();
+                        if (data.status !== 'deleted') {
+                            events.push({
+                                id: doc.id,
+                                ref: doc.ref,
+                                ...data,
+                                department: 'global',
+                                status: calculateEventStatus(data.startDate, data.endDate)
+                            });
+                        }
+                    });
+                    
+                    // Add department events
+                    deptSnapshot.forEach(doc => {
+                        const data = doc.data();
+                        if (data.status !== 'deleted') {
+                            events.push({
+                                id: doc.id,
+                                ref: doc.ref,
+                                ...data,
+                                department: currentDepartment,
+                                status: calculateEventStatus(data.startDate, data.endDate)
+                            });
+                        }
+                    });
+                } else {
+                    // For non-admin: Only load from their department
+                    const query = db.collection('Departments')
+                        .doc(currentDepartment)
+                        .collection('events');
+                    
+                    snapshot = await query.get();
+                    events = [];
+                    
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        if (data.status !== 'deleted') {
+                            events.push({
+                                id: doc.id,
+                                ref: doc.ref,
+                                ...data,
+                                department: currentDepartment,
+                                status: calculateEventStatus(data.startDate, data.endDate)
+                            });
+                        }
+                    });
+                }
+
+                // Filter based on user role
+                events = filterByUserRole(events, userData.role);
+                
+                // Sort by start date (soonest first)
+                events.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+                
+                console.log('Loaded events:', events.length);
+                displayEvents();
+            } catch (error) {
+                console.error('Error loading events:', error);
+                showError('Error loading events: ' + error.message);
+            }
+        }
+
+        // Helper function to get department from document reference
+        function getDepartmentFromRef(ref) {
+            const path = ref.path.split('/');
+            // Path format: Departments/{department}/collection/docId
+            if (path[0] === 'Departments' && path.length >= 2) {
+                return path[1];
+            }
+            return 'global';
+        }
+
+        // Filter items by user role
+        function filterByUserRole(items, userRole) {
+            return items.filter(item => {
+                // Check if item is targeted to the user's role
+                if (!item.targetAudience) return true;
+                
+                // Convert targetAudience to array if it's a string
+                const audience = Array.isArray(item.targetAudience) 
+                    ? item.targetAudience 
+                    : [item.targetAudience];
+                
+                // Check if audience includes the user's role or "All"
+                return audience.includes(userRole) || 
+                       audience.includes('All') ||
+                       (userRole === 'Admin' && audience.includes('Admins')) ||
+                       (userRole === 'HOD' && audience.includes('HODs')) ||
+                       (userRole === 'Lecturer' && audience.includes('Lecturers')) ||
+                       (userRole === 'Student Admin' && (audience.includes('Students') || audience.includes('Student Admin')));
+            });
+        }
+
+        // Calculate notification status
+        function calculateStatus(startDate, endDate) {
+            const now = new Date();
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+
+            if (now < start) return 'upcoming';
+            if (now > end) return 'expired';
+            return 'active';
+        }
+
+        // Calculate event status
+        function calculateEventStatus(startDate, endDate) {
+            const now = new Date();
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+
+            if (now < start) return 'upcoming';
+            if (now > end) return 'expired';
+            return 'ongoing';
+        }
+
+        // Load departments for admin dropdown
+        async function loadDepartmentsList() {
+            if (!isAdmin) return;
+
+            try {
+                const snapshot = await firebase.firestore().collection('Departments').get();
+                departments = [];
+                snapshot.forEach(doc => {
+                    departments.push(doc.id);
+                });
+            } catch (error) {
+                console.error('Error loading departments:', error);
+            }
+        }
+
+        // Load all departments
+        async function loadDepartments() {
+            try {
+                const snapshot = await firebase.firestore().collection('Departments').get();
+                departments = [];
+                snapshot.forEach(doc => {
+                    departments.push(doc.id);
+                });
+            } catch (error) {
+                console.error('Error loading departments:', error);
+            }
+        }
+
+        // Auto-delete items expired 10 days ago
+        async function autoDeleteOldExpiredItems() {
+            try {
+                const tenDaysAgo = new Date();
+                tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+                
+                console.log('Checking for items expired before:', tenDaysAgo);
+                
+                // Check notifications
+                for (const notification of notifications) {
+                    if (notification.status === 'expired') {
+                        const expiredDate = new Date(notification.endDate);
+                        if (expiredDate < tenDaysAgo) {
+                            console.log('Deleting old notification:', notification.title);
+                            await deleteNotificationPermanently(notification.id, notification.department);
+                        }
+                    }
+                }
+                
+                // Check events
+                for (const event of events) {
+                    if (event.status === 'expired') {
+                        const expiredDate = new Date(event.endDate);
+                        if (expiredDate < tenDaysAgo) {
+                            console.log('Deleting old event:', event.title);
+                            await deleteEventPermanently(event.id, event.department);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error auto-deleting old items:', error);
+            }
+        }
+
+        // Delete notification permanently (for auto-delete)
+        async function deleteNotificationPermanently(id, department) {
+            try {
+                let docRef;
+                if (department === 'global') {
+                    docRef = firebase.firestore().collection('notifications').doc(id);
+                } else {
+                    docRef = firebase.firestore()
+                        .collection('Departments')
+                        .doc(department)
+                        .collection('notifications')
+                        .doc(id);
+                }
+
+                await docRef.delete();
+                console.log('Deleted notification:', id);
+            } catch (error) {
+                console.error('Error permanently deleting notification:', error);
+            }
+        }
+
+        // Delete event permanently (for auto-delete)
+        async function deleteEventPermanently(id, department) {
+            try {
+                let docRef;
+                if (department === 'global') {
+                    docRef = firebase.firestore().collection('events').doc(id);
+                } else {
+                    docRef = firebase.firestore()
+                        .collection('Departments')
+                        .doc(department)
+                        .collection('events')
+                        .doc(id);
+                }
+
+                await docRef.delete();
+                console.log('Deleted event:', id);
+            } catch (error) {
+                console.error('Error permanently deleting event:', error);
+            }
+        }
+
+        // Display notifications
+        function displayNotifications(filteredNotifications = null) {
+            const list = document.getElementById('notifications-list');
+            const itemsToDisplay = filteredNotifications || notifications;
+
+            if (itemsToDisplay.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-bell-slash"></i>
+                        <h3>No Notifications Found</h3>
+                        <p>Create your first notification using the form above.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            itemsToDisplay.forEach(notification => {
+                const isExpired = notification.status === 'expired';
+                const priorityClass = notification.priority || 'medium';
+                
+                html += `
+                    <div class="item-card notification-item ${priorityClass}-priority ${isExpired ? 'expired' : ''}" 
+                          data-id="${notification.id}" data-department="${notification.department}">
+                        <div class="item-header">
+                            <div>
+                                <h3 class="item-title">
+                                    <i class="fas fa-bell"></i> ${notification.title}
+                                    <span class="badge ${getPriorityBadgeClass(notification.priority)}">
+                                        ${notification.priority} priority
+                                    </span>
+                                </h3>
+                                <div class="item-meta">
+                                    <span><i class="fas fa-tag"></i> ${notification.type}</span>
+                                    <span><i class="fas fa-calendar"></i> ${formatDate(notification.startDate)}</span>
+                                    <span><i class="fas fa-clock"></i> ${formatTimeRange(notification.startDate, notification.endDate)}</span>
+                                    <span class="status-badge ${getStatusClass(notification.status)}">
+                                        <i class="fas fa-circle"></i> ${notification.status}
+                                    </span>
+                                    ${notification.department !== 'global' ? `<span><i class="fas fa-building"></i> ${notification.department}</span>` : ''}
+                                </div>
+                            </div>
+                            ${isExpired ? '' : `
+                                <div class="item-actions">
+                                    <button class="btn btn-sm btn-warning" onclick="editNotification('${notification.id}', '${notification.department}')">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" onclick="showDeleteModal('notification', '${notification.id}', '${notification.department}', '${notification.title}')">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </div>
+                            `}
+                        </div>
+                        <div class="item-content">
+                            ${notification.content}
+                        </div>
+                        <div class="item-footer">
+                            <div class="item-creator">
+                                <div class="creator-avatar">
+                                    ${getInitials(notification.createdBy || 'System')}
+                                </div>
+                                <span>Created by ${notification.createdByName || 'System'} • ${formatRelativeTime(notification.createdAt)}</span>
+                            </div>
+                            <div>
+                                <small class="text-muted">Target: ${Array.isArray(notification.targetAudience) ? notification.targetAudience.join(', ') : notification.targetAudience}</small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            list.innerHTML = html;
+        }
+
+        // Display events
+        function displayEvents(filteredEvents = null) {
+            const list = document.getElementById('events-list');
+            const itemsToDisplay = filteredEvents || events;
+
+            if (itemsToDisplay.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-calendar-times"></i>
+                        <h3>No Events Found</h3>
+                        <p>Create your first event using the form above.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            itemsToDisplay.forEach(event => {
+                const isExpired = event.status === 'expired';
+                const importanceClass = event.importance || 'medium';
+                
+                html += `
+                    <div class="item-card event-item ${isExpired ? 'expired' : ''}" 
+                          data-id="${event.id}" data-department="${event.department}">
+                        <div class="item-header">
+                            <div>
+                                <h3 class="item-title">
+                                    <i class="fas fa-calendar-day"></i> ${event.title}
+                                    <span class="badge ${getImportanceBadgeClass(event.importance)}">
+                                        ${event.importance} importance
+                                    </span>
+                                </h3>
+                                <div class="item-meta">
+                                    <span><i class="fas fa-tag"></i> ${event.type}</span>
+                                    <span class="event-time">
+                                        <i class="fas fa-clock"></i> ${formatDateTime(event.startDate)}
+                                    </span>
+                                    ${event.venue ? `<span class="event-venue"><i class="fas fa-map-marker-alt"></i> ${event.venue}</span>` : ''}
+                                    <span class="status-badge ${getEventStatusClass(event.status)}">
+                                        <i class="fas fa-circle"></i> ${event.status}
+                                    </span>
+                                    ${event.department !== 'global' ? `<span><i class="fas fa-building"></i> ${event.department}</span>` : ''}
+                                </div>
+                            </div>
+                            ${isExpired ? '' : `
+                                <div class="item-actions">
+                                    <button class="btn btn-sm btn-warning" onclick="editEvent('${event.id}', '${event.department}')">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" onclick="showDeleteModal('event', '${event.id}', '${event.department}', '${event.title}')">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </div>
+                            `}
+                        </div>
+                        <div class="item-content">
+                            ${event.description}
+                        </div>
+                        <div class="item-footer">
+                            <div class="item-creator">
+                                <div class="creator-avatar">
+                                    ${getInitials(event.createdBy || 'System')}
+                                </div>
+                                <span>Created by ${event.createdByName || 'System'} • ${formatRelativeTime(event.createdAt)}</span>
+                            </div>
+                            ${event.organizer ? `
+                                <div>
+                                    <small class="text-muted">Organized by: ${event.organizer}</small>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            list.innerHTML = html;
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Tab switching
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tabId = btn.getAttribute('data-tab');
+                    switchTab(tabId);
+                });
+            });
+
+            // Form toggles
+            document.getElementById('toggle-notification-form').addEventListener('click', function() {
+                toggleForm('notification-form-container', this);
+            });
+
+            document.getElementById('toggle-event-form').addEventListener('click', function() {
+                toggleForm('event-form-container', this);
+            });
+
+            // Form submissions
+            document.getElementById('notification-form').addEventListener('submit', handleNotificationSubmit);
+            document.getElementById('event-form').addEventListener('submit', handleEventSubmit);
+
+            // Form resets
+            document.getElementById('reset-notification-form').addEventListener('click', resetNotificationForm);
+            document.getElementById('reset-event-form').addEventListener('click', resetEventForm);
+
+            // Delete modal buttons
+            document.getElementById('cancel-delete-btn').addEventListener('click', closeDeleteModal);
+            document.getElementById('confirm-delete-btn').addEventListener('click', confirmDelete);
+
+            // Close modal on overlay click
+            document.getElementById('delete-modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeDeleteModal();
+                }
+            });
+
+            // Filters and search
+            setupFiltersAndSearch();
+
+            // Set default date/time values to current time
+            setDefaultDateTimeValues();
+        }
+
+        // Set default date/time values
+        function setDefaultDateTimeValues() {
+            const now = new Date();
+            const tomorrow = new Date(now);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
+            // Format for datetime-local input (YYYY-MM-DDTHH:MM)
+            const formatDateTimeLocal = (date) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                return `${year}-${month}-${day}T${hours}:${minutes}`;
+            };
+
+            // Set default start time to current time
+            document.getElementById('notification-start').value = formatDateTimeLocal(now);
+            document.getElementById('notification-end').value = formatDateTimeLocal(tomorrow);
+            
+            // Set default event times
+            document.getElementById('event-start').value = formatDateTimeLocal(now);
+            const oneHourLater = new Date(now);
+            oneHourLater.setHours(oneHourLater.getHours() + 1);
+            document.getElementById('event-end').value = formatDateTimeLocal(oneHourLater);
+        }
+
+        // Switch tabs
+        function switchTab(tabId) {
+            // Update active tab button
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+
+            // Update active tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`${tabId}-tab`).classList.add('active');
+
+            // Load manage tab data if needed
+            if (tabId === 'manage') {
+                displayManageItems();
+            }
+        }
+
+        // Toggle form visibility
+        function toggleForm(formId, button) {
+            const form = document.getElementById(formId);
+            const isHidden = form.style.display === 'none';
+            
+            if (isHidden) {
+                form.style.display = 'block';
+                button.innerHTML = '<i class="fas fa-chevron-down"></i> Hide Form';
+            } else {
+                form.style.display = 'none';
+                button.innerHTML = '<i class="fas fa-chevron-up"></i> Show Form';
+            }
+        }
+
+        // Setup filters and search
+        function setupFiltersAndSearch() {
+            // Notification filters
+            document.getElementById('filter-notification-type').addEventListener('change', filterNotifications);
+            document.getElementById('filter-notification-priority').addEventListener('change', filterNotifications);
+            document.getElementById('filter-notification-status').addEventListener('change', filterNotifications);
+            document.getElementById('search-notifications').addEventListener('input', filterNotifications);
+
+            // Event filters
+            document.getElementById('filter-event-type').addEventListener('change', filterEvents);
+            document.getElementById('filter-event-importance').addEventListener('change', filterEvents);
+            document.getElementById('filter-event-status').addEventListener('change', filterEvents);
+            document.getElementById('search-events').addEventListener('input', filterEvents);
+
+            // Manage filters
+            document.getElementById('filter-manage-type').addEventListener('change', displayManageItems);
+            document.getElementById('filter-manage-department').addEventListener('change', displayManageItems);
+            document.getElementById('search-manage').addEventListener('input', displayManageItems);
+        }
+
+        // Filter notifications
+        function filterNotifications() {
+            const typeFilter = document.getElementById('filter-notification-type').value;
+            const priorityFilter = document.getElementById('filter-notification-priority').value;
+            const statusFilter = document.getElementById('filter-notification-status').value;
+            const searchQuery = document.getElementById('search-notifications').value.toLowerCase();
+
+            const filtered = notifications.filter(notification => {
+                // Type filter
+                if (typeFilter && notification.type !== typeFilter) return false;
+                
+                // Priority filter
+                if (priorityFilter && notification.priority !== priorityFilter) return false;
+                
+                // Status filter
+                if (statusFilter && notification.status !== statusFilter) return false;
+                
+                // Search filter
+                if (searchQuery) {
+                    const titleMatch = notification.title.toLowerCase().includes(searchQuery);
+                    const contentMatch = notification.content.toLowerCase().includes(searchQuery);
+                    return titleMatch || contentMatch;
+                }
+                
+                return true;
+            });
+
+            displayNotifications(filtered);
+        }
+
+        // Filter events
+        function filterEvents() {
+            const typeFilter = document.getElementById('filter-event-type').value;
+            const importanceFilter = document.getElementById('filter-event-importance').value;
+            const statusFilter = document.getElementById('filter-event-status').value;
+            const searchQuery = document.getElementById('search-events').value.toLowerCase();
+
+            const filtered = events.filter(event => {
+                // Type filter
+                if (typeFilter && event.type !== typeFilter) return false;
+                
+                // Importance filter
+                if (importanceFilter && event.importance !== importanceFilter) return false;
+                
+                // Status filter
+                if (statusFilter && event.status !== statusFilter) return false;
+                
+                // Search filter
+                if (searchQuery) {
+                    const titleMatch = event.title.toLowerCase().includes(searchQuery);
+                    const descMatch = event.description.toLowerCase().includes(searchQuery);
+                    const venueMatch = event.venue && event.venue.toLowerCase().includes(searchQuery);
+                    return titleMatch || descMatch || venueMatch;
+                }
+                
+                return true;
+            });
+
+            displayEvents(filtered);
+        }
+
+        // Handle notification submission
+        async function handleNotificationSubmit(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('save-notification');
+            const originalText = submitBtn.innerHTML;
+            
+            try {
+                // Validate form
+                if (!validateNotificationForm()) return;
+
+                // Show loading
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<div class="spinner" style="width: 16px; height: 16px;"></div> Publishing...';
+
+                // Collect form data
+                const notificationData = {
+                    title: document.getElementById('notification-title').value.trim(),
+                    type: document.getElementById('notification-type').value,
+                    content: document.getElementById('notification-content').value.trim(),
+                    priority: document.getElementById('notification-priority').value,
+                    startDate: document.getElementById('notification-start').value,
+                    endDate: document.getElementById('notification-end').value,
+                    targetAudience: getSelectedAudience(),
+                    status: 'active',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                    createdBy: currentUser.uid,
+                    createdByName: userData.fullName || userData.email,
+                    department: isAdmin && document.getElementById('save-location').value === 'global' ? 'global' : currentDepartment
+                };
+
+                // Validate dates - cannot create with passed time
+                const startDate = new Date(notificationData.startDate);
+                const endDate = new Date(notificationData.endDate);
+                const now = new Date();
+                
+                if (startDate < now) {
+                    throw new Error('Start date/time cannot be in the past');
+                }
+                
+                if (endDate <= startDate) {
+                    throw new Error('End date must be after start date');
+                }
+
+                const notificationId = document.getElementById('notification-id').value;
+                
+                // Save to appropriate location
+                let docRef;
+                if (isAdmin && notificationData.department === 'global') {
+                    // Save to global notifications collection
+                    docRef = firebase.firestore().collection('notifications');
+                } else {
+                    // Save to department collection
+                    const dept = notificationData.department === 'global' ? currentDepartment : notificationData.department;
+                    docRef = firebase.firestore()
+                        .collection('Departments')
+                        .doc(dept)
+                        .collection('notifications');
+                }
+
+                if (notificationId) {
+                    // Update existing notification
+                    await docRef.doc(notificationId).update(notificationData);
+                    showSuccess('Notification updated successfully!');
+                } else {
+                    // Create new notification
+                    await docRef.add(notificationData);
+                    showSuccess('Notification published successfully!');
+                }
+
+                // Reset form and reload data
+                resetNotificationForm();
+                await loadNotifications();
+                await loadEvents();
+                updateStats();
+
+            } catch (error) {
+                console.error('Error saving notification:', error);
+                showError('Error: ' + error.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        }
+
+        // Handle event submission
+        async function handleEventSubmit(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('save-event');
+            const originalText = submitBtn.innerHTML;
+            
+            try {
+                // Validate form
+                if (!validateEventForm()) return;
+
+                // Show loading
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<div class="spinner" style="width: 16px; height: 16px;"></div> Scheduling...';
+
+                // Collect form data
+                const eventData = {
+                    title: document.getElementById('event-title').value.trim(),
+                    type: document.getElementById('event-type').value,
+                    description: document.getElementById('event-description').value.trim(),
+                    importance: document.getElementById('event-importance').value,
+                    startDate: document.getElementById('event-start').value,
+                    endDate: document.getElementById('event-end').value,
+                    venue: document.getElementById('event-venue').value,
+                    organizer: document.getElementById('event-organizer').value.trim(),
+                    status: 'active',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                    createdBy: currentUser.uid,
+                    createdByName: userData.fullName || userData.email,
+                    department: isAdmin && document.getElementById('event-save-location').value === 'global' ? 'global' : currentDepartment
+                };
+
+                // Validate dates - cannot create with passed time
+                const startDate = new Date(eventData.startDate);
+                const endDate = new Date(eventData.endDate);
+                const now = new Date();
+                
+                if (startDate < now) {
+                    throw new Error('Start date/time cannot be in the past');
+                }
+                
+                if (endDate <= startDate) {
+                    throw new Error('End date must be after start date');
+                }
+
+                const eventId = document.getElementById('event-id').value;
+                
+                // Save to appropriate location
+                let docRef;
+                if (isAdmin && eventData.department === 'global') {
+                    // Save to global events collection
+                    docRef = firebase.firestore().collection('events');
+                } else {
+                    // Save to department collection
+                    const dept = eventData.department === 'global' ? currentDepartment : eventData.department;
+                    docRef = firebase.firestore()
+                        .collection('Departments')
+                        .doc(dept)
+                        .collection('events');
+                }
+
+                if (eventId) {
+                    // Update existing event
+                    await docRef.doc(eventId).update(eventData);
+                    showSuccess('Event updated successfully!');
+                } else {
+                    // Create new event
+                    await docRef.add(eventData);
+                    showSuccess('Event scheduled successfully!');
+                }
+
+                // Reset form and reload data
+                resetEventForm();
+                await loadNotifications();
+                await loadEvents();
+                updateStats();
+
+            } catch (error) {
+                console.error('Error saving event:', error);
+                showError('Error: ' + error.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        }
+
+        // Validate notification form
+        function validateNotificationForm() {
+            const title = document.getElementById('notification-title').value.trim();
+            const type = document.getElementById('notification-type').value;
+            const content = document.getElementById('notification-content').value.trim();
+            const priority = document.getElementById('notification-priority').value;
+            const startDate = document.getElementById('notification-start').value;
+            const endDate = document.getElementById('notification-end').value;
+            const audience = getSelectedAudience();
+
+            if (!title || !type || !content || !priority || !startDate || !endDate || audience.length === 0) {
+                showError('Please fill in all required fields');
+                return false;
+            }
+
+            return true;
+        }
+
+        // Validate event form
+        function validateEventForm() {
+            const title = document.getElementById('event-title').value.trim();
+            const type = document.getElementById('event-type').value;
+            const description = document.getElementById('event-description').value.trim();
+            const importance = document.getElementById('event-importance').value;
+            const startDate = document.getElementById('event-start').value;
+            const endDate = document.getElementById('event-end').value;
+
+            if (!title || !type || !description || !importance || !startDate || !endDate) {
+                showError('Please fill in all required fields');
+                return false;
+            }
+
+            return true;
+        }
+
+        // Get selected audience
+        function getSelectedAudience() {
+            const checkboxes = document.querySelectorAll('input[name="audience"]:checked');
+            const selected = [];
+            checkboxes.forEach(cb => {
+                selected.push(cb.value);
+            });
+            return selected;
+        }
+
+        // Select priority level
+        function selectPriority(element, level, type = 'notification') {
+            // Remove selected class from all options
+            const container = element.parentElement;
+            container.querySelectorAll('.priority-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked option
+            element.classList.add('selected');
+            
+            // Update hidden input
+            if (type === 'notification') {
+                document.getElementById('notification-priority').value = level;
+            } else {
+                document.getElementById('event-importance').value = level;
+            }
+        }
+
+        // Reset notification form
+        function resetNotificationForm() {
+            document.getElementById('notification-form').reset();
+            document.getElementById('notification-id').value = '';
+            document.getElementById('notification-priority').value = '';
+            
+            // Reset priority selection
+            document.querySelectorAll('.priority-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            
+            // Reset audience selection
+            document.querySelectorAll('input[name="audience"]').forEach(cb => {
+                cb.checked = false;
+            });
+            
+            // Set default date/times
+            setDefaultDateTimeValues();
+        }
+
+        // Reset event form
+        function resetEventForm() {
+            document.getElementById('event-form').reset();
+            document.getElementById('event-id').value = '';
+            document.getElementById('event-importance').value = '';
+            
+            // Reset importance selection
+            document.querySelectorAll('.priority-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            
+            // Set default date/times
+            setDefaultDateTimeValues();
+        }
+
+        // Show delete confirmation modal
+        function showDeleteModal(type, id, department, title) {
+            document.getElementById('delete-item-type').textContent = type === 'notification' ? 'Notification' : 'Event';
+            document.getElementById('delete-item-name').textContent = title;
+            
+            // Store data for confirmation
+            document.getElementById('delete-modal').dataset.type = type;
+            document.getElementById('delete-modal').dataset.id = id;
+            document.getElementById('delete-modal').dataset.department = department;
+            
+            document.getElementById('delete-modal').classList.add('active');
+        }
+
+        // Close delete modal
+        function closeDeleteModal() {
+            document.getElementById('delete-modal').classList.remove('active');
+            document.getElementById('delete-modal').dataset.type = '';
+            document.getElementById('delete-modal').dataset.id = '';
+            document.getElementById('delete-modal').dataset.department = '';
+        }
+
+        // Confirm delete
+        async function confirmDelete() {
+            const type = document.getElementById('delete-modal').dataset.type;
+            const id = document.getElementById('delete-modal').dataset.id;
+            const department = document.getElementById('delete-modal').dataset.department;
+            
+            if (!type || !id || !department) {
+                closeDeleteModal();
+                return;
+            }
+            
+            const deleteBtn = document.getElementById('confirm-delete-btn');
+            const originalText = deleteBtn.innerHTML;
+            
+            try {
+                deleteBtn.disabled = true;
+                deleteBtn.innerHTML = '<div class="spinner" style="width: 16px; height: 16px;"></div> Deleting...';
+                
+                if (type === 'notification') {
+                    await deleteNotification(id, department);
+                } else {
+                    await deleteEvent(id, department);
+                }
+                
+                closeDeleteModal();
+                showSuccess(`${type === 'notification' ? 'Notification' : 'Event'} deleted successfully!`);
+                
+                // Reload data after deletion
+                await loadNotifications();
+                await loadEvents();
+                updateStats();
+                
+            } catch (error) {
+                console.error(`Error deleting ${type}:`, error);
+                showError(`Error deleting ${type}: ` + error.message);
+            } finally {
+                deleteBtn.disabled = false;
+                deleteBtn.innerHTML = originalText;
+            }
+        }
+
+        // Edit notification
+        async function editNotification(id, department) {
+            try {
+                let docRef;
+                if (department === 'global') {
+                    docRef = firebase.firestore().collection('notifications').doc(id);
+                } else {
+                    docRef = firebase.firestore()
+                        .collection('Departments')
+                        .doc(department)
+                        .collection('notifications')
+                        .doc(id);
+                }
+
+                const doc = await docRef.get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    
+                    // Populate form
+                    document.getElementById('notification-id').value = id;
+                    document.getElementById('notification-title').value = data.title;
+                    document.getElementById('notification-type').value = data.type;
+                    document.getElementById('notification-content').value = data.content;
+                    document.getElementById('notification-start').value = formatDateTimeLocal(new Date(data.startDate));
+                    document.getElementById('notification-end').value = formatDateTimeLocal(new Date(data.endDate));
+                    document.getElementById('notification-priority').value = data.priority;
+                    
+                    // Set priority selection
+                    document.querySelectorAll('.priority-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                        if (opt.getAttribute('data-value') === data.priority) {
+                            opt.classList.add('selected');
+                        }
+                    });
+                    
+                    // Set audience selection
+                    document.querySelectorAll('input[name="audience"]').forEach(cb => {
+                        cb.checked = Array.isArray(data.targetAudience) 
+                            ? data.targetAudience.includes(cb.value)
+                            : data.targetAudience === cb.value;
+                    });
+                    
+                    // Set save location for admin
+                    if (isAdmin) {
+                        document.getElementById('save-location').value = data.department === 'global' ? 'global' : 'department';
+                    }
+                    
+                    // Show form if hidden
+                    document.getElementById('notification-form-container').style.display = 'block';
+                    document.getElementById('toggle-notification-form').innerHTML = '<i class="fas fa-chevron-down"></i> Hide Form';
+                    
+                    // Scroll to form
+                    document.getElementById('notification-form-container').scrollIntoView({ behavior: 'smooth' });
+                    
+                    showSuccess('Notification loaded for editing');
+                }
+            } catch (error) {
+                console.error('Error loading notification:', error);
+                showError('Error loading notification: ' + error.message);
+            }
+        }
+
+        // Edit event
+        async function editEvent(id, department) {
+            try {
+                let docRef;
+                if (department === 'global') {
+                    docRef = firebase.firestore().collection('events').doc(id);
+                } else {
+                    docRef = firebase.firestore()
+                        .collection('Departments')
+                        .doc(department)
+                        .collection('events')
+                        .doc(id);
+                }
+
+                const doc = await docRef.get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    
+                    // Populate form
+                    document.getElementById('event-id').value = id;
+                    document.getElementById('event-title').value = data.title;
+                    document.getElementById('event-type').value = data.type;
+                    document.getElementById('event-description').value = data.description;
+                    document.getElementById('event-start').value = formatDateTimeLocal(new Date(data.startDate));
+                    document.getElementById('event-end').value = formatDateTimeLocal(new Date(data.endDate));
+                    document.getElementById('event-venue').value = data.venue || '';
+                    document.getElementById('event-organizer').value = data.organizer || '';
+                    document.getElementById('event-importance').value = data.importance;
+                    
+                    // Set importance selection
+                    document.querySelectorAll('.priority-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                        if (opt.getAttribute('data-value') === data.importance) {
+                            opt.classList.add('selected');
+                        }
+                    });
+                    
+                    // Set save location for admin
+                    if (isAdmin) {
+                        document.getElementById('event-save-location').value = data.department === 'global' ? 'global' : 'department';
+                    }
+                    
+                    // Show form if hidden
+                    document.getElementById('event-form-container').style.display = 'block';
+                    document.getElementById('toggle-event-form').innerHTML = '<i class="fas fa-chevron-down"></i> Hide Form';
+                    
+                    // Scroll to form
+                    document.getElementById('event-form-container').scrollIntoView({ behavior: 'smooth' });
+                    
+                    showSuccess('Event loaded for editing');
+                }
+            } catch (error) {
+                console.error('Error loading event:', error);
+                showError('Error loading event: ' + error.message);
+            }
+        }
+
+        // Delete notification
+        async function deleteNotification(id, department) {
+            try {
+                let docRef;
+                if (department === 'global') {
+                    docRef = firebase.firestore().collection('notifications').doc(id);
+                } else {
+                    docRef = firebase.firestore()
+                        .collection('Departments')
+                        .doc(department)
+                        .collection('notifications')
+                        .doc(id);
+                }
+
+                // Soft delete by updating status
+                await docRef.update({
+                    status: 'deleted',
+                    deletedAt: new Date().toISOString(),
+                    deletedBy: currentUser.uid,
+                    deletedByName: userData.fullName || userData.email
+                });
+
+            } catch (error) {
+                console.error('Error deleting notification:', error);
+                throw error;
+            }
+        }
+
+        // Delete event
+        async function deleteEvent(id, department) {
+            try {
+                let docRef;
+                if (department === 'global') {
+                    docRef = firebase.firestore().collection('events').doc(id);
+                } else {
+                    docRef = firebase.firestore()
+                        .collection('Departments')
+                        .doc(department)
+                        .collection('events')
+                        .doc(id);
+                }
+
+                // Soft delete by updating status
+                await docRef.update({
+                    status: 'deleted',
+                    deletedAt: new Date().toISOString(),
+                    deletedBy: currentUser.uid,
+                    deletedByName: userData.fullName || userData.email
+                });
+
+            } catch (error) {
+                console.error('Error deleting event:', error);
+                throw error;
+            }
+        }
+
+        // Display manage items
+        function displayManageItems() {
+            const typeFilter = document.getElementById('filter-manage-type').value;
+            const deptFilter = document.getElementById('filter-manage-department').value;
+            const searchQuery = document.getElementById('search-manage').value.toLowerCase();
+            
+            const list = document.getElementById('manage-list');
+            let allItems = [];
+
+            // Combine notifications and events
+            notifications.forEach(n => {
+                allItems.push({
+                    ...n,
+                    itemType: 'notification',
+                    displayTitle: n.title,
+                    displayType: `Notification (${n.type})`,
+                    displayDate: n.startDate,
+                    badgeClass: getPriorityBadgeClass(n.priority)
+                });
+            });
+
+            events.forEach(e => {
+                allItems.push({
+                    ...e,
+                    itemType: 'event',
+                    displayTitle: e.title,
+                    displayType: `Event (${e.type})`,
+                    displayDate: e.startDate,
+                    badgeClass: getImportanceBadgeClass(e.importance)
+                });
+            });
+
+            // Apply filters
+            let filteredItems = allItems.filter(item => {
+                // Type filter
+                if (typeFilter === 'notifications' && item.itemType !== 'notification') return false;
+                if (typeFilter === 'events' && item.itemType !== 'event') return false;
+                
+                // Department filter
+                if (deptFilter && item.department !== deptFilter) return false;
+                
+                // Search filter
+                if (searchQuery) {
+                    const titleMatch = item.title.toLowerCase().includes(searchQuery);
+                    const contentMatch = (item.content || item.description || '').toLowerCase().includes(searchQuery);
+                    return titleMatch || contentMatch;
+                }
+                
+                return true;
+            });
+
+            // Sort by date (newest first)
+            filteredItems.sort((a, b) => new Date(b.displayDate) - new Date(a.displayDate));
+
+            if (filteredItems.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <h3>No Items Found</h3>
+                        <p>No items match your current filters.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            filteredItems.forEach(item => {
+                const isExpired = item.status === 'expired';
+                const isNotification = item.itemType === 'notification';
+                
+                html += `
+                    <div class="item-card ${isNotification ? 'notification-item' : 'event-item'} ${isExpired ? 'expired' : ''}" 
+                          data-id="${item.id}" data-department="${item.department}">
+                        <div class="item-header">
+                            <div>
+                                <h3 class="item-title">
+                                    <i class="fas ${isNotification ? 'fa-bell' : 'fa-calendar-day'}"></i> 
+                                    ${item.displayTitle}
+                                    <span class="badge ${item.badgeClass}">
+                                        ${isNotification ? item.priority + ' priority' : item.importance + ' importance'}
+                                    </span>
+                                    <span class="badge ${isNotification ? 'badge-info' : 'badge-success'}">
+                                        ${item.displayType}
+                                    </span>
+                                </h3>
+                                <div class="item-meta">
+                                    <span><i class="fas fa-calendar"></i> ${formatDate(item.displayDate)}</span>
+                                    <span><i class="fas fa-building"></i> ${item.department}</span>
+                                    <span class="status-badge ${isNotification ? getStatusClass(item.status) : getEventStatusClass(item.status)}">
+                                        <i class="fas fa-circle"></i> ${item.status}
+                                    </span>
+                                    <span><i class="fas fa-user"></i> ${item.createdByName}</span>
+                                </div>
+                            </div>
+                            ${isExpired ? '' : `
+                                <div class="item-actions">
+                                    <button class="btn btn-sm btn-warning" onclick="${isNotification ? `editNotification('${item.id}', '${item.department}')` : `editEvent('${item.id}', '${item.department}')`}">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" onclick="showDeleteModal('${isNotification ? 'notification' : 'event'}', '${item.id}', '${item.department}', '${item.title}')">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </div>
+                            `}
+                        </div>
+                        <div class="item-content">
+                            ${isNotification ? item.content : item.description}
+                        </div>
+                        <div class="item-footer">
+                            <div class="item-creator">
+                                <div class="creator-avatar">
+                                    ${getInitials(item.createdByName || 'System')}
+                                </div>
+                                <span>Created ${formatRelativeTime(item.createdAt)}</span>
+                            </div>
+                            ${isNotification ? `
+                                <div>
+                                    <small class="text-muted">Target: ${Array.isArray(item.targetAudience) ? item.targetAudience.join(', ') : item.targetAudience}</small>
+                                </div>
+                            ` : item.venue ? `
+                                <div>
+                                    <small class="text-muted">Venue: ${item.venue}</small>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            list.innerHTML = html;
+        }
+
+        // Update stats
+        function updateStats() {
+            const activeNotifications = notifications.filter(n => n.status === 'active').length;
+            const activeEvents = events.filter(e => e.status === 'ongoing' || e.status === 'upcoming').length;
+            const expiredNotifications = notifications.filter(n => n.status === 'expired').length;
+            const expiredEvents = events.filter(e => e.status === 'expired').length;
+
+            document.getElementById('total-notifications').textContent = notifications.length;
+            document.getElementById('total-events').textContent = events.length;
+            document.getElementById('active-items').textContent = activeNotifications + activeEvents;
+            document.getElementById('expired-items').textContent = expiredNotifications + expiredEvents;
+        }
+
+        // Utility functions
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                weekday: 'short',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        function formatDateTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function formatTimeRange(startString, endString) {
+            const start = new Date(startString);
+            const end = new Date(endString);
+            
+            const startTime = start.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            const endTime = end.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            return `${startTime} - ${endTime}`;
+        }
+
+        function formatDateTimeLocal(date) {
+            const d = new Date(date);
+            d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+            return d.toISOString().slice(0, 16);
+        }
+
+        function formatRelativeTime(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+
+            if (diffMins < 1) return 'just now';
+            if (diffMins < 60) return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`;
+            if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+            if (diffDays < 7) return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+            
+            return formatDate(dateString);
+        }
+
+        function getInitials(name) {
+            return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        }
+
+        function getPriorityBadgeClass(priority) {
+            switch (priority) {
+                case 'high': return 'badge-danger';
+                case 'medium': return 'badge-warning';
+                case 'low': return 'badge-success';
+                default: return 'badge-primary';
+            }
+        }
+
+        function getImportanceBadgeClass(importance) {
+            switch (importance) {
+                case 'high': return 'badge-danger';
+                case 'medium': return 'badge-warning';
+                case 'low': return 'badge-success';
+                default: return 'badge-primary';
+            }
+        }
+
+        function getStatusClass(status) {
+            switch (status) {
+                case 'active': return 'status-active';
+                case 'expired': return 'status-expired';
+                case 'upcoming': return 'status-upcoming';
+                default: return 'status-active';
+            }
+        }
+
+        function getEventStatusClass(status) {
+            switch (status) {
+                case 'ongoing': return 'status-active';
+                case 'expired': return 'status-expired';
+                case 'upcoming': return 'status-upcoming';
+                default: return 'status-active';
+            }
+        }
+
+        function showSuccess(message) {
+            window.SchoolApp.SchoolUtils.showToast(message, 'success');
+        }
+
+        function showError(message) {
+            window.SchoolApp.SchoolUtils.showToast(message, 'error');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Enrollment - KSITM CTE Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    
+    <link rel="stylesheet" href="css/style.css">
+<style>
+    /* Signup Page Specific Styles */
+    .main {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        width: 100%;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        flex: 1;
+    }
+    
+    .a-header {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        padding: 20px 0;
+        box-shadow: var(--shadow);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    .logo {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        font-size: 1.6rem;
+        font-weight: bold;
+        text-decoration: none;
+        color: white;
+    }
+
+    .logo-img {
+        height: 60px;
+        width: 60px;
+        border-radius: 50%;
+        border: 3px solid white;
+        object-fit: cover;
+    }
+
+    .logo-text {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .logo-title {
+        font-size: 1.6rem;
+        font-weight: 700;
+    }
+
+    .logo-subtitle {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        font-weight: 400;
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .page-title {
+        margin: 30px 0;
+        color: var(--dark);
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .page-title h1 {
+        font-size: 2.2rem;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
+    .page-subtitle {
+        text-align: center;
+        color: var(--gray);
+        margin-bottom: 30px;
+        font-size: 1.1rem;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .registration-container {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        min-height: 70vh;
+        margin-top: 20px;
+    }
+
+    .registration-form {
+        background: var(--bg-color);
+        padding: 40px;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-md);
+        width: 100%;
+        max-width: 700px;
+        border: 1px solid #e9ecef;
+    }
+
+    .registration-form h2 {
+        text-align: center;
+        margin-bottom: 30px;
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        font-size: 1.8rem;
+    }
+
+    .form-section {
+        margin-bottom: 30px;
+        padding-bottom: 25px;
+        border-bottom: 2px solid var(--light-gray);
+    }
+
+    .form-section:last-child {
+        border-bottom: none;
+    }
+
+    .form-section h3 {
+        margin-bottom: 20px;
+        color: var(--secondary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.3rem;
+    }
+
+    .form-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 40px;
+        flex-wrap: wrap;
+        gap: 20px;
+        padding-top: 25px;
+        border-top: 2px solid var(--light-gray);
+    }
+
+    .form-footer .btn {
+        min-width: 150px;
+        padding: 16px 30px;
+        font-size: 1.1rem;
+    }
+
+    /* Activation Code Section */
+    .activation-section {
+        background: var(--primary-light);
+        border-left: 4px solid var(--primary);
+        padding: 25px;
+        border-radius: var(--radius-md);
+        margin-bottom: 30px;
+    }
+
+    .activation-section h3 {
+        color: var(--primary);
+        margin-bottom: 15px;
+    }
+
+    .activation-help {
+        margin-top: 15px;
+        padding: 15px;
+        background-color: rgba(146, 15, 9, 0.1);
+        border-radius: var(--radius-md);
+        text-align: center;
+    }
+
+    .activation-help p {
+        margin-bottom: 10px;
+        color: var(--dark);
+    }
+
+    .btn-whatsapp {
+        background-color: #25D366;
+        color: white;
+    }
+
+    .btn-whatsapp:hover {
+        background-color: #128C7E;
+    }
+
+    /* Password Validation Styles */
+    .password-validation {
+        margin-top: 15px;
+        background: #f8f9fa;
+        border-radius: var(--radius-md);
+        padding: 15px;
+    }
+
+    .validation-title {
+        font-weight: 500;
+        margin-bottom: 10px;
+        color: var(--dark);
+    }
+
+    .validation-rules {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .validation-rule {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    .rule-icon {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+    }
+
+    .rule-icon.valid {
+        background-color: #2ecc71;
+        color: white;
+    }
+
+    .rule-icon.invalid {
+        background-color: #e74c3c;
+        color: white;
+    }
+
+    .rule-icon.pending {
+        background-color: #bdc3c7;
+        color: white;
+    }
+
+    .rule-text {
+        flex: 1;
+    }
+
+    .rule-text.valid {
+        color: #2ecc71;
+        font-weight: 500;
+    }
+
+    .rule-text.invalid {
+        color: #e74c3c;
+    }
+
+    .rule-text.pending {
+        color: #7f8c8d;
+    }
+
+    /* Locked Fields */
+    .locked-field {
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+        cursor: not-allowed;
+    }
+
+    .field-locked-message {
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin-top: 5px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .terms-agreement {
+        margin-top: 20px;
+        font-size: 0.9rem;
+        color: var(--gray);
+        line-height: 1.6;
+        text-align: center;
+    }
+
+    .terms-agreement a {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .terms-agreement a:hover {
+        text-decoration: underline;
+    }
+
+    .login-link {
+        text-align: center;
+        margin-top: 30px;
+        font-size: 1rem;
+        color: var(--gray);
+    }
+
+    .login-link a {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 500;
+        margin-left: 5px;
+    }
+
+    .login-link a:hover {
+        text-decoration: underline;
+    }
+
+    /* Loading Overlay */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.95);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        transition: var(--transition);
+    }
+
+    .loading-spinner {
+        width: 60px;
+        height: 60px;
+        border: 5px solid var(--light-gray);
+        border-top: 5px solid var(--primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 20px;
+    }
+
+    .loading-text {
+        font-size: 1.2rem;
+        color: var(--dark);
+        font-weight: 500;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Info Display */
+    .info-display {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: var(--radius-md);
+        margin-bottom: 20px;
+        border-left: 4px solid var(--primary);
+    }
+
+    .info-display h4 {
+        color: var(--primary);
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .info-display p {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .info-display strong {
+        min-width: 150px;
+        color: var(--dark);
+    }
+
+    /* WhatsApp Request Modal Styles */
+    .whatsapp-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10001;
+        opacity: 0;
+        visibility: hidden;
+        transition: var(--transition);
+    }
+
+    .whatsapp-modal.active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .whatsapp-modal-content {
+        background: white;
+        border-radius: var(--radius-lg);
+        width: 90%;
+        max-width: 500px;
+        overflow: hidden;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+        transform: translateY(20px);
+        transition: transform 0.3s ease;
+    }
+
+    .whatsapp-modal.active .whatsapp-modal-content {
+        transform: translateY(0);
+    }
+
+    .whatsapp-modal-header {
+        background: linear-gradient(135deg, #25D366, #128C7E);
+        color: white;
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .whatsapp-modal-header h2 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.5rem;
+        margin: 0;
+    }
+
+    .whatsapp-modal-body {
+        padding: 25px;
+        color: var(--dark);
+        line-height: 1.6;
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+
+    .whatsapp-modal-footer {
+        padding: 20px;
+        border-top: 1px solid var(--light-gray);
+        display: flex;
+        justify-content: flex-end;
+        gap: 15px;
+    }
+
+    .admin-list {
+        margin-top: 15px;
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #dee2e6;
+        border-radius: var(--radius-md);
+    }
+
+    .admin-item {
+        padding: 12px 15px;
+        border-bottom: 1px solid #e9ecef;
+        cursor: pointer;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .admin-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .admin-item.selected {
+        background-color: rgba(37, 211, 102, 0.1);
+        border-left: 4px solid #25D366;
+    }
+
+    .admin-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #25D366, #128C7E);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+
+    .admin-info {
+        flex: 1;
+    }
+
+    .admin-name {
+        font-weight: 500;
+        color: var(--dark);
+    }
+
+    .admin-role {
+        font-size: 0.85rem;
+        color: var(--gray);
+    }
+
+    .admin-phone {
+        font-size: 0.9rem;
+        color: var(--dark);
+        font-family: monospace;
+    }
+
+    .admin-check {
+        color: #25D366;
+        font-size: 1.2rem;
+    }
+
+    .no-admins {
+        text-align: center;
+        padding: 30px;
+        color: var(--gray);
+    }
+
+    .no-admins i {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        opacity: 0.5;
+    }
+
+    @media (max-width: 768px) {
+        .form-footer {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .form-footer .btn {
+            width: 100%;
+        }
+        
+        .registration-form {
+            padding: 25px;
+        }
+        
+        .header-content {
+            flex-direction: column;
+            gap: 15px;
+            text-align: center;
+        }
+        
+        .logo {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .info-display strong {
+            min-width: 120px;
+        }
+        
+        .whatsapp-modal-content {
+            width: 95%;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .registration-form {
+            padding: 20px;
+        }
+        
+        .page-title h1 {
+            font-size: 1.8rem;
+        }
+        
+        .container {
+            padding: 15px;
+        }
+        
+        .info-display p {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 5px;
+        }
+        
+        .info-display strong {
+            min-width: auto;
+        }
+        
+        .admin-item {
+            flex-direction: column;
+            text-align: center;
+            gap: 8px;
+        }
+        
+        .admin-info {
+            text-align: center;
+        }
+    }
+</style>
+</head>
+<body>
+  
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay" style="display: flex;">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Initializing Registration Portal...</div>
+    </div>
+
+    <div class="main">
+        <div class="a-header">
+            <div class="header-content">
+                <a href="index.html" class="logo">
+                    <img src="https://via.placeholder.com/60x60/4361ee/ffffff?text=S" alt="KSITM CTE" class="logo-img">
+                    <div class="logo-text">
+                        <div class="logo-title">KSITM CTE</div>
+                        <div class="logo-subtitle">College of Technical Education</div>
+                    </div>
+                </a>
+                <div class="user-info">
+                    <a href="login.html" class="btn btn-outline">
+                        <i class="fas fa-sign-in-alt"></i> Student Login
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="container">
+            <div class="page-title">
+                <h1><i class="fas fa-user-graduate"></i> Student Enrollment</h1>
+            </div>
+
+            <div class="page-subtitle">
+                Create your student account to access academic resources, course materials, and campus services.
+            </div>
+
+            <div class="registration-container">
+                <form class="registration-form" id="registration-form">
+                    <!-- Activation Code Section -->
+                    <div class="activation-section">
+                        <h3><i class="fas fa-key"></i> Activation Required</h3>
+                        <p>You need a valid activation code to register. This code should have been provided by the school administration.</p>
+                        
+                        <div class="form-group">
+                            <label for="reg-number">Registration Number <span class="required">*</span></label>
+                            <input type="text" id="reg-number" class="form-control" required placeholder="KSITM/CTE/24/001">
+                            <small class="text-muted">Enter your official registration number</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="activation-code">Activation Code <span class="required">*</span></label>
+                            <input type="text" id="activation-code" class="form-control" required placeholder="Enter your 8-character activation code" maxlength="8">
+                            <small class="text-muted">This code is linked to your registration number</small>
+                        </div>
+                        
+                        <button type="button" class="btn btn-primary" id="verify-activation-btn" style="width: 100%;">
+                            <i class="fas fa-check-circle"></i> Verify Activation Code
+                        </button>
+                        
+                        <div class="activation-help">
+                            <p><strong>Don't have an activation code?</strong></p>
+                            <p>Contact the school administration office or ICT department to request one.</p>
+                            <button type="button" class="btn btn-whatsapp" id="whatsapp-help-btn">
+                                <i class="fab fa-whatsapp"></i> Request Code via WhatsApp
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Personal Information Section -->
+                    <div class="form-section" id="personal-info-section" style="display: none;">
+                        <h3><i class="fas fa-user-circle"></i> Personal Information</h3>
+                        
+                        <div id="student-info-display" class="info-display">
+                            <!-- Student info will be displayed here after verification -->
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="fullName">Full Name <span class="required">*</span></label>
+                            <input type="text" id="fullName" class="form-control" required placeholder="Enter your full name as on official records">
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="email">Email Address <span class="required">*</span></label>
+                                <input type="email" id="email" class="form-control" required placeholder="student@ksitm.edu.ng">
+                                <small class="text-muted">This will be used for login and notifications</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="phone">Phone Number <span class="required">*</span></label>
+                                <input type="tel" id="phone" class="form-control" required placeholder="+234 800 000 0000">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="jamb-number">JAMB Registration Number</label>
+                                <input type="text" id="jamb-number" class="form-control" placeholder="e.g., 12345678AB">
+                            </div>
+                            <div class="form-group">
+                                <label for="entry-year">Entry Year</label>
+                                <select id="entry-year" class="form-control">
+                                    <option value="">Select Year</option>
+                                    <option value="2024">2024</option>
+                                    <option value="2023">2023</option>
+                                    <option value="2022">2022</option>
+                                    <option value="2021">2021</option>
+                                    <option value="2020">2020</option>
+                                    <option value="2019">2019</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Academic Information Section -->
+                    <div class="form-section" id="academic-info-section" style="display: none;">
+                        <h3><i class="fas fa-graduation-cap"></i> Academic Information</h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="department">Department <span class="required">*</span></label>
+                                <select id="department" class="form-control locked-field" required disabled>
+                                    <option value="">Select Department</option>
+                                    <option value="Computer Science">Computer Science</option>
+                                    <option value="Electrical Engineering">Electrical Engineering</option>
+                                    <option value="Mechanical Engineering">Mechanical Engineering</option>
+                                    <option value="Civil Engineering">Civil Engineering</option>
+                                    <option value="Business Administration">Business Administration</option>
+                                    <option value="Mass Communication">Mass Communication</option>
+                                    <option value="Law">Law</option>
+                                    <option value="Medicine">Medicine</option>
+                                    <option value="Nursing">Nursing</option>
+                                    <option value="Education">Education</option>
+                                </select>
+                                <small class="field-locked-message">
+                                    <i class="fas fa-lock"></i> This field is locked based on your activation code
+                                </small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="faculty">Faculty <span class="required">*</span></label>
+                                <select id="faculty" class="form-control locked-field" required disabled>
+                                    <option value="">Select Faculty</option>
+                                    <option value="Engineering">Engineering</option>
+                                    <option value="Sciences">Sciences</option>
+                                    <option value="Social Sciences">Social Sciences</option>
+                                    <option value="Arts">Arts</option>
+                                    <option value="Medicine">Medicine</option>
+                                    <option value="Law">Law</option>
+                                    <option value="Education">Education</option>
+                                    <option value="Management Sciences">Management Sciences</option>
+                                </select>
+                                <small class="field-locked-message">
+                                    <i class="fas fa-lock"></i> This field is locked based on your activation code
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="level">Academic Level <span class="required">*</span></label>
+                                <select id="level" class="form-control locked-field" required disabled>
+                                    <option value="">Select Level</option>
+                                    <option value="100 Level">100 Level</option>
+                                    <option value="200 Level">200 Level</option>
+                                    <option value="300 Level">300 Level</option>
+                                    <option value="400 Level">400 Level</option>
+                                    <option value="500 Level">500 Level</option>
+                                    <option value="PGD">Postgraduate Diploma</option>
+                                    <option value="Masters">Masters</option>
+                                    <option value="PhD">PhD</option>
+                                </select>
+                                <small class="field-locked-message">
+                                    <i class="fas fa-lock"></i> This field is locked based on your activation code
+                                </small>
+                            </div>
+                            <div class="form-group">
+                                <label for="state">State of Origin</label>
+                                <input type="text" id="state" class="form-control" placeholder="Your state">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="lga">Local Government Area</label>
+                                <input type="text" id="lga" class="form-control" placeholder="Your LGA">
+                            </div>
+                            <div class="form-group">
+                                <label for="address">Residential Address</label>
+                                <input type="text" id="address" class="form-control" placeholder="Your current address">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Account Security Section -->
+                    <div class="form-section" id="security-section" style="display: none;">
+                        <h3><i class="fas fa-shield-alt"></i> Account Security</h3>
+                        
+                        <div class="form-group">
+                            <label for="password">Password <span class="required">*</span></label>
+                            <div class="password-container">
+                                <input type="password" id="password" class="form-control" required placeholder="Create a password (min. 6 characters)">
+                                <button type="button" class="toggle-password" id="toggle-password">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Password Validation Rules -->
+                            <div class="password-validation">
+                                <div class="validation-title">Password must contain:</div>
+                                <div class="validation-rules">
+                                    <div class="validation-rule" id="rule-length">
+                                        <div class="rule-icon pending">
+                                            <i class="fas fa-circle"></i>
+                                        </div>
+                                        <div class="rule-text pending">At least 6 characters</div>
+                                    </div>
+                                    <div class="validation-rule" id="rule-uppercase">
+                                        <div class="rule-icon pending">
+                                            <i class="fas fa-circle"></i>
+                                        </div>
+                                        <div class="rule-text pending">At least 1 uppercase letter (A-Z)</div>
+                                    </div>
+                                    <div class="validation-rule" id="rule-lowercase">
+                                        <div class="rule-icon pending">
+                                            <i class="fas fa-circle"></i>
+                                        </div>
+                                        <div class="rule-text pending">At least 1 lowercase letter (a-z)</div>
+                                    </div>
+                                    <div class="validation-rule" id="rule-number">
+                                        <div class="rule-icon pending">
+                                            <i class="fas fa-circle"></i>
+                                        </div>
+                                        <div class="rule-text pending">At least 1 number (0-9)</div>
+                                    </div>
+                                    <div class="validation-rule" id="rule-match">
+                                        <div class="rule-icon pending">
+                                            <i class="fas fa-circle"></i>
+                                        </div>
+                                        <div class="rule-text pending">Passwords must match</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="confirmPassword">Confirm Password <span class="required">*</span></label>
+                            <div class="password-container">
+                                <input type="password" id="confirmPassword" class="form-control" required placeholder="Confirm your password">
+                                <button type="button" class="toggle-password" id="toggle-confirm-password">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Terms and Agreement -->
+                    <div class="terms-agreement" id="terms-section" style="display: none;">
+                        By creating an account, you agree to the 
+                        <a href="#" onclick="return false">KSITM CTE Terms of Service</a> and 
+                        <a href="#" onclick="return false">Privacy Policy</a>. 
+                        Your academic records will be maintained in accordance with institutional policies.
+                    </div>
+                    
+                    <!-- Form Actions -->
+                    <div class="form-footer" id="registration-footer" style="display: none;">
+                        <button type="button" class="btn btn-danger" id="reset-btn">
+                            <i class="fas fa-redo"></i> Clear Form
+                        </button>
+                        <button type="button" class="btn btn-primary" id="submit-btn">
+                            <i class="fas fa-user-plus"></i> Complete Registration
+                        </button>
+                    </div>
+                    
+                    <!-- Login Link -->
+                    <div class="login-link" id="login-link" style="display: none;">
+                        Already enrolled? <a href="login.html">Sign in to your student account</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Activation Verification Modal -->
+        <div class="modal" id="verification-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><i class="fas fa-check-circle"></i> Verify Activation Code</h2>
+                    <button class="close-modal" id="close-verification-modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center" id="verification-spinner">
+                        <i class="fas fa-spinner fa-spin fa-3x" style="color: #4361ee;"></i>
+                        <p style="margin-top: 15px;">Verifying activation code for <strong id="verifying-reg-number"></strong></p>
+                    </div>
+                    <div id="verification-result" style="display: none;">
+                        <!-- Result will be shown here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-danger" id="cancel-verification-btn">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button class="btn btn-primary" id="proceed-registration-btn" style="display: none;">
+                        <i class="fas fa-check"></i> Proceed with Registration
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- WhatsApp Request Modal -->
+        <div class="whatsapp-modal" id="whatsapp-modal">
+            <div class="whatsapp-modal-content">
+                <div class="whatsapp-modal-header">
+                    <h2><i class="fab fa-whatsapp"></i> Request Activation Code</h2>
+                    <button class="close-modal" id="close-whatsapp-modal">&times;</button>
+                </div>
+                <div class="whatsapp-modal-body">
+                    <p>Please provide your details below to request an activation code from the school administration.</p>
+                    
+                    <div class="form-group mt-20">
+                        <label for="request-name">Your Full Name <span class="required">*</span></label>
+                        <input type="text" id="request-name" class="form-control" placeholder="Enter your full name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="request-reg-number">Your Registration Number <span class="required">*</span></label>
+                        <input type="text" id="request-reg-number" class="form-control" placeholder="KSITM/CTE/24/001">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="request-phone">Your Phone Number (for WhatsApp)</label>
+                        <input type="tel" id="request-phone" class="form-control" placeholder="+234 800 000 0000">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Select Admin to Contact <span class="required">*</span></label>
+                        <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 10px;">
+                            Choose an administrator who can provide you with an activation code:
+                        </p>
+                        
+                        <div class="admin-list" id="admin-list">
+                            <div class="no-admins">
+                                <i class="fas fa-user-shield"></i>
+                                <p>Loading administrators...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info" style="margin-top: 20px;">
+                        <i class="fas fa-info-circle"></i>
+                        <p><strong>Note:</strong> Your request will be sent via WhatsApp. Make sure you have WhatsApp installed on your device.</p>
+                    </div>
+                </div>
+                <div class="whatsapp-modal-footer">
+                    <button class="btn btn-danger" id="cancel-whatsapp-btn">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button class="btn btn-whatsapp" id="send-whatsapp-btn" disabled>
+                        <i class="fab fa-whatsapp"></i> Send Request via WhatsApp
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="toast" class="toast"></div>
+    </div>
+
+    <!-- Include the consolidated school app JS -->
+    <script src="js/school-app.js"></script>
+    
+    <!-- Signup with Activation Code Script -->
+<script>
+    // Signup page specific functions
+    let activationCodeData = null;
+    let formData = {};
+    let isInitialized = false;
+    let selectedAdmin = null;
+    let adminList = [];
+
+    // Page-specific authentication functions
+    const AuthManager = {
+        currentUser: null,
+        userData: null,
+
+        initialize: function() {
+            return new Promise((resolve, reject) => {
+                firebase.auth().onAuthStateChanged(async (user) => {
+                    if (user) {
+                        this.currentUser = user;
+                        await this.loadUserData(user.uid);
+                        resolve(user);
+                    } else {
+                        this.currentUser = null;
+                        this.userData = null;
+                        resolve(null);
+                    }
+                });
+            });
+        },
+
+        loadUserData: async function(uid) {
+            try {
+                const doc = await firebase.firestore().collection('users').doc(uid).get();
+                if (doc.exists) {
+                    this.userData = { uid, ...doc.data() };
+                    localStorage.setItem('currentUser', JSON.stringify(this.userData));
+                }
+            } catch (error) {
+                console.error("Error loading user data:", error);
+            }
+        },
+
+        getCurrentUser: function() {
+            return this.currentUser;
+        },
+
+        getUserData: function() {
+            return this.userData;
+        },
+
+        login: async function(email, password) {
+            try {
+                const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+                
+                await this.loadUserData(userCredential.user.uid);
+                return { success: true, user: userCredential.user };
+            } catch (error) {
+                let errorMessage = 'Login failed';
+                switch (error.code) {
+                    case 'auth/user-not-found':
+                        errorMessage = 'User not found';
+                        break;
+                    case 'auth/wrong-password':
+                        errorMessage = 'Incorrect password';
+                        break;
+                    case 'auth/invalid-email':
+                        errorMessage = 'Invalid email format';
+                        break;
+                    default:
+                        errorMessage = error.message;
+                }
+                return { success: false, error: errorMessage };
+            }
+        },
+
+        logout: async function() {
+            try {
+                await firebase.auth().signOut();
+                this.currentUser = null;
+                this.userData = null;
+                localStorage.removeItem('currentUser');
+                return { success: true };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        },
+
+        register: async function(userData) {
+            try {
+                const userCredential = await firebase.auth().createUserWithEmailAndPassword(
+                    userData.email, 
+                    userData.password
+                );
+                
+                return { success: true, user: userCredential.user, uid: userCredential.user.uid };
+            } catch (error) {
+                let errorMessage = 'Registration failed';
+                switch (error.code) {
+                    case 'auth/email-already-in-use':
+                        errorMessage = 'Email already registered';
+                        break;
+                    case 'auth/invalid-email':
+                        errorMessage = 'Invalid email address';
+                        break;
+                    case 'auth/weak-password':
+                        errorMessage = 'Password is too weak';
+                        break;
+                    default:
+                        errorMessage = error.message;
+                }
+                return { success: false, error: errorMessage };
+            }
+        },
+
+        updateProfile: async function(uid, profileData) {
+            try {
+                const updateData = {
+                    ...profileData,
+                    updatedAt: new Date().toISOString()
+                };
+                
+                await firebase.firestore().collection('users').doc(uid).update(updateData);
+                return { success: true };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        },
+
+        changePassword: async function(currentPassword, newPassword) {
+            try {
+                const user = this.currentUser;
+                const credential = firebase.auth.EmailAuthProvider.credential(
+                    user.email, 
+                    currentPassword
+                );
+                
+                await user.reauthenticateWithCredential(credential);
+                await user.updatePassword(newPassword);
+                return { success: true };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        },
+
+        forgotPassword: async function(email) {
+            try {
+                await firebase.auth().sendPasswordResetEmail(email);
+                return { success: true };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+    };
+
+    // Initialize when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        initializePage();
+    });
+
+    // Initialize the page with loading state
+    async function initializePage() {
+        try {
+            showLoading(true);
+            setupEventListeners();
+            await loadSchoolConfig();
+            isInitialized = true;
+            
+            // Show real-time connection status
+            window.SchoolApp.SchoolUtils.showToast('Registration portal ready. Please verify your activation code.', 'info');
+        } catch (error) {
+            console.error('Initialization error:', error);
+            window.SchoolApp.SchoolUtils.showToast('Error initializing: ' + error.message, 'error');
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    function setupEventListeners() {
+        document.getElementById('verify-activation-btn').addEventListener('click', handleActivationVerification);
+        document.getElementById('submit-btn').addEventListener('click', handleRegistration);
+        document.getElementById('reset-btn').addEventListener('click', resetForm);
+        document.getElementById('whatsapp-help-btn').addEventListener('click', showWhatsAppModal);
+        
+        document.getElementById('toggle-password').addEventListener('click', function() {
+            togglePasswordVisibility('password', this);
+        });
+        
+        document.getElementById('toggle-confirm-password').addEventListener('click', function() {
+            togglePasswordVisibility('confirmPassword', this);
+        });
+        
+        // Real-time password validation
+        document.getElementById('password').addEventListener('input', function() {
+            updatePasswordStrength();
+            validatePassword();
+        });
+        
+        document.getElementById('confirmPassword').addEventListener('input', function() {
+            validatePasswordMatch();
+        });
+        
+        // Modal close buttons
+        document.getElementById('close-verification-modal').addEventListener('click', closeVerificationModal);
+        document.getElementById('cancel-verification-btn').addEventListener('click', closeVerificationModal);
+        document.getElementById('proceed-registration-btn').addEventListener('click', proceedWithRegistration);
+        
+        // WhatsApp modal events
+        document.getElementById('close-whatsapp-modal').addEventListener('click', closeWhatsAppModal);
+        document.getElementById('cancel-whatsapp-btn').addEventListener('click', closeWhatsAppModal);
+        document.getElementById('send-whatsapp-btn').addEventListener('click', sendWhatsAppRequest);
+        
+        // WhatsApp form validation
+        document.getElementById('request-name').addEventListener('input', validateWhatsAppForm);
+        document.getElementById('request-reg-number').addEventListener('input', validateWhatsAppForm);
+        document.getElementById('request-phone').addEventListener('input', validateWhatsAppForm);
+    }
+
+    async function loadSchoolConfig() {
+        try {
+            const doc = await firebase.firestore().collection('schoolConfig').doc('main').get();
+            if (doc.exists) {
+                const config = doc.data();
+                populateDropdowns(config);
+            }
+        } catch (error) {
+            console.error('Error loading school config:', error);
+        }
+    }
+
+    function populateDropdowns(config) {
+        populateDropdown('department', config.departments || []);
+        populateDropdown('faculty', config.faculties || []);
+        populateDropdown('level', config.academicLevels || []);
+        
+        const currentYear = new Date().getFullYear();
+        const yearSelect = document.getElementById('entry-year');
+        for (let year = currentYear; year >= currentYear - 10; year--) {
+            const option = document.createElement('option');
+            option.value = year;
+            option.textContent = year;
+            yearSelect.appendChild(option);
+        }
+    }
+
+    function populateDropdown(selectId, items) {
+        const select = document.getElementById(selectId);
+        if (!select) return;
+        
+        // Clear existing options except the first
+        while (select.options.length > 1) {
+            select.remove(1);
+        }
+        
+        items.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item;
+            option.textContent = item;
+            select.appendChild(option);
+        });
+    }
+
+    async function handleActivationVerification(e) {
+        e.preventDefault();
+        
+        if (!isInitialized) {
+            window.SchoolApp.SchoolUtils.showToast('System still initializing. Please wait...', 'warning');
+            return;
+        }
+        
+        const regNumber = document.getElementById('reg-number').value.trim();
+        const activationCode = document.getElementById('activation-code').value.trim().toUpperCase();
+        
+        if (!regNumber) {
+            window.SchoolApp.SchoolUtils.showToast('Registration number is required', 'error');
+            return;
+        }
+        
+        if (!activationCode) {
+            window.SchoolApp.SchoolUtils.showToast('Activation code is required', 'error');
+            return;
+        }
+        
+        if (activationCode.length !== 8) {
+            window.SchoolApp.SchoolUtils.showToast('Activation code must be 8 characters', 'error');
+            return;
+        }
+        
+        showVerificationModal(regNumber);
+        await verifyActivationCode(activationCode, regNumber);
+    }
+
+    async function verifyActivationCode(code, regNumber) {
+        try {
+            const snapshot = await firebase.firestore().collection('activationCodes')
+                .where('code', '==', code)
+                .where('regNumber', '==', regNumber)
+                .where('used', '==', false)
+                .get();
+
+            if (snapshot.empty) {
+                showVerificationResult(false, 'Invalid activation code or registration number');
+                return;
+            }
+
+            const doc = snapshot.docs[0];
+            const activationData = doc.data();
+            
+            const now = new Date();
+            const expiresAt = new Date(activationData.expiresAt);
+            if (now > expiresAt) {
+                showVerificationResult(false, 'Activation code has expired');
+                return;
+            }
+
+            activationCodeData = { 
+                valid: true, 
+                data: activationData,
+                docId: doc.id 
+            };
+            
+            showVerificationResult(true, activationData);
+        } catch (error) {
+            showVerificationResult(false, error.message);
+        }
+    }
+
+    function showVerificationResult(success, data) {
+        const spinner = document.getElementById('verification-spinner');
+        const resultDiv = document.getElementById('verification-result');
+        const proceedBtn = document.getElementById('proceed-registration-btn');
+        
+        spinner.style.display = 'none';
+        resultDiv.style.display = 'block';
+        
+        if (success) {
+            resultDiv.innerHTML = `
+                <div style="text-align: center; color: #2ecc71;">
+                    <i class="fas fa-check-circle fa-3x"></i>
+                    <h3 style="margin: 15px 0 10px;">Activation Code Verified!</h3>
+                    <p>Code is valid and ready for use.</p>
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                        <p><strong>Student:</strong> ${data.studentName}</p>
+                        <p><strong>Reg Number:</strong> ${data.regNumber}</p>
+                        <p><strong>Phone:</strong> ${data.studentPhone || 'Not provided'}</p>
+                        <p><strong>Department:</strong> ${data.department || 'To be filled'}</p>
+                        <p><strong>Faculty:</strong> ${data.faculty || 'To be filled'}</p>
+                        <p><strong>Level:</strong> ${data.level || 'To be filled'}</p>
+                        <p><strong>Expires:</strong> ${new Date(data.expiresAt).toLocaleDateString()}</p>
+                    </div>
+                </div>
+            `;
+            proceedBtn.style.display = 'inline-block';
+        } else {
+            resultDiv.innerHTML = `
+                <div style="text-align: center; color: #e74c3c;">
+                    <i class="fas fa-times-circle fa-3x"></i>
+                    <h3 style="margin: 15px 0 10px;">Verification Failed</h3>
+                    <p>${data}</p>
+                </div>
+            `;
+            proceedBtn.style.display = 'none';
+        }
+    }
+
+    function autoFillStudentInfo(studentData) {
+        const infoDisplay = document.getElementById('student-info-display');
+        infoDisplay.innerHTML = `
+            <h4><i class="fas fa-user-graduate"></i> Student Information (From Activation Code)</h4>
+            <p><strong>Name:</strong> ${studentData.studentName}</p>
+            <p><strong>Registration Number:</strong> ${studentData.regNumber}</p>
+            <p><strong>Phone:</strong> ${studentData.studentPhone || 'Not provided'}</p>
+            ${studentData.department ? `<p><strong>Department:</strong> ${studentData.department}</p>` : ''}
+            ${studentData.faculty ? `<p><strong>Faculty:</strong> ${studentData.faculty}</p>` : ''}
+            ${studentData.level ? `<p><strong>Level:</strong> ${studentData.level}</p>` : ''}
+        `;
+        
+        // Auto-fill fields from activation code
+        document.getElementById('fullName').value = studentData.studentName || '';
+        document.getElementById('reg-number').value = studentData.regNumber || '';
+        document.getElementById('phone').value = studentData.studentPhone || '';
+        
+        // DO NOT auto-fill email - leave it for manual input
+        
+        // Lock and set academic fields
+        if (studentData.department) {
+            document.getElementById('department').value = studentData.department;
+            document.getElementById('department').disabled = true;
+        }
+        
+        if (studentData.faculty) {
+            document.getElementById('faculty').value = studentData.faculty;
+            document.getElementById('faculty').disabled = true;
+        }
+        
+        if (studentData.level) {
+            document.getElementById('level').value = studentData.level;
+            document.getElementById('level').disabled = true;
+        }
+        
+        // Show all sections
+        document.getElementById('personal-info-section').style.display = 'block';
+        document.getElementById('academic-info-section').style.display = 'block';
+        document.getElementById('security-section').style.display = 'block';
+        document.getElementById('terms-section').style.display = 'block';
+        document.getElementById('registration-footer').style.display = 'flex';
+        document.getElementById('login-link').style.display = 'block';
+        
+        // Focus on email field (which is now empty for manual input)
+        setTimeout(() => {
+            document.getElementById('email').focus();
+            document.getElementById('personal-info-section').scrollIntoView({ behavior: 'smooth' });
+        }, 300);
+    }
+
+    // Password validation functions
+    function validatePassword() {
+        const password = document.getElementById('password').value;
+        
+        // Validate length
+        const lengthValid = password.length >= 6;
+        updateValidationRule('length', lengthValid);
+        
+        // Validate uppercase
+        const uppercaseValid = /[A-Z]/.test(password);
+        updateValidationRule('uppercase', uppercaseValid);
+        
+        // Validate lowercase
+        const lowercaseValid = /[a-z]/.test(password);
+        updateValidationRule('lowercase', lowercaseValid);
+        
+        // Validate number
+        const numberValid = /[0-9]/.test(password);
+        updateValidationRule('number', numberValid);
+        
+        // Validate match (if confirm password is filled)
+        if (document.getElementById('confirmPassword').value) {
+            validatePasswordMatch();
+        }
+    }
+
+    function validatePasswordMatch() {
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        const matchValid = password === confirmPassword && password.length > 0;
+        updateValidationRule('match', matchValid);
+    }
+
+    function updateValidationRule(ruleId, isValid) {
+        const ruleElement = document.getElementById(`rule-${ruleId}`);
+        const iconElement = ruleElement.querySelector('.rule-icon');
+        const textElement = ruleElement.querySelector('.rule-text');
+        
+        if (isValid) {
+            iconElement.className = 'rule-icon valid';
+            iconElement.innerHTML = '<i class="fas fa-check"></i>';
+            textElement.className = 'rule-text valid';
+        } else {
+            iconElement.className = 'rule-icon invalid';
+            iconElement.innerHTML = '<i class="fas fa-times"></i>';
+            textElement.className = 'rule-text invalid';
+        }
+    }
+
+    function updatePasswordStrength() {
+        const password = document.getElementById('password').value;
+        const strengthBar = document.getElementById('password-strength-bar');
+        const strengthText = document.getElementById('password-strength-text');
+        
+        let strength = 0;
+        let text = '';
+        let width = '0%';
+        let colorClass = '';
+        
+        if (password.length > 0) {
+            strength++;
+            if (password.length >= 6) strength++;
+            if (/[A-Z]/.test(password)) strength++;
+            if (/[a-z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            
+            switch(strength) {
+                case 1:
+                    text = 'Very Weak';
+                    width = '20%';
+                    colorClass = 'strength-weak';
+                    break;
+                case 2:
+                    text = 'Weak';
+                    width = '40%';
+                    colorClass = 'strength-weak';
+                    break;
+                case 3:
+                    text = 'Fair';
+                    width = '60%';
+                    colorClass = 'strength-medium';
+                    break;
+                case 4:
+                    text = 'Good';
+                    width = '80%';
+                    colorClass = 'strength-medium';
+                    break;
+                case 5:
+                    text = 'Strong';
+                    width = '100%';
+                    colorClass = 'strength-strong';
+                    break;
+            }
+        }
+        
+        if (strengthBar) strengthBar.style.width = width;
+        if (strengthBar) strengthBar.className = 'strength-bar ' + colorClass;
+        if (strengthText) strengthText.textContent = text;
+    }
+
+    async function handleRegistration(e) {
+        e.preventDefault();
+        
+        formData = {
+            activationCode: document.getElementById('activation-code').value.trim(),
+            fullName: document.getElementById('fullName').value.trim(),
+            regNumber: document.getElementById('reg-number').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            phone: document.getElementById('phone').value.trim(),
+            password: document.getElementById('password').value,
+            confirmPassword: document.getElementById('confirmPassword').value,
+            jambNumber: document.getElementById('jamb-number').value.trim(),
+            department: document.getElementById('department').value,
+            faculty: document.getElementById('faculty').value,
+            level: document.getElementById('level').value,
+            state: document.getElementById('state').value.trim(),
+            lga: document.getElementById('lga').value.trim(),
+            address: document.getElementById('address').value.trim(),
+            entryYear: document.getElementById('entry-year').value
+        };
+        
+        const validation = validateForm(formData);
+        if (!validation.valid) {
+            window.SchoolApp.SchoolUtils.showToast(validation.message, 'error');
+            return;
+        }
+        
+        try {
+            const submitBtn = document.getElementById('submit-btn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<div class="spinner"></div> Registering...';
+            submitBtn.disabled = true;
+            
+            const result = await registerWithRegNumber(formData, formData.activationCode);
+            
+            if (result.success) {
+                window.SchoolApp.SchoolUtils.showToast('Registration successful! Welcome to KSITM CTE.', 'success');
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 2000);
+            } else {
+                window.SchoolApp.SchoolUtils.showToast('Registration failed: ' + result.error, 'error');
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        } catch (error) {
+            window.SchoolApp.SchoolUtils.showToast('Registration error: ' + error.message, 'error');
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Complete Registration';
+            submitBtn.disabled = false;
+        }
+    }
+
+    async function registerWithRegNumber(userData, activationCode) {
+        try {
+            if (!activationCodeData || !activationCodeData.valid) {
+                return { success: false, error: 'Activation code not verified' };
+            }
+            
+            const authResult = await AuthManager.register({
+                email: userData.email,
+                password: userData.password
+            });
+            
+            if (!authResult.success) {
+                return authResult;
+            }
+            
+            const studentData = {
+                uid: authResult.uid,
+                fullName: userData.fullName,
+                regNumber: userData.regNumber,
+                email: userData.email,
+                phone: userData.phone,
+                department: userData.department,
+                faculty: userData.faculty,
+                level: userData.level,
+                role: 'Student',
+                status: 'Active',
+                jambNumber: userData.jambNumber || '',
+                state: userData.state || '',
+                lga: userData.lga || '',
+                address: userData.address || '',
+                entryYear: userData.entryYear || new Date().getFullYear().toString(),
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                lastLoginAt: new Date().toISOString(),
+                activationCodeUsed: activationCode
+            };
+            
+            await firebase.firestore().collection('users').doc(authResult.uid).set(studentData);
+            await markActivationCodeAsUsed(activationCodeData.docId, authResult.uid);
+            await AuthManager.loadUserData(authResult.uid);
+            
+            return { success: true, user: authResult.user };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    }
+
+    async function markActivationCodeAsUsed(docId, userId) {
+        try {
+            await firebase.firestore().collection('activationCodes').doc(docId).update({
+                used: true,
+                usedAt: new Date().toISOString(),
+                usedBy: userId
+            });
+            return { success: true };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    }
+
+    function validateForm(data) {
+        const requiredFields = ['fullName', 'regNumber', 'email', 'phone', 'password', 'confirmPassword', 'department', 'faculty', 'level'];
+        for (const field of requiredFields) {
+            if (!data[field]) {
+                return { valid: false, message: `${field.replace(/([A-Z])/g, ' $1').toLowerCase()} is required` };
+            }
+        }
+        
+        if (!window.SchoolApp.SchoolUtils.validateEmail(data.email)) {
+            return { valid: false, message: 'Please enter a valid email address' };
+        }
+        
+        if (!window.SchoolApp.SchoolUtils.validatePhone(data.phone)) {
+            return { valid: false, message: 'Please enter a valid phone number' };
+        }
+        
+        if (data.password !== data.confirmPassword) {
+            return { valid: false, message: 'Passwords do not match' };
+        }
+        
+        if (data.password.length < 6) {
+            return { valid: false, message: 'Password must be at least 6 characters long' };
+        }
+        
+        if (!/[A-Z]/.test(data.password)) {
+            return { valid: false, message: 'Password must contain at least one uppercase letter' };
+        }
+        
+        if (!/[a-z]/.test(data.password)) {
+            return { valid: false, message: 'Password must contain at least one lowercase letter' };
+        }
+        
+        if (!/[0-9]/.test(data.password)) {
+            return { valid: false, message: 'Password must contain at least one number' };
+        }
+        
+        return { valid: true, message: 'Validation passed' };
+    }
+
+    function resetForm() {
+        if (confirm('Are you sure you want to clear all form fields?')) {
+            document.getElementById('registration-form').reset();
+            document.getElementById('personal-info-section').style.display = 'none';
+            document.getElementById('academic-info-section').style.display = 'none';
+            document.getElementById('security-section').style.display = 'none';
+            document.getElementById('terms-section').style.display = 'none';
+            document.getElementById('registration-footer').style.display = 'none';
+            document.getElementById('login-link').style.display = 'none';
+            document.getElementById('student-info-display').innerHTML = '';
+            
+            // Reset locked fields
+            document.getElementById('department').disabled = false;
+            document.getElementById('faculty').disabled = false;
+            document.getElementById('level').disabled = false;
+            
+            // Reset validation rules
+            resetValidationRules();
+            
+            activationCodeData = null;
+            formData = {};
+        }
+    }
+
+    function resetValidationRules() {
+        const rules = ['length', 'uppercase', 'lowercase', 'number', 'match'];
+        rules.forEach(ruleId => {
+            const ruleElement = document.getElementById(`rule-${ruleId}`);
+            if (ruleElement) {
+                const iconElement = ruleElement.querySelector('.rule-icon');
+                const textElement = ruleElement.querySelector('.rule-text');
+                iconElement.className = 'rule-icon pending';
+                iconElement.innerHTML = '<i class="fas fa-circle"></i>';
+                textElement.className = 'rule-text pending';
+            }
+        });
+    }
+
+    // WhatsApp Modal Functions
+    async function showWhatsAppModal() {
+        try {
+            showLoading(true);
+            await loadAdmins();
+            
+            // Pre-fill form if user has already entered data
+            const name = document.getElementById('fullName').value || document.getElementById('reg-number').value.split('/').pop() || '';
+            const regNumber = document.getElementById('reg-number').value || '';
+            const phone = document.getElementById('phone').value || '';
+            
+            if (name) document.getElementById('request-name').value = name;
+            if (regNumber) document.getElementById('request-reg-number').value = regNumber;
+            if (phone) document.getElementById('request-phone').value = phone;
+            
+            showWhatsAppModalUI();
+            validateWhatsAppForm();
+        } catch (error) {
+            window.SchoolApp.SchoolUtils.showToast('Error loading administrators: ' + error.message, 'error');
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    async function loadAdmins() {
+        try {
+            const snapshot = await firebase.firestore().collection('users')
+                .where('role', 'in', ['Admin', 'Lecturer', 'Registrar', 'HOD', 'Dean'])
+                .where('status', '==', 'Active')
+                .get();
+            
+            adminList = [];
+            snapshot.forEach(doc => {
+                const admin = { id: doc.id, ...doc.data() };
+                if (admin.phone) {
+                    adminList.push(admin);
+                }
+            });
+            
+            displayAdmins();
+        } catch (error) {
+            console.error('Error loading admins:', error);
+            throw error;
+        }
+    }
+
+    function displayAdmins() {
+        const adminListContainer = document.getElementById('admin-list');
+        
+        if (!adminList || adminList.length === 0) {
+            adminListContainer.innerHTML = `
+                <div class="no-admins">
+                    <i class="fas fa-user-shield"></i>
+                    <p>No administrators available at the moment.</p>
+                    <p class="text-muted" style="margin-top: 10px;">
+                        Please contact the school office directly.
+                    </p>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '';
+        adminList.forEach((admin, index) => {
+            const initials = getInitials(admin.fullName || admin.email);
+            const role = admin.role || 'Administrator';
+            
+            html += `
+                <div class="admin-item" data-index="${index}" onclick="selectAdmin(${index})">
+                    <div class="admin-avatar">${initials}</div>
+                    <div class="admin-info">
+                        <div class="admin-name">${admin.fullName || admin.email}</div>
+                        <div class="admin-role">${role}</div>
+                        <div class="admin-phone">${admin.phone}</div>
+                    </div>
+                    <div class="admin-check" style="display: none;">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+            `;
+        });
+        
+        adminListContainer.innerHTML = html;
+    }
+
+    function getInitials(name) {
+        if (!name) return 'A';
+        return name.split(' ')
+            .map(part => part.charAt(0))
+            .join('')
+            .toUpperCase()
+            .substring(0, 2);
+    }
+
+    function selectAdmin(index) {
+        // Reset all selections
+        document.querySelectorAll('.admin-item').forEach(item => {
+            item.classList.remove('selected');
+            item.querySelector('.admin-check').style.display = 'none';
+        });
+        
+        // Set new selection
+        const selectedItem = document.querySelector(`.admin-item[data-index="${index}"]`);
+        if (selectedItem) {
+            selectedItem.classList.add('selected');
+            selectedItem.querySelector('.admin-check').style.display = 'block';
+            selectedAdmin = adminList[index];
+        }
+        
+        validateWhatsAppForm();
+    }
+
+    function validateWhatsAppForm() {
+        const name = document.getElementById('request-name').value.trim();
+        const regNumber = document.getElementById('request-reg-number').value.trim();
+        const phone = document.getElementById('request-phone').value.trim();
+        const sendBtn = document.getElementById('send-whatsapp-btn');
+        
+        // Basic validation
+        const isValid = name && regNumber && selectedAdmin;
+        
+        // Additional phone validation if provided
+        if (phone && !window.SchoolApp.SchoolUtils.validatePhone(phone)) {
+            sendBtn.disabled = true;
+            return;
+        }
+        
+        sendBtn.disabled = !isValid;
+    }
+
+    function sendWhatsAppRequest() {
+        const name = document.getElementById('request-name').value.trim();
+        const regNumber = document.getElementById('request-reg-number').value.trim();
+        const phone = document.getElementById('request-phone').value.trim();
+        
+        if (!name || !regNumber || !selectedAdmin) {
+            window.SchoolApp.SchoolUtils.showToast('Please fill all required fields', 'error');
+            return;
+        }
+        
+        // Format phone number for WhatsApp
+        const adminPhone = formatPhoneForWhatsApp(selectedAdmin.phone);
+        const studentPhone = phone ? formatPhoneForWhatsApp(phone) : null;
+        
+        // Create WhatsApp message
+        let message = `Hello ${selectedAdmin.fullName || 'Administrator'},\n\n`;
+        message += `I would like to request an activation code for KSITM CTE student registration.\n\n`;
+        message += `**My Details:**\n`;
+        message += `• Full Name: ${name}\n`;
+        message += `• Registration Number: ${regNumber}\n`;
+        if (phone) {
+            message += `• My Phone: ${phone}\n`;
+        }
+        message += `\nPlease provide me with the necessary information to obtain an activation code.\n\n`;
+        message += `Thank you.\n`;
+        message += `_This request was sent via KSITM CTE Student Portal_`;
+        
+        // Create WhatsApp URL
+        let whatsappUrl = `https://wa.me/${adminPhone}?text=${encodeURIComponent(message)}`;
+        
+        // Open WhatsApp
+        window.open(whatsappUrl, '_blank');
+        
+        // Close modal
+        closeWhatsAppModal();
+        
+        // Show success message
+        window.SchoolApp.SchoolUtils.showToast('WhatsApp request prepared. The app will open to send the message.', 'success');
+    }
+
+    function formatPhoneForWhatsApp(phone) {
+        // Remove all non-digits
+        const digits = phone.replace(/\D/g, '');
+        
+        // If starts with 0, replace with 234
+        if (digits.startsWith('0')) {
+            return '234' + digits.substring(1);
+        }
+        
+        // If already starts with 234, return as is
+        if (digits.startsWith('234')) {
+            return digits;
+        }
+        
+        // If no prefix, add 234
+        return '234' + digits;
+    }
+
+    function showWhatsAppModalUI() {
+        const modal = document.getElementById('whatsapp-modal');
+        modal.classList.add('active');
+    }
+
+    function closeWhatsAppModal() {
+        const modal = document.getElementById('whatsapp-modal');
+        modal.classList.remove('active');
+        
+        // Reset form
+        document.getElementById('request-name').value = '';
+        document.getElementById('request-reg-number').value = '';
+        document.getElementById('request-phone').value = '';
+        
+        // Reset selection
+        selectedAdmin = null;
+        document.querySelectorAll('.admin-item').forEach(item => {
+            item.classList.remove('selected');
+            item.querySelector('.admin-check').style.display = 'none';
+        });
+        
+        // Reset button
+        document.getElementById('send-whatsapp-btn').disabled = true;
+    }
+
+    function togglePasswordVisibility(inputId, button) {
+        const input = document.getElementById(inputId);
+        const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+        input.setAttribute('type', type);
+        button.innerHTML = type === 'password' ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
+    }
+
+    function showVerificationModal(regNumber) {
+        const modal = document.getElementById('verification-modal');
+        modal.classList.add('active');
+        document.getElementById('verifying-reg-number').textContent = regNumber;
+        document.getElementById('verification-spinner').style.display = 'block';
+        document.getElementById('verification-result').style.display = 'none';
+        document.getElementById('proceed-registration-btn').style.display = 'none';
+    }
+
+    function closeVerificationModal() {
+        const modal = document.getElementById('verification-modal');
+        modal.classList.remove('active');
+    }
+
+    function proceedWithRegistration() {
+        closeVerificationModal();
+        if (activationCodeData && activationCodeData.data) {
+            autoFillStudentInfo(activationCodeData.data);
+        }
+        document.getElementById('email').focus();
+    }
+
+    function showLoading(show) {
+        const overlay = document.getElementById('loading-overlay');
+        overlay.style.display = show ? 'flex' : 'none';
+    }
+
+    function showToast(message, type = 'success') {
+        window.SchoolApp.SchoolUtils.showToast(message, type);
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Dashboard - Chat</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+          /* CSS Variables for Theming */
+    :root {
+        --primary: #4361ee;
+        --primary-light: #4895ef;
+        --secondary: #3a0ca3;
+        --success: #4cc9f0;
+        --warning: #f72585;
+        --light: #f8f9fa;
+        --dark: #212529;
+        --gray: #6c757d;
+        --light-gray: #e9ecef;
+        --text-color: #333;
+        --bg-color: #fff;
+        --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        --transition: all 0.3s ease;
+        --border-radius: 12px;
+    }
+    
+    /* General Styles */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    body {
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        transition: var(--transition);
+        height: 100vh;
+        overflow: hidden;
+    }
+    
+    /* Layout */
+    .main-container {
+        display: flex;
+        min-height: 100vh;
+    }
+    
+    /* Main Content Styles */
+    .main-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Content Area Styles */
+    .content {
+        flex: 1;
+        padding: 30px;
+        overflow-y: auto;
+    }
+    
+    /* Chat Container Styles */
+    .chat-container {
+        background-color: var(--bg-color);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        height: calc(100vh - 70px);
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .chat-header {
+        padding: 15px 20px;
+        background-color: var(--light-gray);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--gray);
+    }
+    
+    .chat-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+    
+    /* Online Counter Button Styles */
+    .online-counter-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background-color: var(--light-gray);
+        border-radius: 20px;
+        cursor: pointer;
+        transition: var(--transition);
+        border: 1px solid transparent;
+    }
+    
+    .online-counter-btn:hover {
+        background-color: var(--primary-light);
+        border-color: var(--primary);
+        color: white;
+    }
+    
+    .online-counter-btn:hover .online-text,
+    .online-counter-btn:hover .dropdown-icon {
+        color: white;
+    }
+    
+    .online-status {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+        .online-dot {
+        color: #4cc9f0;
+        font-size: 15px;
+        animation: pulse 1.5s infinite ease-in-out;
+    }
+    
+    @keyframes pulse {
+        0% { 
+            transform: scale(1);
+            opacity: 1;
+        }
+        50% { 
+            transform: scale(1.3);
+            opacity: 0.8;
+        }
+        100% { 
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+    
+    .online-count-number {
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+    
+    .online-text {
+        font-size: 0.9rem;
+        color: var(--gray);
+        transition: var(--transition);
+    }
+    
+    .dropdown-icon {
+        font-size: 0.8rem;
+        color: var(--gray);
+        transition: var(--transition);
+    }
+    
+    .chat-messages {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .message {
+        max-width: 70%;
+        padding: 12px 15px;
+        border-radius: 18px;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .message.received {
+        background-color: var(--light-gray);
+        align-self: flex-start;
+        border-bottom-left-radius: 4px;
+    }
+    
+    .message.sent {
+        background-color: var(--primary);
+        color: white;
+        align-self: flex-end;
+        border-bottom-right-radius: 4px;
+    }
+    
+    .message-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 5px;
+    }
+    
+    .message-avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        object-fit: cover;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.7rem;
+        background-color: var(--primary-light);
+        color: white;
+    }
+    
+    .message-sender {
+        font-weight: 600;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .sender-online-indicator {
+    width: 8px;
+    height: 8px;
+    background-color: #4cc9f0;
+    border-radius: 50%;
+    display: inline-block;
+    animation: pulse 1.5s infinite ease-in-out;
+}
+    
+    .message-content {
+        margin-left: 36px;
+        margin-bottom: 20px;
+    }
+    
+    .message-time {
+        font-size: 0.7rem;
+        opacity: 0.8;
+        align-self: flex-end;
+        margin-top: 5px;
+        white-space: nowrap;
+    }
+    
+    .edited-indicator {
+        font-size: 0.7rem;
+        opacity: 0.7;
+        font-style: italic;
+        margin-left: 5px;
+    }
+    
+    .message-actions {
+        position: absolute;
+        bottom: 5px;
+        right: 10px;
+        display: none;
+        gap: 5px;
+    }
+    
+    .message:hover .message-actions {
+        display: flex;
+    }
+    
+    .message-action-btn {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        border-radius: 4px;
+        width: 22px;
+        height: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 0.7rem;
+        color: inherit;
+    }
+    
+    .message-input-container {
+        padding: 15px 20px;
+        background-color: var(--light-gray);
+        display: flex;
+        gap: 10px;
+        border-top: 1px solid var(--gray);
+    }
+    
+    .message-input {
+        flex: 1;
+        height: 50px;
+        padding: 12px 15px;
+        border: 1px solid var(--gray);
+        border-radius: 20px;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+    }
+    
+    .send-btn {
+        background-color: var(--primary);
+        color: white;
+        border: none;
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+    
+    .send-btn:hover {
+        background-color: var(--secondary);
+    }
+    
+    /* Online Users Panel */
+    .online-users-panel {
+        position: fixed;
+        right: 0;
+        top: 0;
+        height: 100vh;
+        width: 320px;
+        background-color: var(--bg-color);
+        box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        overflow-y: auto;
+        transform: translateX(100%);
+        transition: var(--transition);
+        z-index: 90;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .online-users-panel.active {
+        transform: translateX(0);
+    }
+    
+    .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--gray);
+    }
+    
+    .panel-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+    
+    .close-panel {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: var(--text-color);
+    }
+    
+    .user-tabs {
+        display: flex;
+        margin-bottom: 15px;
+        border-bottom: 1px solid var(--light-gray);
+    }
+    
+    .user-tab {
+        padding: 8px 15px;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+    }
+    
+    .user-tab.active {
+        border-bottom: 2px solid var(--primary);
+        color: var(--primary);
+        font-weight: 600;
+    }
+    
+    .user-list {
+        list-style: none;
+        flex: 1;
+        overflow-y: auto;
+    }
+    
+    .user-item {
+        display: flex;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--light-gray);
+        gap: 10px;
+    }
+    
+    .user-avatar-sm {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        background-color: var(--primary-light);
+        color: white;
+    }
+    
+    .user-details {
+        flex: 1;
+    }
+    
+    .user-name-sm {
+        font-weight: 500;
+        font-size: 0.95rem;
+        margin-bottom: 2px;
+    }
+    
+    .user-status-sm {
+        font-size: 0.8rem;
+        color: var(--gray);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .user-last-seen {
+        font-size: 0.7rem;
+        color: var(--gray);
+    }
+    
+    .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 80;
+        opacity: 0;
+        visibility: hidden;
+        transition: var(--transition);
+    }
+    
+    .overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    /* Custom Modal Styles */
+    .custom-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transition: var(--transition);
+    }
+    
+    .custom-modal.active {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .modal-content {
+        background-color: var(--bg-color);
+        width: 100%;
+        max-width: 400px;
+        border-radius: 10px;
+        padding: 25px;
+        box-shadow: var(--shadow);
+    }
+    
+    .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid var(--light-gray);
+    }
+    
+    .modal-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+    
+    .close-modal {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: var(--text-color);
+    }
+    
+    .modal-body {
+        margin-bottom: 20px;
+    }
+    
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+    
+    .modal-btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+    
+    .modal-btn.cancel {
+        background-color: var(--light-gray);
+        color: var(--text-color);
+    }
+    
+    .modal-btn.cancel:hover {
+        background-color: var(--gray);
+        color: white;
+    }
+    
+    .modal-btn.confirm {
+        background-color: var(--primary);
+        color: white;
+    }
+    
+    .modal-btn.confirm:hover {
+        background-color: var(--secondary);
+    }
+    
+    .prompt-input {
+        width: 100%;
+        padding: 10px 15px;
+        border: 1px solid var(--gray);
+        border-radius: 14px;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        margin-top: 10px;
+    }
+    
+    /* Password Prompt Styles */
+    .password-prompt {
+        margin-top: 15px;
+    }
+    
+    .password-input {
+        width: 100%;
+        padding: 10px 15px;
+        border: 1px solid var(--gray);
+        border-radius: 4px;
+        margin-top: 5px;
+    }
+    
+    /* Custom Alert Styles */
+    .alert-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transition: var(--transition);
+    }
+    
+    .alert-modal.active {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .alert-content {
+        background-color: var(--bg-color);
+        width: 100%;
+        max-width: 350px;
+        border-radius: 10px;
+        padding: 25px;
+        box-shadow: var(--shadow);
+        text-align: center;
+    }
+    
+    .alert-icon {
+        font-size: 2.5rem;
+        color: var(--warning);
+        margin-bottom: 15px;
+    }
+    
+    .alert-message {
+        margin-bottom: 20px;
+        line-height: 1.5;
+    }
+    
+    .alert-btn {
+        padding: 8px 20px;
+        background-color: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+    
+    .alert-btn:hover {
+        background-color: var(--secondary);
+    }
+    
+    /* Responsive Styles */
+    @media (max-width: 768px) {
+        .message {
+            max-width: 85%;
+        }
+        
+        .content {
+            padding: 15px;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .message {
+            max-width: 90%;
+        }
+        
+        .online-users-panel {
+            width: 100%;
+        }
+        
+        .online-counter-btn {
+            padding: 6px 10px;
+        }
+        
+        .online-text {
+            display: none;
+        }
+    }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            
+            <!-- Content Area -->
+            <div class="content">
+                <div class="chat-container">
+             <div class="chat-header">
+    <div class="chat-title">General Chat</div>
+    
+    <div class="online-counter-btn" id="online-users-btn">
+        <div class="online-status">
+            <i class="fas fa-circle online-dot"></i>
+            <span class="online-count-number" id="online-count">0 Online</span>
+        </div>
+        <span class="online-text">Online</span>
+        <i class="fas fa-chevron-down dropdown-icon"></i>
+    </div>
+</div>
+                    
+                    <div class="chat-messages" id="chat-messages">
+                        <!-- Messages will be loaded here -->
+                        <div class="message received">
+                            <div class="message-header">
+                                <div class="message-avatar">S</div>
+                                <div class="message-sender">System</div>
+                            </div>
+                            <div class="message-content">Welcome to EduPortal Chat! Start a conversation with your peers.</div>
+                            <div class="message-time">Just now</div>
+                        </div>
+                    </div>
+                    
+                    <div class="message-input-container">
+                        <textarea class="message-input" id="message-input" placeholder="Type your message here..."></textarea>
+                        <button class="send-btn" id="send-btn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Online Users Panel -->
+      <div class="online-users-panel" id="online-users-panel">
+          <div class="panel-header">
+              <div class="panel-title">Online Users</div>
+              <button class="close-panel" id="close-panel">
+                  <i class="fas fa-times"></i>
+              </button>
+          </div>
+          
+          <div class="user-tabs">
+              <div class="user-tab active" data-tab="online">Online</div>
+              <div class="user-tab" data-tab="offline">Offline</div>
+              <div class="user-tab" data-tab="all">All Users</div>
+          </div>
+          
+          <ul class="user-list" id="user-list">
+              <!-- Users will be listed here with actual last seen time -->
+          </ul>
+      </div>
+        
+        <!-- Overlay -->
+        <div class="overlay" id="overlay"></div>
+        
+        <!-- Custom Confirm Modal -->
+        <div class="custom-modal" id="confirm-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title" id="confirm-title">Confirm Action</div>
+                    <button class="close-modal" id="close-confirm-modal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p id="confirm-message">Are you sure you want to perform this action?</p>
+                    <div class="password-prompt" id="password-prompt" style="display: none;">
+                        <label for="password-input">Enter your password to confirm:</label>
+                        <input type="password" class="password-input" id="password-input" placeholder="Your password">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-btn cancel" id="confirm-cancel">Cancel</button>
+                    <button class="modal-btn confirm" id="confirm-ok">OK</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Custom Prompt Modal -->
+        <div class="custom-modal" id="prompt-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title" id="prompt-title">Edit Message</div>
+                    <button class="close-modal" id="close-prompt-modal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p id="prompt-message">Edit your message:</p>
+                    <textarea class="prompt-input" id="prompt-input"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-btn cancel" id="prompt-cancel">Cancel</button>
+                    <button class="modal-btn confirm" id="prompt-ok">OK</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Custom Alert Modal -->
+<div class="alert-modal" id="alert-modal">
+    <div class="alert-content">
+        <div class="alert-icon">
+            <i class="fas fa-exclamation-circle"></i>
+        </div>
+        <p class="alert-message" id="alert-message">Incorrect password. Please try again.</p>
+        <button class="alert-btn" id="alert-ok-btn">OK</button>
+    </div>
+</div>
+ 
+    </div>
+
+    <script>
+    // Firebase configuration
+    const firebaseConfig = {
+          apiKey: "AIzaSyDQsgtHJecbG75M0v8Jk2jPi-EuOOXcTK0",
+          authDomain: "ksitm-cte-24-series.firebaseapp.com",
+          databaseURL: "https://ksitm-cte-24-series-default-rtdb.firebaseio.com",
+          projectId: "ksitm-cte-24-series",
+          storageBucket: "ksitm-cte-24-series.appspot.com",
+          messagingSenderId: "106262152246",
+          appId: "1:106262152246:web:1b5d4b5d3e1c0b6d7b7e8f"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+    const firestore = firebase.firestore();
+
+    // DOM Elements
+    const messageInput = document.getElementById('message-input');
+    const sendBtn = document.getElementById('send-btn');
+    const chatMessages = document.getElementById('chat-messages');
+    const onlineUsersBtn = document.getElementById('online-users-btn');
+    const onlineUsersPanel = document.getElementById('online-users-panel');
+    const closePanel = document.getElementById('close-panel');
+    const overlay = document.getElementById('overlay');
+    const userList = document.getElementById('user-list');
+    const onlineCount = document.getElementById('online-count');
+    const userTabs = document.querySelectorAll('.user-tab');
+    const confirmModal = document.getElementById('confirm-modal');
+    const closeConfirmModal = document.getElementById('close-confirm-modal');
+    const confirmCancel = document.getElementById('confirm-cancel');
+    const confirmOk = document.getElementById('confirm-ok');
+    const confirmTitle = document.getElementById('confirm-title');
+    const confirmMessage = document.getElementById('confirm-message');
+    const passwordPrompt = document.getElementById('password-prompt');
+    const passwordInput = document.getElementById('password-input');
+    const promptModal = document.getElementById('prompt-modal');
+    const closePromptModal = document.getElementById('close-prompt-modal');
+    const promptCancel = document.getElementById('prompt-cancel');
+    const promptOk = document.getElementById('prompt-ok');
+    const promptTitle = document.getElementById('prompt-title');
+    const promptMessage = document.getElementById('prompt-message');
+    const promptInput = document.getElementById('prompt-input');
+    const alertModal = document.getElementById('alert-modal');
+const alertMessage = document.getElementById('alert-message');
+const alertOkBtn = document.getElementById('alert-ok-btn');
+
+    // Global variables
+    let currentUser = null;
+    let currentUserData = null;
+    let selectedMessageId = null;
+    let selectedMessageAction = null;
+    let onlineUsers = {};
+    let allUsers = {};
+
+    // Initialize the app
+    function init() {
+        // Listen for auth state changes
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                currentUser = user;
+                // Get user data from Firestore
+                firestore.collection('users').doc(user.uid).get().then(doc => {
+                    if (doc.exists) {
+                        currentUserData = doc.data();
+                        // Set up presence
+                        setupPresence();
+                        // Load messages
+                        loadMessages();
+                        // Load users
+                        loadUsers();
+                    } else {
+                        console.error("No user data found in Firestore");
+                    }
+                });
+            } else {
+                // Redirect to login if not authenticated
+                window.location.href = 'login.html';
+            }
+        });
+
+        // Event listeners
+        sendBtn.addEventListener('click', sendMessage);
+
+        onlineUsersBtn.addEventListener('click', () => {
+    onlineUsersPanel.classList.add('active');
+    overlay.classList.add('active');
+    // Automatically filter and show online users when panel opens
+    filterUsers('online');
+    // Ensure the Online tab is visually selected
+    userTabs.forEach(tab => tab.classList.remove('active'));
+    document.querySelector('.user-tab[data-tab="online"]').classList.add('active');
+});
+
+        closePanel.addEventListener('click', closeOnlinePanel);
+        overlay.addEventListener('click', closeOnlinePanel);
+
+        userTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                userTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                filterUsers(tab.dataset.tab);
+            });
+        });
+
+        // Modal event listeners
+        closeConfirmModal.addEventListener('click', closeConfirmModalFunc);
+        confirmCancel.addEventListener('click', closeConfirmModalFunc);
+        confirmOk.addEventListener('click', handleConfirmAction);
+        
+        closePromptModal.addEventListener('click', closePromptModalFunc);
+        promptCancel.addEventListener('click', closePromptModalFunc);
+        promptOk.addEventListener('click', handlePromptAction);
+        alertOkBtn.addEventListener('click', closeAlertModal);
+    }
+
+    // Setup user presence
+    function setupPresence() {
+        // Reference to user's presence in Realtime DB
+        const userStatusRef = db.ref('/status/' + currentUser.uid);
+        const userLastSeenRef = db.ref('/lastSeen/' + currentUser.uid);
+        
+        // Reference to the special '.info/connected' path in Realtime DB
+        const connectedRef = db.ref('.info/connected');
+        
+        // When the client's connection state changes
+        connectedRef.on('value', (snapshot) => {
+            if (snapshot.val() === false) {
+                return;
+            }
+            
+            // When client disconnects, set user to offline and update last seen
+            userStatusRef.onDisconnect().set({
+                state: 'offline',
+                last_changed: firebase.database.ServerValue.TIMESTAMP
+            }).then(() => {
+                // Also set last seen timestamp when disconnecting
+                userLastSeenRef.onDisconnect().set(firebase.database.ServerValue.TIMESTAMP);
+                
+                // When client connects, set user to online
+                userStatusRef.set({
+                    state: 'online',
+                    last_changed: firebase.database.ServerValue.TIMESTAMP
+                });
+            });
+        });
+        
+        // Listen for changes in user statuses
+        db.ref('/status').on('value', (snapshot) => {
+            const statuses = snapshot.val() || {};
+            onlineUsers = {};
+            
+            for (const [userId, status] of Object.entries(statuses)) {
+                if (status.state === 'online') {
+                    onlineUsers[userId] = status;
+                }
+            }
+            
+            // Update online count
+            onlineCount.textContent = `${Object.keys(onlineUsers).length} Online`;
+            
+            // Update user list if panel is open
+            if (onlineUsersPanel.classList.contains('active')) {
+                filterUsers(document.querySelector('.user-tab.active').dataset.tab);
+            }
+        });
+    
+    // Listen for changes in user statuses
+    db.ref('/status').on('value', (snapshot) => {
+        const statuses = snapshot.val() || {};
+        onlineUsers = {};
+        
+        for (const [userId, status] of Object.entries(statuses)) {
+            if (status.state === 'online') {
+                onlineUsers[userId] = status;
+            }
+        }
+        
+        // Update online count
+        onlineCount.textContent = `${Object.keys(onlineUsers).length} Online`;
+        
+        // Update user list if panel is open
+        if (onlineUsersPanel.classList.contains('active')) {
+            filterUsers(document.querySelector('.user-tab.active').dataset.tab);
+        }
+        
+        // NEW: Update online indicators in messages
+        updateOnlineIndicators();
+    });
+    }
+    
+    function updateOnlineIndicators() {
+    // Get all message sender elements
+    const senderElements = document.querySelectorAll('.message-sender');
+    
+    senderElements.forEach(element => {
+        const userId = element.getAttribute('data-user-id');
+        if (userId) {
+            const isOnline = onlineUsers[userId] !== undefined;
+            const indicatorElement = element.querySelector('.sender-online-indicator');
+            
+            if (isOnline) {
+                // Add indicator if it doesn't exist
+                if (!indicatorElement) {
+                    const newIndicator = document.createElement('span');
+                    newIndicator.className = 'sender-online-indicator';
+                    element.appendChild(newIndicator);
+                }
+            } else {
+                // Remove indicator if it exists
+                if (indicatorElement) {
+                    indicatorElement.remove();
+                }
+            }
+        }
+    });
+}
+    
+        // Format last seen timestamp to readable text
+    function formatLastSeen(timestamp) {
+        if (!timestamp) return "Never";
+        
+        const now = Date.now();
+        const diff = now - timestamp;
+        const seconds = Math.floor(diff / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
+        
+        if (seconds < 60) {
+            return "Just now";
+        } else if (minutes < 60) {
+            return `${minutes} min ago`;
+        } else if (hours < 24) {
+            return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+        } else if (days < 7) {
+            return `${days} day${days !== 1 ? 's' : ''} ago`;
+        } else {
+            return new Date(timestamp).toLocaleDateString();
+        }
+    }
+
+    // Load messages from Realtime Database
+    function loadMessages() {
+        db.ref('messages').orderByChild('timestamp').on('child_added', (snapshot) => {
+            const message = snapshot.val();
+            displayMessage(snapshot.key, message);
+        });
+        
+        // Listen for message updates (edits)
+        db.ref('messages').on('child_changed', (snapshot) => {
+            const message = snapshot.val();
+            updateMessageDisplay(snapshot.key, message);
+        });
+        
+        // Listen for message removals (deletes)
+        db.ref('messages').on('child_removed', (snapshot) => {
+            removeMessageDisplay(snapshot.key);
+        });
+    }
+
+    // Display a message in the chat
+    function displayMessage(messageId, message) {
+        const messageDiv = document.createElement('div');
+        messageDiv.id = `message-${messageId}`;
+        messageDiv.className = `message ${message.senderId === currentUser.uid ? 'sent' : 'received'}`;
+        
+        // Get user data from Firestore
+        firestore.collection('users').doc(message.senderId).get().then(doc => {
+            let userName = "Unknown User";
+            let userInitials = "UU";
+            let avatarUrl = "";
+            
+            if (doc.exists) {
+                const userData = doc.data();
+                // Use fullName if available, otherwise fall back to email
+                userName = userData.fullName || userData.email || "Unknown User";
+                userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+                avatarUrl = userData.avatarUrl || "";
+            }
+            
+            // Check if sender is online
+            const isSenderOnline = onlineUsers[message.senderId] !== undefined;
+            
+      messageDiv.innerHTML = `
+          <div class="message-header">
+              ${avatarUrl ? 
+                  `<img src="${avatarUrl}" alt="${userName}" class="message-avatar" data-user-id="${message.senderId}" style="cursor: pointer;">` : 
+                  `<div class="message-avatar" data-user-id="${message.senderId}" style="cursor: pointer;">${userInitials}</div>`
+              }
+              <div class="message-sender" data-user-id="${message.senderId}" style="cursor: pointer;">
+                  ${userName}
+                  ${isSenderOnline ? '<span class="sender-online-indicator"></span>' : ''}
+              </div>
+          </div>
+          <div class="message-content">${message.content}</div>
+          <div class="message-time">${formatTime(message.timestamp)}${message.edited ? '<span class="edited-indicator"> (edited)</span>' : ''}</div>
+          ${message.senderId === currentUser.uid ? `
+              <div class="message-actions">
+                  <button class="message-action-btn edit-btn" data-id="${messageId}">
+                      <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="message-action-btn delete-btn" data-id="${messageId}">
+                      <i class="fas fa-trash"></i>
+                  </button>
+              </div>
+          ` : ''}
+      `;
+      
+      // event listeners for profile redirection
+      const avatarElement = messageDiv.querySelector('.message-avatar');
+      const senderElement = messageDiv.querySelector('.message-sender');
+      
+      if (avatarElement && senderElement) {
+          const userId = message.senderId;
+          
+          avatarElement.addEventListener('click', () => {
+              redirectToProfile(userId);
+          });
+          
+          senderElement.addEventListener('click', () => {
+              redirectToProfile(userId);
+          });
+      }
+            
+            // Add event listeners for action buttons
+            if (message.senderId === currentUser.uid) {
+                const editBtn = messageDiv.querySelector('.edit-btn');
+                const deleteBtn = messageDiv.querySelector('.delete-btn');
+                
+                editBtn.addEventListener('click', () => {
+                    selectedMessageId = messageId;
+                    showEditPrompt(message.content);
+                });
+                
+                deleteBtn.addEventListener('click', () => {
+                    selectedMessageId = messageId;
+                    showDeleteConfirm();
+                });
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            scrollToBottom();
+        }).catch(error => {
+            console.error("Error fetching user data:", error);
+        });
+    }
+
+        // Update message display when edited
+    function updateMessageDisplay(messageId, message) {
+        const messageElement = document.getElementById(`message-${messageId}`);
+        if (messageElement) {
+            const contentElement = messageElement.querySelector('.message-content');
+            if (contentElement) {
+                contentElement.textContent = message.content;
+            }
+            
+            // Update timestamp to show it was edited
+            const timeElement = messageElement.querySelector('.message-time');
+            if (timeElement) {
+                timeElement.textContent = `${formatTime(message.timestamp)}${message.edited ? ' (edited)' : ''}`;
+            }
+        }
+    }
+
+    // Remove message display when deleted
+    function removeMessageDisplay(messageId) {
+        const messageElement = document.getElementById(`message-${messageId}`);
+        if (messageElement) {
+            messageElement.remove();
+        }
+    }
+
+    // Send a new message
+function sendMessage() {
+    const content = messageInput.value.trim();
+    
+    if (content && currentUser) {
+        const timestamp = Date.now();
+        const messageData = {
+            content: content,
+            senderId: currentUser.uid,
+            timestamp: timestamp,
+            edited: false, // Add edited flag
+            lastEdited: null // Add last edited timestamp
+        };
+        
+        // Push message to Realtime Database
+        db.ref('messages').push(messageData)
+            .then(() => {
+                messageInput.value = '';
+            })
+            .catch(error => {
+                console.error("Error sending message:", error);
+            });
+    }
+}
+
+    // Load users from Firestore
+    function loadUsers() {
+        firestore.collection('users').onSnapshot(snapshot => {
+            allUsers = {};
+            snapshot.forEach(doc => {
+                allUsers[doc.id] = doc.data();
+            });
+            
+            // Update user list if panel is open
+            if (onlineUsersPanel.classList.contains('active')) {
+                filterUsers(document.querySelector('.user-tab.active').dataset.tab);
+            }
+        });
+    }
+
+    // Filter users based on selected tab
+    function filterUsers(filter) {
+        userList.innerHTML = '';
+        
+        // Get last seen data
+        db.ref('/lastSeen').once('value').then(lastSeenSnapshot => {
+            const lastSeenData = lastSeenSnapshot.val() || {};
+            
+            Object.entries(allUsers).forEach(([userId, userData]) => {
+                const isOnline = onlineUsers[userId] !== undefined;
+                const lastSeen = lastSeenData[userId] || null;
+                
+                if (filter === 'online' && !isOnline) return;
+                if (filter === 'offline' && isOnline) return;
+                
+                const userItem = document.createElement('li');
+                userItem.className = 'user-item';
+                
+                // Use fullName if available, otherwise fall back to email
+                const userName = userData.fullName || userData.email || 'Unknown User';
+                const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+                
+        userItem.innerHTML = `
+            <div class="user-clickable" data-user-id="${userId}" style="display: flex; align-items: center; gap: 10px; width: 100%; cursor: pointer;">
+                ${userData.avatarUrl ? 
+                    `<img src="${userData.avatarUrl}" alt="${userName}" class="user-avatar-sm">` : 
+                    `<div class="user-avatar-sm">${userInitials}</div>`
+                }
+                <div class="user-details">
+                    <div class="user-name-sm">${userName}</div>
+                    <div class="user-status-sm">
+                        <i class="fas fa-circle" style="color: ${isOnline ? '#4cc9f0' : '#6c757d'}; font-size: 8px; ${isOnline ? 'animation: pulse 1.5s infinite ease-in-out;' : ''}"></i>
+                        ${isOnline ? 'Online' : 'Offline'}
+                    </div>
+                </div>
+                ${isOnline ? '' : `<div class="user-last-seen">${formatLastSeen(lastSeen)}</div>`}
+            </div>
+        `;
+        
+        // Add event listener for profile redirection
+        const clickableElement = userItem.querySelector('.user-clickable');
+        clickableElement.addEventListener('click', () => {
+            redirectToProfile(userId);
+        });
+                
+                userList.appendChild(userItem);
+            });
+        });
+    }
+    
+          // Redirect to user profile page
+      function redirectToProfile(userId) {
+          const profileUrl = `profile.html?userId=${userId}`;
+          
+          // Redirect to the profile page
+          window.location.href = profileUrl;
+      }
+
+    // Show delete confirmation modal
+    function showDeleteConfirm() {
+        selectedMessageAction = 'delete';
+        confirmTitle.textContent = 'Delete Message';
+        confirmMessage.textContent = 'Are you sure you want to delete this message?';
+        passwordPrompt.style.display = 'block';
+        passwordInput.value = '';
+        confirmModal.classList.add('active');
+    }
+
+    // Show edit prompt modal
+    function showEditPrompt(currentContent) {
+        selectedMessageAction = 'edit';
+        promptTitle.textContent = 'Edit Message';
+        promptMessage.textContent = 'Edit your message:';
+        promptInput.value = currentContent;
+        promptModal.classList.add('active');
+    }
+
+    // Handle confirm action (delete with password verification)
+    function handleConfirmAction() {
+        if (selectedMessageAction === 'delete') {
+            const password = passwordInput.value;
+            
+            if (!password) {
+                showAlert('Please enter your password to confirm deletion.');
+                return;
+            }
+            
+            // Reauthenticate user
+            const credential = firebase.auth.EmailAuthProvider.credential(
+                currentUser.email, 
+                password
+            );
+            
+            currentUser.reauthenticateWithCredential(credential)
+                .then(() => {
+                    // Password is correct, delete the message
+                    db.ref('messages/' + selectedMessageId).remove()
+                        .then(() => {
+                            closeConfirmModalFunc();
+                        })
+                        .catch(error => {
+                            console.error("Error deleting message:", error);
+                            showAlert('Failed to delete message. Please try again.');
+                        });
+                })
+                .catch(error => {
+                    console.error("Authentication failed:", error);
+                    showAlert('Incorrect password. Please try again.');
+                });
+        }
+    }
+
+        // Handle prompt action (edit message)
+    function handlePromptAction() {
+        if (selectedMessageAction === 'edit') {
+            const newContent = promptInput.value.trim();
+            
+            if (!newContent) {
+                alert('Message cannot be empty.');
+                return;
+            }
+            
+            // Update the message in Realtime Database
+            db.ref('messages/' + selectedMessageId).update({
+                content: newContent,
+                edited: true, // Set edited flag
+                lastEdited: Date.now() // Set last edited timestamp
+            })
+            .then(() => {
+                closePromptModalFunc();
+            })
+            .catch(error => {
+                console.error("Error updating message:", error);
+                alert('Failed to update message. Please try again.');
+            });
+        }
+    }
+
+    // Close confirm modal
+    function closeConfirmModalFunc() {
+        confirmModal.classList.remove('active');
+        passwordPrompt.style.display = 'none';
+    }
+
+    // Close prompt modal
+    function closePromptModalFunc() {
+        promptModal.classList.remove('active');
+    }
+    
+    // Show custom alert
+    function showAlert(message) {
+    alertMessage.textContent = message;
+    alertModal.classList.add('active');
+    }
+    
+    // Close alert modal
+    function closeAlertModal() {
+    alertModal.classList.remove('active');
+    }
+
+    // Close online users panel
+    function closeOnlinePanel() {
+        onlineUsersPanel.classList.remove('active');
+        overlay.classList.remove('active');
+    }
+
+    // Format timestamp to readable date and time
+function formatTime(timestamp) {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    // Check if message was sent today
+    if (date.toDateString() === now.toDateString()) {
+        return `Today at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    } 
+    // Check if message was sent yesterday
+    else if (date.toDateString() === yesterday.toDateString()) {
+        return `Yesterday at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    } 
+    // Check if message was sent within the last week
+    else if (now - date < 7 * 24 * 60 * 60 * 1000) {
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        return `${days[date.getDay()]} at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    } 
+    // For older messages, show full date
+    else {
+        return `${date.toLocaleDateString()} at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    }
+}
+
+    // Scroll chat to bottom
+    function scrollToBottom() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Initialize the app when DOM is loaded
+    document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
